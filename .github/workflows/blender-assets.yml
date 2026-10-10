@@ -21,7 +21,8 @@ jobs:
       - name: Generate truly cut numeral meshes and glTF exports
         run: |
           mkdir -p build/premium-glb
-          blender --background -noaudio --python tools/blender/generate_die_assets.py -- --output build/premium-glb > build/premium-glb/generator.log 2>&1 || { tail -160 build/premium-glb/generator.log; exit 1; }
+          blender --background -noaudio --python-exit-code 2 --python tools/blender/generate_die_assets.py -- --output build/premium-glb > build/premium-glb/generator.log 2>&1 || { tail -160 build/premium-glb/generator.log; exit 1; }
+          tail -35 build/premium-glb/generator.log
           grep -F "PASS Blender true digit Boolean engraving" build/premium-glb/generator.log
           for die in d20 d6; do
             test -s "build/premium-glb/${die}_boolean_engraved.glb"

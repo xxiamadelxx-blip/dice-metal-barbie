@@ -145,8 +145,9 @@ def engraved_die(sides, font):
                         size,.0025,font,'Bronze_Engraved_%d'%values[i])
         inset.data.materials.append(gold)
         inserts.append(inset)
-    # Boolean creates new faces: generate complete UV set after final sculpt.
-    unwrap(shell)
+    # This proof uses scalar PBR material inputs with no image textures.
+    # UV unwrap is deferred to baked PBR art; headless smart_project() needs
+    # a GUI area and must not block geometry export.
     bpy.ops.object.select_all(action='DESELECT')
     for obj in inserts:obj.select_set(True)
     bpy.context.view_layer.objects.active=inserts[0]
