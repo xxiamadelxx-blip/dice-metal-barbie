@@ -102,6 +102,7 @@ func _run() -> void:
         var normal_name: String = {8:"native-12-d8-normal",12:"native-13-d12-normal",
             4:"native-14-d4-normal"}[sides]
         await _capture(normal_name)
+        print("NORMAL_VIEW Jolt D%d physically settled result = %d, camera size 14.2" % [sides, rolled_number])
         var imported := die.get_node_or_null("BlenderRecessedGLB") as Node3D
         if imported == null:
             push_error("D%d is showing old procedural fallback, not new Blender GLB" % sides)
