@@ -30,6 +30,8 @@ jobs:
         run: godot --headless --path . --script res://tests/cube_symmetry.gd
       - name: M3 real numbered D6 physics and result agreement
         run: godot --headless --path . --script res://tests/numbered_d6_physics.gd
+      - name: M3 D20 geometry and 60 rotations
+        run: godot --headless --path . --script res://tests/d20_geometry.gd
 
   android-debug:
     name: Android ARM64 debug export
