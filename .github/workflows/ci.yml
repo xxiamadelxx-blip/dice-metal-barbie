@@ -28,6 +28,8 @@ jobs:
         run: godot --headless --path . --script res://tests/physics_smoke.gd
       - name: M3 D6 mathematical symmetry proof
         run: godot --headless --path . --script res://tests/cube_symmetry.gd
+      - name: M3 real numbered D6 physics and result agreement
+        run: godot --headless --path . --script res://tests/numbered_d6_physics.gd
 
   android-debug:
     name: Android ARM64 debug export
