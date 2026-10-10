@@ -38,6 +38,10 @@ jobs:
         run: godot --headless --path . --script res://tests/d8_geometry.gd
       - name: M3 physical numbered D8 integration
         run: godot --headless --path . --script res://tests/numbered_d8_physics.gd
+      - name: M3 D12 mathematically correct dodecahedron
+        run: godot --headless --path . --script res://tests/d12_geometry.gd
+      - name: M3 D12 real numbered Jolt physics
+        run: godot --headless --path . --script res://tests/numbered_d12_physics.gd
 
   android-debug:
     name: Android ARM64 debug export
@@ -62,12 +66,12 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
-          godot --headless --path . --export-debug "Android Debug" build/android/dice-3d-m3-d8-debug.apk
-          test -s build/android/dice-3d-m3-d8-debug.apk
+          godot --headless --path . --export-debug "Android Debug" build/android/dice-3d-m3-d12-debug.apk
+          test -s build/android/dice-3d-m3-d12-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: m3-d8-android-debug
-          path: build/android/dice-3d-m3-d8-debug.apk
+          name: m3-d12-android-debug
+          path: build/android/dice-3d-m3-d12-debug.apk
           if-no-files-found: error
           retention-days: 14
 
