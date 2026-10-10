@@ -13,7 +13,7 @@ def validate(root):
     for filename in pbr['images']:
         png=(root/filename).read_bytes()
         assert png[:8]==bytes.fromhex("89504e470d0a1a0a") and len(png)>8000, 'Empty texture '+filename
-    for sides in (20,6,8,12):
+    for sides in (20,6,8,12,4):
         entry=manifest['dice'][f'D{sides}']
         values=entry['numbers']
         assert len(values)==sides and sorted(values)==list(range(1,sides+1)),f'D{sides} bad numeric face map'
@@ -24,6 +24,8 @@ def validate(root):
             assert values==expected,'D20 visual index mapping deviates from Jolt'
         if sides==6:
             assert values==[1,6,2,5,3,4],'D6 visual index mapping deviates from Jolt'
+        if sides==4:
+            assert values==[1,2,3,4] and entry.get('engraved_glyphs')==12, 'D4 requires three imprints per apex (12 total)'
         if sides==8:
             assert values==list(range(1,9)),'D8 visual index mapping deviates from Jolt'
         if sides==12:
@@ -54,7 +56,7 @@ def validate(root):
         stone=scene['meshes'][0]['primitives'][0]
         position=scene['accessors'][stone['attributes']['POSITION']]
         mins,maxs=position['min'],position['max']
-        expected_half={6:.61,20:.7486,8:.93,12:.98}[sides]
+        expected_half={6:.61,20:.7486,8:.93,12:.98,4:.566}[sides]
         for bound in [*mins,*maxs]:
             assert abs(bound)<=expected_half+.015,f'D{sides} shell exceeds original Jolt hull'
         assert entry['triangles']>sides*5, f'D{sides} no cut mesh detail'
@@ -65,7 +67,7 @@ def validate(root):
         preview=(root/entry['preview']).read_bytes()
         assert preview[:8]==b'\x89PNG\r\n\x1a\n' and len(preview)>50000,f'D{sides} missing true Blender preview'
         print(f'PASS D{sides}: {len(blob):,} bytes, {entry["triangles"]} Blender shell polygons, 2 meshes, exact face numbering, real PNG')
-    print('PASS: four actual exported GLBs and Blender scene captures validated')
+    print('PASS: five actual exported GLBs and Blender scene captures validated')
 
 if __name__=='__main__':
     validate(Path(sys.argv[1] if len(sys.argv)>1 else 'build/premium-glb'))

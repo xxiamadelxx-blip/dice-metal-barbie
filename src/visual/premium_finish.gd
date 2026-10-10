@@ -157,7 +157,7 @@ static func _attach_blender_glb(die: RigidBody3D, sides: int) -> bool:
 static func decorate_die(die: RigidBody3D, sides: int) -> void:
     # Production-grade visual GLBs for D6/D8/D12/D20, with legacy
     # Jolt collision and numeric metadata unchanged. All bodies remain offline.
-    if sides in [4,6,8,12,20] and sides != 4:
+    if sides in [4,6,8,12,20]:
         if _attach_blender_glb(die, sides):
             return
         # Current D20/D6 custom fallback already has actual pocket geometry.
@@ -165,7 +165,7 @@ static func decorate_die(die: RigidBody3D, sides: int) -> void:
             EngravedGem.apply(die, sides)
             return
         # Preserve working D8/D12 procedural scene on code-only checkouts.
-    # D4 apex-numbering needs different visual engraving placement.
+    # D4 triple-apex engraving is built from its own face-specific placements.
     ## The physics hull never changes. Metallic hairline inlays attach only
     ## to the graphics and share the die's physical orientation.
     var collision: CollisionShape3D

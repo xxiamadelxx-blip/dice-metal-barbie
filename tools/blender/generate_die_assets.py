@@ -45,6 +45,12 @@ def model(sides):
             next_low+=1
         assert sorted(values)==list(range(1,21))
         return verts,faces,values
+    if sides == 4:
+        # Exact tetrahedral Godot vertices; printed value = apex index + 1.
+        raw=[(1,1,1),(-1,-1,1),(-1,1,-1),(1,-1,-1)]
+        points=[vec(Vector(x).normalized()*.98) for x in raw]
+        faces=[[j for j in range(4) if j!=opposite] for opposite in range(4)]
+        return points,faces,[1,2,3,4]
     if sides == 8:
         # Exact index/number contract of src/core/octahedron.gd.
         godot_verts=[(.93,0,0),(-.93,0,0),(0,.93,0),(0,-.93,0),
@@ -256,7 +262,7 @@ def text_mesh(value,center,normal,size,depth,font,name,as_cutter=False):
 
 def bevel_shell(shell,sides):
     m=shell.modifiers.new('Three_segment_physically_beveled_edges','BEVEL')
-    m.width={20:.035,6:.075,8:.042,12:.035}[sides]
+    m.width={20:.035,6:.075,8:.042,12:.035,4:.032}[sides]
     m.segments=3
     m.limit_method='ANGLE'
     m.angle_limit=.35
@@ -287,24 +293,37 @@ def engraved_die(sides, font, maps):
         gold_bsdf.inputs['Emission Strength'].default_value=.22
     inserts=[]
     cutters=[]
+    placements=[]
     for i,f in enumerate(faces):
         p=[verts[j] for j in f]
         center=sum(p,Vector())/len(p)
         normal=(p[1]-p[0]).cross(p[2]-p[0]).normalized()
         if normal.dot(center)<0: normal=-normal
-        if sides==20:
-            size=.225 if values[i]>=10 else .295
-        elif sides==6:
-            size=.47
-        elif sides==8:
-            size=.25
+        if sides==4:
+            # D4 cannot be marked as "one numeral per face": the winning
+            # upper vertex is printed on each of its 3 adjacent faces.
+            # Copy src/core/tetrahedron.gd::printed_position exactly.
+            for apex in f:
+                position=verts[apex].lerp(center,.48)
+                placements.append((apex+1,position,normal,.20,
+                                   '%02d_Apex%d'%(i,apex+1)))
         else:
-            size=.21 if values[i]>=10 else .275
-        cutter=text_mesh(values[i],center-normal*.006,normal,
-                         size,.042,font,'BooleanDigitCut_%02d'%i,as_cutter=True)
+            if sides==20:
+                size=.225 if values[i]>=10 else .295
+            elif sides==6:
+                size=.47
+            elif sides==8:
+                size=.25
+            else:
+                size=.21 if values[i]>=10 else .275
+            placements.append((values[i],center,normal,size,'%02d'%i))
+    assert len(placements)==(12 if sides==4 else sides)
+    for number,position,normal,size,uid in placements:
+        cutter=text_mesh(number,position-normal*.006,normal,
+                         size,.042,font,'BooleanDigitCut_'+uid,as_cutter=True)
         cutters.append(cutter)
-        inset=text_mesh(values[i],center-normal*.016,normal,
-                        size,.0025,font,'Bronze_Engraved_%d'%values[i])
+        inset=text_mesh(number,position-normal*.016,normal,
+                        size,.0025,font,'Bronze_Engraved_%d'%number)
         inset.data.materials.append(gold)
         inserts.append(inset)
     # A single Boolean through the UNION of spatially disjoint glyph cutters
@@ -409,7 +428,8 @@ def export_and_preview(sides,out,font,maps):
     preview=out/('d%d_boolean_preview.png'%sides)
     scene.render.filepath=str(preview)
     bpy.ops.render.render(write_still=True)
-    return {'faces':len(values),'numbers':values,'triangles':len(shell.data.polygons),
+    return {'faces':len(values),'numbers':values,'engraved_glyphs':12 if sides==4 else sides,
+            'triangles':len(shell.data.polygons),
             'glb':filepath.name,'preview':preview.name,'glb_bytes':filepath.stat().st_size}
 
 def main():
@@ -428,10 +448,10 @@ def main():
                      'albedo_linear_mean':float(np.mean(np.asarray(maps['albedo'].pixels[:]).reshape((256,256,4))[:,:,:3])),
                      'description':'Deterministic offline generated PBR maps, not Cycles geometric bake'},
               'dice':{}}
-    for sides in (20,6,8,12):
+    for sides in (20,6,8,12,4):
         manifest['dice']['D%d'%sides]=export_and_preview(sides,out,font,maps)
     (out/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
-    print('PASS Blender true digit Boolean engraving + GLB export, D20 D6 D8 D12')
+    print('PASS Blender true digit Boolean engraving + GLB export, D20 D6 D8 D12 D4')
 
 if __name__=='__main__':
     main()

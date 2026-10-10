@@ -5,6 +5,7 @@ const D20 = preload("res://src/dice/d20_body.gd")
 const D6 = preload("res://src/dice/d6_body.gd")
 const D8 = preload("res://src/dice/d8_body.gd")
 const D12 = preload("res://src/dice/d12_body.gd")
+const D4 = preload("res://src/dice/d4_body.gd")
 const Premium = preload("res://src/visual/premium_finish.gd")
 const Ico = preload("res://src/core/icosahedron.gd")
 const Cube = preload("res://src/core/cube_symmetry.gd")
@@ -32,17 +33,19 @@ func _imported_meshes(node: Node) -> Array[MeshInstance3D]:
 
 
 func _run() -> void:
-    for sides in [20, 6, 8, 12]:
+    for sides in [20, 6, 8, 12, 4]:
         var die: RigidBody3D
         match sides:
             20: die = D20.new()
             6: die = D6.new()
             8: die = D8.new()
             12: die = D12.new()
+            4: die = D4.new()
         root.add_child(die)
         await process_frame
         var collider_name: String = {20:"IcosahedronCollision",6:"SymmetricCubeCollision",
-            8:"OctahedronCollision",12:"DodecahedronCollision"}[sides]
+            8:"OctahedronCollision",12:"DodecahedronCollision",
+            4:"TetrahedronCollision"}[sides]
         var shape := die.get_node(collider_name) as CollisionShape3D
         var old_shape: Shape3D = shape.shape
         var old_mass := die.mass
@@ -77,15 +80,16 @@ func _run() -> void:
                     _check(mesh_node.mesh.surface_get_material(0) != null,
                         "D%d GLB lacks imported physical material" % sides)
             var legacy_name: String = {20:"ObsidianD20",6:"Obsidian",
-                8:"ObsidianD8",12:"ObsidianD12"}[sides]
+                8:"ObsidianD8",12:"ObsidianD12",4:"ObsidianD4"}[sides]
             var original_stone := die.get_node_or_null(legacy_name)
             _check(original_stone != null and not original_stone.visible, "Legacy die geometry should be hidden")
-            var original_label := die.get_node_or_null("Face_1") as Label3D
+            var label_name := "Apex_1_OnFace_1" if sides == 4 else "Face_1"
+            var original_label := die.get_node_or_null(label_name) as Label3D
             _check(original_label != null and not original_label.visible, "Face mapping retained but old label hidden")
             die.queue_free()
             await process_frame
             continue
-        if sides == 8 or sides == 12:
+        if sides in [4,8,12]:
             _check(false, "D%d authored GLB unavailable; cannot promote fallback as premium art" % sides)
             die.queue_free()
             await process_frame
@@ -136,5 +140,5 @@ func _run() -> void:
                 _check(glyph.position.dot(glyph.basis.z) > 0.0, "Engraved glyph should remain on its outward face")
         die.queue_free()
         await process_frame
-    print("M5 sculpted D20/D6/D8/D12 asset contracts: %d checks, %d FAIL" % [count, fails])
+    print("M5 sculpted D20/D6/D8/D12/D4 asset contracts: %d checks, %d FAIL" % [count, fails])
     quit(0 if fails == 0 else 1)
