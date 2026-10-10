@@ -11,6 +11,7 @@ var rolling := false
 var result := -1
 var failure := ""
 var elapsed := 0.0
+var edge_recovery_count := 0
 
 func _ready() -> void:
     name = "PhysicalD8"
@@ -77,6 +78,7 @@ func throw_from_top() -> void:
     result = -1
     failure = ""
     elapsed = 0.0
+    edge_recovery_count = 0
     sleeping = false
     var chosen := DiceRng.pick(24) - 1
     if chosen < 0:
@@ -107,7 +109,15 @@ func _physics_process(delta: float) -> void:
         var alignment: float = (pose * Octa.face_normal(i)).dot(Vector3.UP)
         best = maxf(best, alignment)
     if face < 0 or best < 0.89:
-        _abort("D8 остановился на ребре; результат не определён")
+        ## Rare solver rest on an unstable edge: give the body a small, label-independent
+        ## world-space physical impulse. NEVER snap/rotate it to a chosen number.
+        if edge_recovery_count < 3 and elapsed < MAX_ROLL_SECONDS - 1.5:
+            edge_recovery_count += 1
+            sleeping = false
+            apply_central_impulse(Vector3(0.006, 0.008, 0.004))
+            apply_torque_impulse(Vector3(0.005, 0.003, -0.004))
+            return
+        _abort("D8 не смог устойчиво остановиться на грани")
         return
     rolling = false
     result = Octa.numbers()[face]
