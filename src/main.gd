@@ -1,8 +1,9 @@
 extends Node3D
-## M3 D6 testbed. A numeral is shown ONLY once real Jolt physics has settled.
+## M3 physical D6 / D20 testbed. A numeral is shown only after Jolt settles.
 ## Not final UX, not yet approved as statistical fairness evidence.
 
 const DieScript = preload("res://src/dice/d6_body.gd")
+const D20Script = preload("res://src/dice/d20_body.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
 
@@ -10,6 +11,9 @@ var active_die: RigidBody3D
 var status_label: Label
 var throw_button: Button
 var copy_button: Button
+var selected_chooser: OptionButton
+var selected_die := 6
+var active_sides := 6
 var last_result := -1
 
 func _ready() -> void:
@@ -80,27 +84,32 @@ func _make_overlay() -> void:
     canvas.add_child(root)
 
     var top := Label.new()
-    top.text = "D&D 3D Dice   ·   M3 D6 testbed"
+    top.text = "D&D 3D Dice   ·   M3 D6 / D20 testbed"
     top.position = Vector2(20, 25)
     root.add_child(top)
 
     var panel := PanelContainer.new()
     panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    panel.offset_top = -205.0
+    panel.offset_top = -270.0
     root.add_child(panel)
     var column := VBoxContainer.new()
     column.add_theme_constant_override("separation", 10)
     panel.add_child(column)
     var heading := Label.new()
-    heading.text = "Обсидиановый D6 · физический тест"
+    heading.text = "Обсидиановые кости · физический тест"
     column.add_child(heading)
+    selected_chooser = OptionButton.new()
+    selected_chooser.add_item("D6", 6)
+    selected_chooser.add_item("D20", 20)
+    selected_chooser.item_selected.connect(_on_type_selected)
+    column.add_child(selected_chooser)
     throw_button = Button.new()
     throw_button.text = "Бросить D6"
     throw_button.custom_minimum_size = Vector2(0, 54)
-    throw_button.pressed.connect(_throw_physical_d6)
+    throw_button.pressed.connect(_throw_selected_die)
     column.add_child(throw_button)
     status_label = Label.new()
-    status_label.text = "Выбери «Бросить D6»"
+    status_label.text = "Выбери кубик и нажми «Бросить»"
     column.add_child(status_label)
     copy_button = Button.new()
     copy_button.text = "Скопировать результат"
@@ -111,32 +120,57 @@ func _make_overlay() -> void:
 func _copy_result() -> void:
     if last_result != -1:
         DisplayServer.clipboard_set(str(last_result))
-        status_label.text = "Скопировано: %d" % last_result
+        status_label.text = "Скопировано: D%d = %d" % [active_sides, last_result]
+
+func _on_type_selected(index: int) -> void:
+    selected_die = 6 if index == 0 else 20
+    throw_button.text = "Бросить D%d" % selected_die
+
+func _throw_selected_die() -> void:
+    if selected_die == 20:
+        _throw_physical_d20()
+    else:
+        _throw_physical_d6()
 
 func _throw_physical_d6() -> void:
+    _begin_throw(DieScript.new(), 6)
+
+func _throw_physical_d20() -> void:
+    _begin_throw(D20Script.new(), 20)
+
+func _begin_throw(die: RigidBody3D, sides: int) -> void:
     if not throw_button or throw_button.disabled:
+        die.queue_free()
         return
+    active_sides = sides
     last_result = -1
     copy_button.disabled = true
     throw_button.disabled = true
+    selected_chooser.disabled = true
     if is_instance_valid(active_die):
         remove_child(active_die)
         active_die.queue_free()
-    var die = DieScript.new()
-    die.name = "PhysicalD6"
+    die.name = "PhysicalD%d" % sides
     add_child(die)
     active_die = die
-    die.roll_completed.connect(_on_d6_completed)
-    die.roll_failed.connect(_on_d6_failed)
-    die.throw_from_top()
-    status_label.text = "Кубик летит…"
+    die.connect("roll_completed", Callable(self, "_on_die_completed"))
+    die.connect("roll_failed", Callable(self, "_on_die_failed"))
+    die.call("throw_from_top")
+    status_label.text = "D%d · кубик летит…" % sides
 
-func _on_d6_completed(value: int) -> void:
+func _on_die_completed(value: int) -> void:
     last_result = value
-    status_label.text = "D6 · результат: %d" % value
+    if active_sides == 20 and value == 20:
+        status_label.text = "D20 · 20 · критический успех"
+    elif active_sides == 20 and value == 1:
+        status_label.text = "D20 · 1 · критический провал"
+    else:
+        status_label.text = "D%d · результат: %d" % [active_sides, value]
     throw_button.disabled = false
+    selected_chooser.disabled = false
     copy_button.disabled = false
 
-func _on_d6_failed(message: String) -> void:
+func _on_die_failed(message: String) -> void:
     status_label.text = "Бросок не засчитан: %s" % message
     throw_button.disabled = false
+    selected_chooser.disabled = false
