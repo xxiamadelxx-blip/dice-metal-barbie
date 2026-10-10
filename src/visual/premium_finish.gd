@@ -62,7 +62,7 @@ static func decorate_die(die: RigidBody3D, sides: int) -> void:
             node.shaded = false
     # D20 has real planar chamfers and in-face flush bronze engraving.
     # Do not layer a wireframe of cylinders over its physical facets.
-    if sides == 20:
+    if sides != 6:
         return
     if collision == null:
         return
