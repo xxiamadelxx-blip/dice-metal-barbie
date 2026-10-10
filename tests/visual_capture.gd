@@ -76,5 +76,30 @@ func _run() -> void:
         return
     await create_timer(0.18).timeout
     await _capture("native-08-staged-crimson-pulse")
-    print("Native Godot visual capture complete; pulses are STAGED EFFECT PREVIEWS, not natural dice outcomes.")
+    print("Staged D20 critical wave previews complete; not natural throw evidence.")
+    # New authored Blender D8/D12 art MUST be inspected inside real Godot,
+    # not only as standalone Blender camera renders. Real physical throws.
+    await create_timer(1.0).timeout
+    for sides in [8,12]:
+        closeup_camera.size = 14.2
+        closeup_camera.position = Vector3(0, 18.0, 1.5)
+        scene.call("_select_die_type", sides)
+        scene.call("_throw_selected_die")
+        await create_timer(7.0).timeout
+        var die := scene.get_node_or_null("PhysicalD%d" % sides) as RigidBody3D
+        if die == null:
+            push_error("Missing real physical D%d for imported GLB macro QA" % sides)
+            quit(9)
+            return
+        var imported := die.get_node_or_null("BlenderRecessedGLB") as Node3D
+        if imported == null:
+            push_error("D%d is showing old procedural fallback, not new Blender GLB" % sides)
+            quit(10)
+            return
+        closeup_camera.size = 3.8
+        closeup_camera.position = Vector3(die.position.x, 18.0, die.position.z)
+        await create_timer(0.4).timeout
+        var output := "native-09-d8-detail" if sides == 8 else "native-10-d12-detail"
+        await _capture(output)
+    print("Native Godot visual capture complete: real D6/D20/D8/D12 throws + explicitly staged D20 pulses.")
     quit(0)
