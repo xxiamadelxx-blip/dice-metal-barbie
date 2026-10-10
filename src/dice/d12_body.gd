@@ -68,7 +68,7 @@ func _create_visual() -> void:
         glyph.name = "Face_%d" % value
         glyph.text = str(value)
         glyph.font_size = 51
-        glyph.pixel_size = 0.005
+        glyph.pixel_size = 0.0056
         glyph.outline_size = 6
         glyph.modulate = Color(0.94, 0.87, 0.74)
         glyph.outline_modulate = Color(0.05, 0.07, 0.10)
