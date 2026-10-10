@@ -15,12 +15,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Checkout actual draft head, not the synthetic PR merge commit.
-          ref: ${{ github.head_ref || github.ref_name }}
+          # Pin exact PR source SHA. fetch-depth=1 hides HEAD^ from git diff-tree,
+          # allowing empty "changed" output and a false GREEN sculpt build.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
       - name: Decide whether actual Blender sources changed
         id: art_source
         shell: bash
         run: |
+          if ! git rev-parse --verify 'HEAD^' >/dev/null 2>&1; then
+            echo "FAIL: parent commit unavailable, cannot establish model source diff"
+            exit 9
+          fi
           changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
           printf '%s\\n' "$changed"
           if printf '%s\\n' "$changed" | grep -Eq '^(tools/blender/|\\.github/workflows/blender-assets\\.yml$)'; then

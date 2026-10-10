@@ -447,9 +447,11 @@ def main():
     # A heavier typeface plus larger curves yield real cut strokes, not a
     # screen-space outline that breaks visual/physics consistency.
     heavy=Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')
-    apex_font=bpy.data.fonts.load(str(heavy)) if heavy.exists() else font
+    # A silent fallback would return to illegible thin apex numerals while
+    # still passing model compilation. Fail the art build if the font is absent.
     if not heavy.exists():
-        print('WARNING: DejaVuSans-Bold unavailable, falling back to current face',flush=True)
+        raise FileNotFoundError('D4 source requires DejaVuSans-Bold.ttf (fonts-dejavu-core)')
+    apex_font=bpy.data.fonts.load(str(heavy))
     maps=texture_set(out)
     manifest={'blender':bpy.app.version_string,
               'note':'visual-only source; Jolt hull and outcome unchanged',
