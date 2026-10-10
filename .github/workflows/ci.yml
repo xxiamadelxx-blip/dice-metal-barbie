@@ -65,6 +65,8 @@ jobs:
         run: godot --headless --path . --script res://tests/percentile_pair_mapping.gd
       - name: M3 D10, single D100, dual-D10 percentile real Jolt integration
         run: godot --headless --path . --script res://tests/trapezohedron_physics.gd
+      - name: M3 rapid repeated percentile pair Jolt lifecycle regression
+        run: godot --headless --path . --script res://tests/m3_pair_lifecycle.gd
       - name: M3 secure source RNG frequency sanity (not physical fairness proof)
         run: godot --headless --path . --script res://tests/m3_secure_rng_sanity.gd
       - name: M3 extended Jolt endurance with real D10, D100 and percentile pair
