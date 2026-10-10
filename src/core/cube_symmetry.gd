@@ -4,11 +4,11 @@ extends RefCounted
 ## This can de-bias labels independently of which physical face ends up on top.
 ## WARNING: only valid if collision shape/inertia and launch are symmetry-equivalent.
 
-const D6_FACE_NORMALS := [
+const D6_FACE_NORMALS = [
     Vector3.UP, Vector3.DOWN, Vector3.RIGHT,
     Vector3.LEFT, Vector3.BACK, Vector3.FORWARD
 ]
-const D6_FACE_VALUES := [1, 6, 2, 5, 3, 4]
+const D6_FACE_VALUES = [1, 6, 2, 5, 3, 4]
 
 static func rotations() -> Array[Basis]:
     var directions: Array[Vector3] = [
