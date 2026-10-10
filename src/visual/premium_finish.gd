@@ -2,7 +2,7 @@ extends RefCounted
 ## Procedural, locally generated visual assets. No licensed textures or
 ## external service. All embellishments are NON-COLLIDING.
 const GOLD := Color(0.77, 0.57, 0.31)
-const OBSIDIAN := Color(0.018, 0.024, 0.037)
+const OBSIDIAN := Color(0.075, 0.085, 0.105)
 
 static func velvet_material() -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
@@ -16,12 +16,13 @@ static func _velvet_texture() -> ImageTexture:
     var texture := Image.create(256, 256, false, Image.FORMAT_RGBA8)
     var noise := FastNoiseLite.new()
     noise.seed = 57321
-    noise.frequency = 0.055
+    noise.frequency = 0.075
     for y in range(256):
         for x in range(256):
             var grain: float = noise.get_noise_2d(float(x), float(y))
-            var thread: float = sin(float(x) * 0.41 + float(y) * 0.31) * 0.003
-            var value := clampf(0.067 + grain * 0.018 + thread, 0.036, 0.105)
+            var thread: float = sin(float(x) * 0.92 + float(y) * 0.12) * 0.006
+            var fine: float = noise.get_noise_2d(float(x * 3 + 400), float(y * 3 - 700))
+            var value := clampf(0.062 + grain * 0.025 + fine * 0.018 + thread, 0.029, 0.11)
             texture.set_pixel(x, y, Color(value * 0.83, value * 0.85, value, 1.0))
     texture.generate_mipmaps()
     return ImageTexture.create_from_image(texture)
@@ -29,11 +30,11 @@ static func _velvet_texture() -> ImageTexture:
 static func obsidian_material() -> StandardMaterial3D:
     var stone := StandardMaterial3D.new()
     stone.albedo_color = OBSIDIAN
-    stone.metallic = 0.37
-    stone.roughness = 0.11
+    stone.metallic = 0.24
+    stone.roughness = 0.16
     stone.clearcoat_enabled = true
-    stone.clearcoat = 0.72
-    stone.clearcoat_roughness = 0.11
+    stone.clearcoat = 0.91
+    stone.clearcoat_roughness = 0.07
     return stone
 
 static func gold_material() -> StandardMaterial3D:
