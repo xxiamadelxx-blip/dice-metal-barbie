@@ -54,6 +54,11 @@ jobs:
           exit 0
       - name: Bounded executable and install-status probes
         run: python3 tools/toolchain/probe_creative_tools.py build/tool-probe
+      - name: Remove extracted vendor binaries from artifact
+        if: always()
+        run: |
+          rm -rf build/tool-probe/material-maker
+          rm -f build/tool-probe/material-maker.tar.gz
       - name: Publish exact logs and verdicts even on failure
         if: always()
         uses: actions/upload-artifact@v4

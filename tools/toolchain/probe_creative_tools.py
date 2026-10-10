@@ -56,7 +56,7 @@ def main(root):
             if "material" not in path.name.lower() and "maker" not in path.name.lower():
                 continue
             try:
-                if path.open("rb").read(4) == b"\\x7fELF":
+                if path.open("rb").read(4) == bytes.fromhex("7f454c46"):
                     candidates.append(str(path))
             except OSError:
                 continue
