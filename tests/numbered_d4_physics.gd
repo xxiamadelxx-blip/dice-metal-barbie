@@ -30,6 +30,8 @@ func _run() -> void:
     _assert(collider.shape.points.size() == 4, "D4 collision needs four vertices")
     var mesh: MeshInstance3D = die.get_node("ObsidianD4")
     _assert(mesh.mesh.get_faces().size() == 12, "D4 visible mesh has four triangles")
+    _assert((die.get_node("ActualSculptedBevels") as MeshInstance3D).mesh.get_faces().size() == 72, "D4 must have real beveled geometry")
+    _assert((die.get_node("FaceInsetBronzeHairlines") as MeshInstance3D).mesh.get_faces().size() == 72, "D4 bronze is inlaid into face planes")
     var num_glyphs := 0
     for apex in range(4):
         for opposite in range(4):
