@@ -52,6 +52,8 @@ func _run() -> void:
             for mesh_node in meshes:
                 _check(mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0,
                     "D%d imported GLB mesh has no render surfaces" % sides)
+                _check(mesh_node.material_override != null,
+                    "D%d imported GLB material override missing in Godot renderer" % sides)
                 if mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0:
                     _check(mesh_node.mesh.surface_get_material(0) != null,
                         "D%d GLB lacks imported physical material" % sides)

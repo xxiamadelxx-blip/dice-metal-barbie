@@ -68,6 +68,31 @@ static func blackened_metal() -> StandardMaterial3D:
     return metal
 
 
+static func _gold_inset_for_glb() -> StandardMaterial3D:
+    var gold := StandardMaterial3D.new()
+    gold.albedo_color = Color(0.72, 0.48, 0.22)
+    gold.metallic = 0.62
+    gold.roughness = 0.30
+    gold.clearcoat_enabled = true
+    gold.clearcoat = 0.18
+    gold.emission_enabled = true
+    gold.emission = Color(0.13, 0.070, 0.020)
+    gold.emission_energy_multiplier = 0.20
+    return gold
+
+static func _finish_glb_node(node: Node) -> void:
+    # Godot Mobile/GL compatibility lighting needs a consistent material
+    # response among all five dice. Apply to rendered surfaces only;
+    # authored Boolean geometry, face IDs, and Jolt hull stay unchanged.
+    if node is MeshInstance3D:
+        var surface := node as MeshInstance3D
+        if surface.name.begins_with("Sculpted_Obsidian"):
+            surface.material_override = obsidian_material()
+        elif surface.name.begins_with("Recessed_Bronze"):
+            surface.material_override = _gold_inset_for_glb()
+    for child in node.get_children():
+        _finish_glb_node(child)
+
 static func _attach_blender_glb(die: RigidBody3D, sides: int) -> bool:
     ## GLB meshes are 100% VISUAL, never a physics hull or source of roll
     ## numbers. Their canonical geometry and face IDs are pinned by Blender
@@ -86,6 +111,7 @@ static func _attach_blender_glb(die: RigidBody3D, sides: int) -> bool:
         push_warning("Blender geometry did not instantiate as Node3D for D%d" % sides)
         return false
     art.name = "BlenderRecessedGLB"
+    _finish_glb_node(art)
     die.add_child(art)
     for child in die.get_children():
         if child == art:
