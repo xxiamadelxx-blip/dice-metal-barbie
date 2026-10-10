@@ -29,7 +29,13 @@ func _run() -> void:
     _check(shape.shape.points.size() == 12, "D20 collision must use 12 golden-ratio vertices")
 
     var visual: MeshInstance3D = die.get_node("ObsidianD20")
-    _check(visual.mesh.get_faces().size() == 60, "D20 mesh must have 20 triangles = 60 vertices")
+    _check(visual.mesh.get_faces().size() == 60, "D20 should have 20 numbered planar face cores")
+    var chamfers: MeshInstance3D = die.get_node("ActualSculptedBevels")
+    var brass: MeshInstance3D = die.get_node("FaceInsetBronzeHairlines")
+    _check(chamfers.mesh.get_faces().size() == 360, "Sculpted icosahedron must have real chamfer quads")
+    _check(brass.mesh.get_faces().size() == 360, "Bronze must lie inset into actual triangular faces")
+    _check(die.get_node_or_null("NonCollidingMetalInlay") == null, "D20 cannot use floating cylinder wireframe")
+    _check(die.get_node("IcosahedronCollision").shape.points.size() == 12, "Premium art must never alter Jolt hull")
     var numbers := Ico.numbers()
     for face_id in range(20):
         var face: int = numbers[face_id]
