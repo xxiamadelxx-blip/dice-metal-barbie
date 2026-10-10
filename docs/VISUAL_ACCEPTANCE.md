@@ -19,3 +19,15 @@
 
 ## Known baseline failures
 The original M3 screenshot showed featureless D6 (small black cube with white digit), table of plain black polygons, a Godot dropdown, rectangular text buttons and technical labels. Initial layout fix PR #21 addressed table/dock overlap only. This PR is still an iterative step toward, **not a claim of equivalence to**, Concept 3.
+
+## Gauntlet continuation: reconstructed stage and sculpted polyhedra
+
+- First iteration relied on large basic solids and hovering gold cylinders. It failed the reference.
+- Current work on [PR #23](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/23) uses true inward-chamfered shells on D4, D8, D12 and D20. Faces retain exact Jolt numbering normals; hairline bronze shapes sit inside the face rather than enclosing the die in a floating cage. D6 uses a small actual beveled mesh.
+- Four frozen, non-colliding display dice introduce the product at startup. All are removed on the first roll. They **are not** presented as historical dice results and cannot influence the Jolt solver.
+- Larger engraved face numerals, micro-normal-mapped velvet and procedural normal-based studio reflections. Existing simple minimal chip/blue throw control is preserved.
+- [Verified renderer screenshots, four dice](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38062634632) and [newer cloth/light screenshots](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38063129218). The screenshots are actual Linux/Mesa Godot rendered frames, **NOT an Android device**.
+- Detected that earlier visual workflow erroneously reported success despite GDScript parse errors. The workflow now **fails explicitly on** `SCRIPT ERROR`, `Parse Error`, `Compile Error`, `Invalid call` or failed script loads, as well as blank/unchanged frames. The geometry source was fixed and retested.
+- Physics tests additionally check D4/D8/D12/D20 bevel/inlay triangle counts and require the decorative start models to be removed before any real throw.
+
+**Artistic gate remains OPEN / NOT ACCEPTED:** model fidelity and premium reflective detail are still short of the approved high-quality concept image, even though the new stage is substantially closer than the original single-die testbed. Future iterations should prioritize truly engraved numeral meshes, high quality normal/roughness/albedo maps and proper 3D asset baking or Blender automation, before production approval. Do not merge simply because CI passes.
