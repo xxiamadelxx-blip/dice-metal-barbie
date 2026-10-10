@@ -23,6 +23,12 @@ jobs:
         run: |
           sed -i 's/^architectures\/arm64-v8a=true/architectures\/arm64-v8a=false\narchitectures\/x86_64=true/' export_presets.cfg
           grep 'architectures/' export_presets.cfg
+          # Emulator SwiftShader Vulkan reported QueuePresentKHR DEVICE_LOST.
+          # Modify ONLY the disposable x86_64 diagnostic build checkout.
+          # Production phone ARM64 renderer stays unchanged in git.
+          sed -i 's/renderer\/rendering_method="mobile"/renderer\/rendering_method="gl_compatibility"/' project.godot
+          sed -i 's/renderer\/rendering_method.mobile="mobile"/renderer\/rendering_method.mobile="gl_compatibility"/' project.godot
+          grep 'rendering_method' project.godot
           mkdir -p ~/.local/share/godot/export_templates
           cp -r /root/.local/share/godot/export_templates/4.6.3.stable ~/.local/share/godot/export_templates/ || true
           mkdir -p ~/.config/godot
