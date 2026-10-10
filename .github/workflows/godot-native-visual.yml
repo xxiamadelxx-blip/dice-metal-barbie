@@ -29,6 +29,11 @@ jobs:
       - name: Render real frame evidence under virtual display
         run: |
           xvfb-run -a -s "-screen 0 720x1280x24" godot --path . --rendering-method gl_compatibility --script res://tests/visual_capture.gd > qa-evidence/native-godot.log 2>&1 || { tail -100 qa-evidence/native-godot.log; exit 1; }
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call\\.' qa-evidence/native-godot.log; then
+            echo "FAIL: GDScript errors detected despite generated screenshots"
+            grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call' qa-evidence/native-godot.log
+            exit 3
+          fi
           for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png; do
             test -s "$file"
             test "$(stat -c%s "$file")" -ge 10000
