@@ -9,12 +9,19 @@ const D20Script = preload("res://src/dice/d20_body.gd")
 const D8Script = preload("res://src/dice/d8_body.gd")
 const D12Script = preload("res://src/dice/d12_body.gd")
 const D4Script = preload("res://src/dice/d4_body.gd")
+const TrapezohedronDie = preload("res://src/dice/trapezohedron_body.gd")
+const DiceRules = preload("res://src/core/dice_rules.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
 # Launch display only. Never scale physically simulated dice or Jolt colliders.
 const IDLE_HERO_SCALE := 1.38
 
 var active_die: RigidBody3D
+var active_percentile: Node3D
+var percentile_tens := -1
+var percentile_ones := -1
+var d100_mode_button: Button
+var percentile_pair_enabled := true
 var status_label: Label
 var throw_button: Button
 var copy_button: Button
@@ -230,6 +237,8 @@ func _make_overlay() -> void:
     selected_chooser.add_item("D8", 8)
     selected_chooser.add_item("D12", 12)
     selected_chooser.add_item("D20", 20)
+    selected_chooser.add_item("D10", 10)
+    selected_chooser.add_item("D100", 100)
     selected_chooser.select(1)
     selected_chooser.visible = false
     selected_chooser.item_selected.connect(_on_type_selected)
@@ -258,6 +267,38 @@ func _make_overlay() -> void:
         chip.pressed.connect(_select_die_type.bind(sides))
         die_buttons[sides] = chip
         chips.add_child(chip)
+
+    # Temporary M3 mechanical controls outside the original 5-button dock,
+    # preserving existing Android touch coordinates and the approved stage.
+    # Full visual composition and typography are deferred to M5.
+    var extended := HBoxContainer.new()
+    extended.name = "M3ExtraDiceControls"
+    extended.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    extended.offset_top = -323
+    extended.offset_bottom = -247
+    extended.offset_left = 245
+    extended.offset_right = -20
+    extended.add_theme_constant_override("separation", 8)
+    root.add_child(extended)
+    for extra_sides in [10, 100]:
+        var extra := Button.new()
+        extra.name = "SelectD%d" % extra_sides
+        extra.text = "D%d" % extra_sides
+        extra.custom_minimum_size = Vector2(76, 55)
+        extra.add_theme_font_size_override("font_size", 16)
+        extra.add_theme_stylebox_override("normal", _chip_style(false))
+        extra.add_theme_stylebox_override("pressed", _chip_style(true))
+        extra.pressed.connect(_select_die_type.bind(extra_sides))
+        die_buttons[extra_sides] = extra
+        extended.add_child(extra)
+    d100_mode_button = Button.new()
+    d100_mode_button.name = "D100Mode"
+    d100_mode_button.text = "2 × D10"
+    d100_mode_button.tooltip_text = "Переключить один D100 / два D10"
+    d100_mode_button.visible = false
+    d100_mode_button.custom_minimum_size = Vector2(105, 55)
+    d100_mode_button.pressed.connect(_toggle_d100_mode)
+    extended.add_child(d100_mode_button)
 
     var lower := HBoxContainer.new()
     lower.name = "ThrowAndResult"
@@ -309,6 +350,10 @@ func _make_overlay() -> void:
     throw_button.pressed.connect(_throw_selected_die)
     action_stack.add_child(throw_button)
 
+func _toggle_d100_mode() -> void:
+    percentile_pair_enabled = not percentile_pair_enabled
+    d100_mode_button.text = "2 × D10" if percentile_pair_enabled else "1 × D100"
+
 func _select_die_type(sides: int) -> void:
     for index in range(selected_chooser.item_count):
         if selected_chooser.get_item_id(index) == sides:
@@ -324,6 +369,8 @@ func _copy_result() -> void:
 func _on_type_selected(index: int) -> void:
     selected_die = selected_chooser.get_item_id(index)
     throw_button.tooltip_text = "Бросить D%d" % selected_die
+    if d100_mode_button != null:
+        d100_mode_button.visible = selected_die == 100
     for die_sides in die_buttons:
         var chip: Button = die_buttons[die_sides]
         chip.add_theme_stylebox_override("normal", _chip_style(die_sides == selected_die))
@@ -338,6 +385,13 @@ func _throw_selected_die() -> void:
             _throw_physical_d12()
         20:
             _throw_physical_d20()
+        10:
+            _throw_physical_d10()
+        100:
+            if percentile_pair_enabled:
+                _throw_percentile_d100()
+            else:
+                _throw_physical_d100()
         _:
             _throw_physical_d6()
 
@@ -356,6 +410,71 @@ func _throw_physical_d8() -> void:
 func _throw_physical_d12() -> void:
     _begin_throw(D12Script.new(), 12)
 
+func _throw_physical_d10() -> void:
+    var die: RigidBody3D = TrapezohedronDie.new()
+    die.set("sides", 10)
+    _begin_throw(die, 10)
+
+func _throw_physical_d100() -> void:
+    var die: RigidBody3D = TrapezohedronDie.new()
+    die.set("sides", 100)
+    _begin_throw(die, 100)
+
+func _throw_percentile_d100() -> void:
+    if not throw_button or throw_button.disabled:
+        return
+    active_sides = 100
+    last_result = -1
+    percentile_tens = -1
+    percentile_ones = -1
+    if is_instance_valid(idle_display):
+        idle_display.queue_free()
+        idle_display = null
+    if is_instance_valid(active_die):
+        active_die.queue_free()
+        active_die = null
+    if is_instance_valid(active_percentile):
+        active_percentile.queue_free()
+    active_percentile = Node3D.new()
+    active_percentile.name = "PhysicalD100Percentile"
+    add_child(active_percentile)
+    copy_button.visible = false
+    copy_button.disabled = true
+    throw_button.disabled = true
+    selected_chooser.disabled = true
+    for is_tens in [true, false]:
+        var die: RigidBody3D = TrapezohedronDie.new()
+        die.set("sides", 10)
+        die.name = "TensD10" if is_tens else "OnesD10"
+        active_percentile.add_child(die)
+        die.connect("roll_completed", Callable(self, "_on_percentile_finished").bind(is_tens))
+        die.connect("roll_failed", Callable(self, "_on_die_failed"))
+        die.call("throw_from_top", -1 if is_tens else 1)
+    status_label.text = "D100  ·  ДВА БРОСКА…"
+    if OS.is_debug_build():
+        print("DICE_QA_STARTED D100_PAIR")
+
+func _on_percentile_finished(value: int, is_tens: bool) -> void:
+    if is_tens:
+        percentile_tens = value
+    else:
+        percentile_ones = value
+    if percentile_tens == -1 or percentile_ones == -1:
+        return
+    # Printed 10 corresponds to zero on each percentile digit; only the
+    # physically visible two faces determine the combined result.
+    last_result = DiceRules.percentile((percentile_tens % 10) * 10, percentile_ones % 10)
+    if last_result < 1:
+        _on_die_failed("Ошибка процентного броска")
+        return
+    status_label.text = "D100   /   %d" % last_result
+    copy_button.visible = true
+    copy_button.disabled = false
+    throw_button.disabled = false
+    selected_chooser.disabled = false
+    if OS.is_debug_build():
+        print("DICE_QA_COMPLETED D100_PAIR=%d" % last_result)
+
 func _begin_throw(die: RigidBody3D, sides: int) -> void:
     if not throw_button or throw_button.disabled:
         die.queue_free()
@@ -371,9 +490,13 @@ func _begin_throw(die: RigidBody3D, sides: int) -> void:
     if is_instance_valid(active_die):
         remove_child(active_die)
         active_die.queue_free()
+    if is_instance_valid(active_percentile):
+        active_percentile.queue_free()
+        active_percentile = null
     die.name = "PhysicalD%d" % sides
     add_child(die)
-    Premium.decorate_die(die, sides)
+    if sides != 10 and sides != 100:
+        Premium.decorate_die(die, sides)
     active_die = die
     die.connect("roll_completed", Callable(self, "_on_die_completed"))
     die.connect("roll_failed", Callable(self, "_on_die_failed"))

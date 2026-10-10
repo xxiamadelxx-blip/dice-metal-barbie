@@ -67,6 +67,10 @@ jobs:
         run: godot --headless --path . --script res://tests/d12_geometry.gd
       - name: M3 D12 real numbered Jolt physics
         run: godot --headless --path . --script res://tests/numbered_d12_physics.gd
+      - name: M3 D10/D100 true kite-face convex geometry and result normals
+        run: godot --headless --path . --script res://tests/trapezohedron_geometry.gd
+      - name: M3 D10, single D100, dual-D10 percentile real Jolt integration
+        run: godot --headless --path . --script res://tests/trapezohedron_physics.gd
       - name: M3 D4 exact tetrahedral apex-number symmetries
         run: godot --headless --path . --script res://tests/d4_geometry.gd
       - name: M3 numbered tetrahedral D4 Jolt physics
