@@ -7,7 +7,7 @@ signal roll_completed(value: int)
 signal roll_failed(reason: String)
 
 const CubeSymmetry = preload("res://src/core/cube_symmetry.gd")
-const SIDE := 0.72
+const SIDE := 1.22
 const MAX_ROLL_SECONDS := 9.0
 
 var elapsed := 0.0
