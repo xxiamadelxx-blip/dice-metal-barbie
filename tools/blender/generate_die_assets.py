@@ -55,7 +55,23 @@ def model(sides):
                       center+u*.61+v*.61,center-u*.61+v*.61])
         k=len(faces)*4
         faces.append([k,k+1,k+2,k+3])
-    return verts,faces,VALUES6
+    # Six separately described quads must share the same 8 vertices;
+    # duplicate coincident vertices leave the boolean input non-manifold.
+    unique = []
+    lookup = {}
+    welded_faces = []
+    for face in faces:
+        indices = []
+        for index in face:
+            p = verts[index]
+            key = tuple(round(float(axis), 7) for axis in p)
+            if key not in lookup:
+                lookup[key] = len(unique)
+                unique.append(p)
+            indices.append(lookup[key])
+        welded_faces.append(indices)
+    assert len(unique) == 8, 'D6 must be a watertight 8-vertex cube'
+    return unique,welded_faces,VALUES6
 
 def active(obj):
     bpy.ops.object.select_all(action='DESELECT')
@@ -86,13 +102,14 @@ def material(name,color,metallic,roughness):
     shader.inputs['Roughness'].default_value=roughness
     return m
 
-def text_mesh(value,center,normal,size,depth,font,name):
+def text_mesh(value,center,normal,size,depth,font,name,as_cutter=False):
     data=bpy.data.curves.new(name+'_contour','FONT')
     data.body=str(value)
     data.font=font
     data.size=size
     data.extrude=depth
-    data.bevel_depth=.0008
+    data.bevel_depth=0.0 if as_cutter else .0008
+    data.resolution_u=3 if as_cutter else 8
     data.align_x='CENTER'
     data.align_y='CENTER'
     o=bpy.data.objects.new(name,data)
@@ -129,6 +146,7 @@ def engraved_die(sides, font):
     assert len(shell.data.polygons) >= sides, 'Bevel destroyed original stone topology'
     gold=material('BronzeGold_D%d'%sides,(.66,.43,.19),.83,.26)
     inserts=[]
+    cutters=[]
     for i,f in enumerate(faces):
         p=[verts[j] for j in f]
         center=sum(p,Vector())/len(p)
@@ -136,25 +154,33 @@ def engraved_die(sides, font):
         if normal.dot(center)<0: normal=-normal
         size=(.195 if values[i]>=10 else .265) if sides==20 else .43
         cutter=text_mesh(values[i],center-normal*.006,normal,
-                         size,.042,font,'BooleanDigitCut_%02d'%i)
-        modifier=shell.modifiers.new('True_Glyph_Groove_%02d'%i,'BOOLEAN')
-        modifier.operation='DIFFERENCE'
-        modifier.solver='EXACT'
-        modifier.object=cutter
-        active(shell)
-        before = len(shell.data.polygons)
-        print('CUT D%d face=%d label=%d pre=%d cutter_faces=%d cutter_dimensions=%s' % (
-            sides,i,values[i],before,len(cutter.data.polygons),
-            str(tuple(round(v,3) for v in cutter.dimensions))),flush=True)
-        bpy.ops.object.modifier_apply(modifier=modifier.name)
-        after = len(shell.data.polygons)
-        print('CUT_RESULT D%d face=%d post=%d' % (sides,i,after),flush=True)
-        assert after > sides, 'Boolean unexpectedly erased stone D%d face %d' % (sides,i)
-        bpy.data.objects.remove(cutter,do_unlink=True)
+                         size,.042,font,'BooleanDigitCut_%02d'%i,as_cutter=True)
+        cutters.append(cutter)
         inset=text_mesh(values[i],center-normal*.035,normal,
                         size,.0025,font,'Bronze_Engraved_%d'%values[i])
         inset.data.materials.append(gold)
         inserts.append(inset)
+    # A single Boolean through the UNION of spatially disjoint glyph cutters
+    # avoids a sequence of increasingly complex, fragile n-gon operations.
+    # Mesh Join transforms each digit into the active object's local space.
+    active(cutters[0])
+    for cutter in cutters[1:]:
+        cutter.select_set(True)
+    bpy.ops.object.join()
+    combined=bpy.context.view_layer.objects.active
+    combined.name='CombinedClosedGlyphCutters'
+    print('ONE_BOOLEAN D%d: cutters=%d glyph faces=%d stone pre=%d' % (
+        sides,len(cutters),len(combined.data.polygons),len(shell.data.polygons)),flush=True)
+    mod=shell.modifiers.new('AllFaceGlyphs_OneExactBoolean','BOOLEAN')
+    mod.operation='DIFFERENCE'
+    mod.solver='EXACT'
+    mod.object=combined
+    active(shell)
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+    print('ONE_BOOLEAN_RESULT D%d stone post=%d' % (
+        sides,len(shell.data.polygons)),flush=True)
+    assert len(shell.data.polygons)>sides*2, 'D%d Boolean erased stone' % sides
+    bpy.data.objects.remove(combined,do_unlink=True)
     # This proof uses scalar PBR material inputs with no image textures.
     # UV unwrap is deferred to baked PBR art; headless smart_project() needs
     # a GUI area and must not block geometry export.
