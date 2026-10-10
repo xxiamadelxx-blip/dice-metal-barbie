@@ -41,3 +41,8 @@ Implementation checkpoint on 2026-10-10:
 - No new geometry participates in physics: existing mass, exact collision resources, 1..N number mapping and settled-face verification are unchanged. No added external font binary or online art dependency; the Godot fallback vector font is used.
 - `tests/engraved_assets.gd` tests one visible geometric asset per face, recessed floors/walls, actual extruded text, and physics invariance. Native renderer QA now executes this test before capturing images.
 - Treat this iteration as **functional/visual R&D**, not automatic acceptance. Confirm native rendered images manually and test the physical Android GPU and readability/FPS on Nord 3. PR remains DRAFT, `main` untouched.
+
+## Native macro critique and material correction (Pass 4)
+- Actual Godot [macro capture](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38065091959), `native-06-d20-detail.png`, was reviewed, NOT accepted: the large dark pockets made D20 look like a hollow wireframe cage despite correct mesh/test counters. Full-screen D6 had the same issue.
+- Corrective sculpt: narrower bevel shoulder; substantially more continuous stone surface per face; shallow inset, with obsidian-shaded **stone floors** (same mineral shader as outer face) instead of pitch-black pocket cut-outs; metallic digits physically touch the pocket floor.
+- Added machine-checkable anti-cage constraints (pocket depth, face coverage and stone-floor shader). These do not replace a human artistic review of the next native PNGs.

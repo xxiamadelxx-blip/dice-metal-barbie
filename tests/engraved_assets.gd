@@ -6,6 +6,7 @@ const D6 = preload("res://src/dice/d6_body.gd")
 const Premium = preload("res://src/visual/premium_finish.gd")
 const Ico = preload("res://src/core/icosahedron.gd")
 const Cube = preload("res://src/core/cube_symmetry.gd")
+const Sculpted = preload("res://src/visual/engraved_gem.gd")
 
 var count := 0
 var fails := 0
@@ -36,6 +37,10 @@ func _run() -> void:
             continue
         _check(die.get_node("RecessedGemAsset") == art, "Art must be owned by die")
         _check(art.get_child_count() == sides + 5, "Exactly one TextMesh per face plus five shared sculptural surfaces")
+        _check(Sculpted.RECESS_DEPTH <= 0.01, "Pocket cannot visually become a black hole")
+        _check(Sculpted.FACE_PLATE >= 0.9, "Bevel cannot swallow broad face planes")
+        var floor_node := art.get_node("RecessedPocketFloors") as MeshInstance3D
+        _check(floor_node.material_override is ShaderMaterial, "Recess floor must have visible obsidian, not pitch-black void")
         _check(shape.shape == old_shape, "D%d cannot replace or mutate Jolt collision hull" % sides)
         _check(is_equal_approx(die.mass, old_mass), "D%d cannot change physical mass" % sides)
         _check(die.get_node_or_null("NonCollidingMetalInlay") == null, "Floating gold edge wires prohibited")
@@ -66,7 +71,7 @@ func _run() -> void:
                 var expected_normal: Vector3 = Ico.face_normal(face_id) if sides == 20 else Cube.D6_FACE_NORMALS[face_id]
                 var expected_center: Vector3 = Ico.face_center(face_id) if sides == 20 else expected_normal * (D6.SIDE * 0.5)
                 var below_surface: float = (glyph.position - expected_center).dot(expected_normal)
-                _check(absf(below_surface + 0.015) < 0.0005,
+                _check(absf(below_surface + 0.005) < 0.0005,
                     "D%d numeral %d must sit recessed inside stone" % [sides, number])
                 _check(glyph.position.dot(glyph.basis.z) > 0.0, "Engraved glyph should remain on its outward face")
         die.queue_free()
