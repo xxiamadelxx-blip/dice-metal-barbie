@@ -31,3 +31,13 @@ The original M3 screenshot showed featureless D6 (small black cube with white di
 - Physics tests additionally check D4/D8/D12/D20 bevel/inlay triangle counts and require the decorative start models to be removed before any real throw.
 
 **Artistic gate remains OPEN / NOT ACCEPTED:** model fidelity and premium reflective detail are still short of the approved high-quality concept image, even though the new stage is substantially closer than the original single-die testbed. Future iterations should prioritize truly engraved numeral meshes, high quality normal/roughness/albedo maps and proper 3D asset baking or Blender automation, before production approval. Do not merge simply because CI passes.
+
+## M5 next Gauntlet: D20/D6 physical pocket + TextMesh experiment (PR #23)
+
+Implementation checkpoint on 2026-10-10:
+- New `src/visual/engraved_gem.gd` builds all D20/D6 display faces from the same numeric vertex layout as their existing Jolt hulls, with narrow polygonal bevel shoulders and actual cavities (open polygonal inset, vertical walls and lowered floors).
+- A separate `TextMesh` for each numeral provides 3D extruded metallic glyphs positioned *inside* the recessed face pocket. Old `Label3D` nodes remain in the scene tree but are invisible, preserving mapping/test metadata.
+- This **is not a full boolean engraving of each glyph contour into the stone**. It is a procedural pocket + recessed 3D inlay. The eventual production asset will still need a real font-contour relief/normal bake or Blender-produced glTF before artistic acceptance.
+- No new geometry participates in physics: existing mass, exact collision resources, 1..N number mapping and settled-face verification are unchanged. No added external font binary or online art dependency; the Godot fallback vector font is used.
+- `tests/engraved_assets.gd` tests one visible geometric asset per face, recessed floors/walls, actual extruded text, and physics invariance. Native renderer QA now executes this test before capturing images.
+- Treat this iteration as **functional/visual R&D**, not automatic acceptance. Confirm native rendered images manually and test the physical Android GPU and readability/FPS on Nord 3. PR remains DRAFT, `main` untouched.
