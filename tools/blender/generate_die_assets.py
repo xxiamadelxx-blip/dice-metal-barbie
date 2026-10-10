@@ -144,7 +144,14 @@ def engraved_die(sides, font):
     print('PRE_CUT D%d: stone polygons=%d, verts=%d, dimensions=%s' % (
         sides,len(shell.data.polygons),len(shell.data.vertices),str(tuple(round(v,3) for v in shell.dimensions))),flush=True)
     assert len(shell.data.polygons) >= sides, 'Bevel destroyed original stone topology'
-    gold=material('BronzeGold_D%d'%sides,(.66,.43,.19),.83,.26)
+    gold=material('BronzeGold_D%d'%sides,(.87,.56,.24),.54,.27)
+    # Dark studio environments make fully metallic bronze nearly invisible.
+    # A controlled warm material response keeps the recessed numbers readable
+    # without switching to fake floating white UI labels.
+    gold_bsdf=gold.node_tree.nodes.get('Principled BSDF')
+    if 'Emission Color' in gold_bsdf.inputs:
+        gold_bsdf.inputs['Emission Color'].default_value=(.33,.17,.04,1.0)
+        gold_bsdf.inputs['Emission Strength'].default_value=.22
     inserts=[]
     cutters=[]
     for i,f in enumerate(faces):
@@ -152,11 +159,11 @@ def engraved_die(sides, font):
         center=sum(p,Vector())/len(p)
         normal=(p[1]-p[0]).cross(p[2]-p[0]).normalized()
         if normal.dot(center)<0: normal=-normal
-        size=(.195 if values[i]>=10 else .265) if sides==20 else .43
+        size=(.225 if values[i]>=10 else .295) if sides==20 else .47
         cutter=text_mesh(values[i],center-normal*.006,normal,
                          size,.042,font,'BooleanDigitCut_%02d'%i,as_cutter=True)
         cutters.append(cutter)
-        inset=text_mesh(values[i],center-normal*.035,normal,
+        inset=text_mesh(values[i],center-normal*.016,normal,
                         size,.0025,font,'Bronze_Engraved_%d'%values[i])
         inset.data.materials.append(gold)
         inserts.append(inset)
@@ -228,7 +235,7 @@ def export_and_preview(sides,out,font):
         o.rotation_euler=(Vector((0,0,0))-o.location).to_track_quat('-Z','Y').to_euler()
     scene=bpy.context.scene
     scene.render.engine='CYCLES'
-    scene.cycles.samples=16
+    scene.cycles.samples=40
     scene.cycles.device='CPU'
     # The distro Blender may be built without Intel OpenImageDenoise.
     # Disable denoising rather than letting an unrelated renderer feature
@@ -240,6 +247,7 @@ def export_and_preview(sides,out,font):
     scene.render.resolution_y=600
     scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG'
+    scene.world.color=(.12,.125,.14)
     preview=out/('d%d_boolean_preview.png'%sides)
     scene.render.filepath=str(preview)
     bpy.ops.render.render(write_still=True)
