@@ -431,10 +431,20 @@ func _throw_percentile_d100() -> void:
         idle_display.queue_free()
         idle_display = null
     if is_instance_valid(active_die):
+        # queue_free() deletes at end-of-frame, leaving an old collider live
+        # for the next physics step. Detach from SceneTree immediately.
+        if active_die.get_parent() == self:
+            remove_child(active_die)
         active_die.queue_free()
         active_die = null
     if is_instance_valid(active_percentile):
+        # Repeated two-D10 throws previously left the queued parent with
+        # the same node name. get_node() then found the OLD settled pair.
+        # The old two colliders must also be removed from Jolt immediately.
+        if active_percentile.get_parent() == self:
+            remove_child(active_percentile)
         active_percentile.queue_free()
+        active_percentile = null
     active_percentile = Node3D.new()
     active_percentile.name = "PhysicalD100Percentile"
     add_child(active_percentile)
@@ -491,6 +501,10 @@ func _begin_throw(die: RigidBody3D, sides: int) -> void:
         remove_child(active_die)
         active_die.queue_free()
     if is_instance_valid(active_percentile):
+        # Switching from two percentiles back to one physical die must
+        # leave no orphan physics bodies in the running scene.
+        if active_percentile.get_parent() == self:
+            remove_child(active_percentile)
         active_percentile.queue_free()
         active_percentile = null
     die.name = "PhysicalD%d" % sides

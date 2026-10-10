@@ -64,6 +64,16 @@ func _run() -> void:
             var dice: Array[RigidBody3D] = []
             if mode == "D100_PAIR":
                 var parent := scene.get_node_or_null("PhysicalD100Percentile")
+                var current: Node3D = scene.get("active_percentile") as Node3D
+                _expect(parent != null and parent == current,
+                    "%s trial %d resolves stale physical parent; expected active scene node" %
+                    [mode, trial])
+                var matching_parents := 0
+                for top_node in scene.get_children():
+                    if top_node.name.begins_with("PhysicalD100Percentile"):
+                        matching_parents += 1
+                _expect(matching_parents == 1,
+                    "%s trial %d has %d live paired-die parents" % [mode,trial,matching_parents])
                 if parent != null:
                     for child_name in ["TensD10", "OnesD10"]:
                         var child := parent.get_node_or_null(child_name) as RigidBody3D
@@ -131,6 +141,26 @@ func _run() -> void:
             "%s suspiciously identical physical results in all throws" % mode)
         if failures > 0:
             break
+    # Confirm a switch OUT of percentile mode removes BOTH old colliders
+    # immediately. Prior code only queue_free()d the pair at frame end.
+    if failures == 0:
+        scene.call("_throw_physical_d10")
+        await physics_frame
+        _expect(scene.get_node_or_null("PhysicalD100Percentile") == null,
+            "Switching from paired D100 to D10 left an old Jolt pair in the scene")
+        var new_single := scene.get_node_or_null("PhysicalD10") as RigidBody3D
+        _expect(new_single != null,
+            "Switching from paired D100 to D10 did not create a new physical D10")
+        if new_single != null:
+            var single_done := await _await_physics([new_single])
+            _expect(single_done and str(new_single.get("failure")) == "",
+                "D10 after paired D100 failed its physical throw")
+            if single_done and str(new_single.get("failure")) == "":
+                var top: int = ShapeMath.top_value(10,
+                    new_single.global_transform.basis.orthonormalized())
+                _expect(top == int(new_single.get("result")) and
+                    top == int(scene.get("last_result")),
+                    "D10 after paired D100 did not match its new top face")
     var result_doc := {"provenance":"REAL_HEADLESS_JOLT_WITH_GAME_SCENE",
         "sampling_note":"Small bounded stress is reliability/face check; NOT a statistical fairness proof",
         "results":tries,"histograms":samples,"checks":checks,"failures":failures,
