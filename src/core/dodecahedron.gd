@@ -3,7 +3,7 @@ extends RefCounted
 ## Twenty vertices (icosahedron face centers), twelve pentagonal faces,
 ## sixty proper rotations. Numbers on antipodal faces sum to 13.
 const Ico = preload("res://src/core/icosahedron.gd")
-const RADIUS := 0.68
+const RADIUS := 0.98
 
 static func vertices() -> PackedVector3Array:
     var result := PackedVector3Array()
