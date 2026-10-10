@@ -229,6 +229,13 @@ def export_and_preview(sides,out,font):
     scene=bpy.context.scene
     scene.render.engine='CYCLES'
     scene.cycles.samples=16
+    scene.cycles.device='CPU'
+    # The distro Blender may be built without Intel OpenImageDenoise.
+    # Disable denoising rather than letting an unrelated renderer feature
+    # block GLB/PNG evidence production.
+    scene.cycles.use_denoising=False
+    for layer in scene.view_layers:
+        layer.cycles.use_denoising=False
     scene.render.resolution_x=600
     scene.render.resolution_y=600
     scene.render.resolution_percentage=100
