@@ -45,6 +45,12 @@ jobs:
           done
       - name: Initialize Godot import
         run: godot --headless --path . --editor --quit
+      - name: Preflight: compile every GDScript test before Jolt simulation
+        run: |
+          set -eu
+          for gdscript in tests/*.gd; do
+            godot --headless --path . --check-only --script "res://$gdscript"
+          done
       - name: Deterministic mechanics tests
         run: godot --headless --path . --script res://tests/smoke.gd
       - name: Physical scene integration smoke
@@ -55,6 +61,8 @@ jobs:
       # rare unrelated D6 edge-rest does not hide new-shape diagnostics.
       - name: M3 D10/D100 true kite-face convex geometry and result normals
         run: godot --headless --path . --script res://tests/trapezohedron_geometry.gd
+      - name: M3: exhaustive 100 outcome two-D10 mapping
+        run: godot --headless --path . --script res://tests/percentile_pair_mapping.gd
       - name: M3 D10, single D100, dual-D10 percentile real Jolt integration
         run: godot --headless --path . --script res://tests/trapezohedron_physics.gd
       - name: M3 D6 mathematical symmetry proof

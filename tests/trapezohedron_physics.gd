@@ -19,7 +19,7 @@ func _wait_for_dice(dice: Array, limit: int) -> bool:
         await physics_frame
         var done := true
         for die in dice:
-            if not is_instance_valid(die) or die.get("rolling"):
+            if not is_instance_valid(die) or bool(die.get("rolling")):
                 done = false
         if done:
             return true
@@ -53,11 +53,12 @@ func _run() -> void:
             break
         var top := ShapeMath.top_value(sides, die.global_transform.basis.orthonormalized())
         _check(top == die.get("result"), "D%d result differs from actual upper face" % sides)
-        _check(scene.last_result == top, "D%d HUD differs from physically visible face" % sides)
+        _check(int(scene.get("last_result")) == top, "D%d HUD differs from physically visible face" % sides)
         _check(die.sleeping, "D%d not physically asleep" % sides)
         _check(top >= 1 and top <= sides, "D%d result outside range" % sides)
     # Two physically independent dice. Neither digit may be invented.
-    if scene.throw_button.disabled == false:
+    var roll_button := scene.get("throw_button") as Button
+    if roll_button != null and not roll_button.disabled:
         scene.call("_throw_percentile_d100")
         await physics_frame
         var pair := scene.get_node_or_null("PhysicalD100Percentile") as Node3D
@@ -75,8 +76,8 @@ func _run() -> void:
                     var oval := ShapeMath.top_value(10,ones.global_transform.basis.orthonormalized())
                     _check(tval == tens.get("result") and oval == ones.get("result"), "Percentile digits differ from actual faces")
                     var value := Rules.percentile((tval % 10) * 10, oval % 10)
-                    _check(scene.last_result == value, "D100 pair result not computed from its two visible faces")
+                    _check(int(scene.get("last_result")) == value, "D100 pair result not computed from its two visible faces")
                     _check(value >= 1 and value <= 100, "Invalid percentile result")
-                    _check(scene.throw_button.disabled == false, "D100 pair did not unlock UI")
+                    _check(not roll_button.disabled, "D100 pair did not unlock UI")
     print("M3 D10 / D100 physical Jolt: %d checks, %d failures" % [checks,failures])
     quit(0 if failures == 0 else 1)

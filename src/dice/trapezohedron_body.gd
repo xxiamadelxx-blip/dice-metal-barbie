@@ -75,7 +75,7 @@ func throw_from_top(lane: int = 0) -> void:
     if selection < 0:
         _abort("Нет случайной энтропии")
         return
-    var ring := sides / 2
+    var ring: int = sides / 2
     var flip := selection >= ring
     var spin := TAU * float(selection % ring) / float(ring)
     var turn := Basis(Vector3.UP, spin)

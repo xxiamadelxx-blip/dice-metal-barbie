@@ -17,6 +17,9 @@ func _run() -> void:
         var vertices := ShapeMath.vertices(sides)
         _check(vertices.size() == sides + 2, "D%d dual needs exactly N+2 vertices" % sides)
         var seen := {}
+        var edges := {}
+        var min_area := INF
+        var max_area := 0.0
         var labels := ShapeMath.numbers(sides)
         _check(labels.size() == sides, "D%d requires one label per physical face" % sides)
         for face in range(sides):
@@ -34,11 +37,31 @@ func _run() -> void:
             var a := vertices[indices[0]]
             var b := vertices[indices[1]]
             var c := vertices[indices[2]]
+            var d := vertices[indices[3]]
             _check((b-a).cross(c-a).dot(n) > 0.0, "D%d outward face winding" % sides)
+            var area: float = 0.5 * ((b-a).cross(c-a).length() +
+                (c-a).cross(d-a).length())
+            min_area = minf(min_area, area)
+            max_area = maxf(max_area, area)
+            for corner in range(4):
+                var va: int = indices[corner]
+                var vb: int = indices[(corner+1)%4]
+                var edge_key := "%d:%d" % [mini(va,vb),maxi(va,vb)]
+                edges[edge_key] = int(edges.get(edge_key,0)) + 1
+            # Convex hull proof for every claimed kite plane.
+            for vertex in vertices:
+                _check((vertex - center).dot(n) <= 0.0001,
+                    "D%d invalid convex halfspace at face %d" % [sides,face])
             seen[labels[face]] = true
             var pose := Basis(Quaternion(n, Vector3.UP))
             _check(ShapeMath.top_value(sides, pose) == labels[face], "D%d upper face result wrong" % sides)
         _check(seen.size() == sides, "D%d missing or repeated labels" % sides)
+        _check(min_area > 0.001, "D%d degenerate kite area" % sides)
+        _check(max_area / min_area < 1.0001, "D%d inequivalent kite areas" % sides)
+        _check(vertices.size() - edges.size() + sides == 2,
+            "D%d failed Euler V-E+F=2" % sides)
+        for edge_use in edges.values():
+            _check(int(edge_use) == 2, "D%d open or nonmanifold edge" % sides)
         if sides == 10:
             var digits := ShapeMath.numbers(10)
             for i in range(5):
@@ -48,7 +71,7 @@ func _run() -> void:
         # The source of crypto-selected initial poses must be an actual
         # transitive set of 2n proper rotational symmetries.
         var orbit := {}
-        var ring := sides / 2
+        var ring: int = sides / 2
         for turn_index in range(sides):
             var spin := TAU * float(turn_index % ring) / float(ring)
             var transform := Basis(Vector3.UP, spin)
