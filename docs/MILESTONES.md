@@ -1,14 +1,13 @@
 # Milestones and exit gates
 
-| Phase | Status | Evidence needed to pass |
+| Phase | Status | Evidence |
 |---|---|---|
-| M0 | APPROVED | User-approved interview outcomes |
-| M1 | APPROVED | User-approved Godot/Jolt architecture |
-| M2 | AUTOMATED PASS · DEVICE NOT VERIFIED | [PR #1](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/1), [CI #38043718230](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38043718230): import PASS, 14/14 rules, 240 physics frames, APK artifact and debug JAR signature verified. [Device QA #5](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/5) open |
-| M3 | RESEARCH ACTIVE · NOT PASSED | [PR #6](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/6) proves ideal D6 symmetry (149 checks); still requires real labeled die, real physics outcome agreement/fairness, D4/D100 and all shapes. [Hard gate #3](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/3) open |
-| M4 | NOT STARTED | All rules, formulas and persistence unit/integration tests green |
-| M5 | NOT STARTED | Visual reference comparisons, sound/haptic hardware evidence, coherent UX |
-| M6 | NOT STARTED | Nord 3 passes installation and upgrade, signed APK, reproducible export, GitHub Release |
+| M0 | APPROVED | User-approved interview 2026-10-10 |
+| M1 | APPROVED | User-approved Godot 4.6 / Jolt architecture |
+| M2 | AUTOMATED PASS · DEVICE NOT VERIFIED | [PR #1](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/1); [Hardware QA #5](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/5) open |
+| M3 | **PARTIAL PASS / IN PROGRESS** | D6 12/12 physics, D20 8/8 physics and correct UI values after actual sleep; [CI #38046017124](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38046017124); [PR #10](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/10). D4/D8/D10/D12/D100, long-run fairness, screen legibility and device QA remain NOT VERIFIED |
+| M4 | NOT COMPLETE | Formulas, mixed pools, advantage/disadvantage visual mechanics, history, statistics, presets, persistence |
+| M5 | NOT COMPLETE | Approved minimalist UI, obsidian/velvet polish, sound/haptic, critical aura/flash from D20, smoothing |
+| M6 | NOT STARTED | Stable release keystore, on-device install/upgrade, verified FPS, release APK, GitHub Release |
 
-No unverified gate is PASS. Document blockers and keep branch runnable. Acceptance details in `docs/ACCEPTANCE_CRITERIA.md`.
-
+The shortest physical trial sample is **not** statistical fairness evidence. A Godot headless PASS is **not** proof of Android visual quality. Do not mark M3 complete until all required shapes and the facing/result invariant have been independently tested.

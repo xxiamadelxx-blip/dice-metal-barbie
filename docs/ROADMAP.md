@@ -1,10 +1,11 @@
 # Roadmap
 
-M0 Discovery: APPROVED 2026-10-10.
-M1 Architecture: APPROVED 2026-10-10.
-M2 Foundation: **automated PASS** (2026-10-10): Godot project, real 3D physics sandbox, 14 mechanics tests, 240-frame physics smoke, docs, CI Android debug APK. Nord 3 install NOT VERIFIED; tracked #5.
-M3 3D Dice: **active**. The ideal D6 cube symmetry group proof passed 149 checks (PR #6), but real face rendering, normal mapping, Jolt bias measurements, D4/D100 prototypes and RNG ↔ visible face must still pass. **Hard face equality + fairness gate is NOT PASSED.**
-M4 Dice Mechanics: mixed quantities/formulas, rerolls, advantage/disadvantage, history and presets.
-M5 UX & Polish: approved minimalist UI, sound, haptics, in-world critical effects, persistence and smoothing.
-M6 Quality & Release: device benchmark, offline/relaunch/upgrade tests, release keystore, signed APK, GitHub Release.
+**M0:** approved 2026-10-10.
+**M1:** approved Godot 4.6 + Jolt.
+**M2:** automated foundation gate passed; handset install still NOT VERIFIED (#5).
+**M3:** active. D6 + D20 genuine numbered physics bodies and mathematical symmetry verified via [CI #38046017124](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38046017124); D4, D8, D10, D12, **single real D100**, dual percentile D10, actual rendering review, mass/symmetry fairness sampling and robust 10+ dice collisions still required. Follow [#3](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/3).
+**M4:** mixed dice, advanced formulas, rerolls, modifiers, advantage/disadvantage; local history, stats and saved combinations.
+**M5:** user-approved minimalist UI, black velvet/obsidian polish, actual collision-driven audio/haptics, spatial D20 crit visuals and smooth state behavior.
+**M6:** Nord 3 compatibility, offline endurance, versioned local migration, permanent signing key, reproducible release APK and GitHub Release.
 
+Always Gauntlet Loop with real regression evidence, report FAIL and NOT VERIFIED separately.

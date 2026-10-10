@@ -1,10 +1,8 @@
 # Persistent context
 
-User-approved: 2026-10-10 M0 and M1. Target OnePlus Nord 3; offline; personal APK. Do not require user's PC. Working repo `xxiamadelxx-blip/dice-metal-barbie`. Build in cloud where possible. Art direction: black obsidian dice on black velvet, zero camera tilt, fixed overhead orthographic view, no world backdrop, minimalist compact lower controls. Throws appear from outside upper playing area, bounce naturally, obey table borders. No hand sprite. Critical effects emanate from D20 itself, nat 1 and 20 only. Sound and haptics from physical collision events. Disable disruptive scrolling mid-throw. Copy separate result.
+Owner-approved M0 and M1 2026-10-10. Personal offline Android for OnePlus Nord 3. Repo `xxiamadelxx-blip/dice-metal-barbie`. No personal PC requirement. Cloud GitHub Actions.
+Approved concept: fixed **exact vertical orthographic camera**; black velvet bounded surface, realistic black obsidian dice, minimalist lower controls, top-left hidden cosmetics (future). No background, no visible hand. Natural bounce, collision-driven sound/haptics and actual face/result equality. Crit FX emit from **D20 body** on natural 1/20 only. No scrolling/selection disruption mid-throw. Copy result. Simple selection default; advanced formulas/mixed dice hidden. Standard D4/D6/D8/D10/D12/D20/D100, one physical D100 or two percentile D10, persisted history/stats/presets and cosmetic selections. Future physical trays and towers, no dead-end catalog in MVP.
 
-Simple mode by default. Advanced mode for mixed dice, formulas, modifiers, rerolls, advantage/disadvantage. D4 D6 D8 D10 D12 D20 D100, D100 one 100-sided physical die or 2 percentile D10s. Persist history, statistics, named presets and skin selections. Future trays/towers/skins must integrate with actual physics, but not show empty catalog entries in MVP.
+Development state at 2026-10-10: M2 automated PASS. M3 D6/D20 *partial implementation* merged: physically numbered Jolt cubes/icosahedra, secure pre-roll symmetry, actual face chosen after sleep and copied to UI; [CI #38046017124](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38046017124) passed 14 pure rules, 149 D6 symmetries, 12 D6 physics trials, 1026 D20 geometry and 8 D20 physics trials. Debug APK versionCode 3 exported. NO claim of visual or physical fairness beyond tested samples, no production key. D4/D8/D10/D12/D100 and bigger rule/UI/audio/haptic work remain open. Hardware installation and visual tests issue #5 open. M3 hard gate issue #3 open.
 
-Open research risk: mathematically unbiased outcomes and exact visual face agreement. Both outcomes and physics require real tests. M2 stage is *not* delivery of that invariant.
-
-M2 branch and PR: `feat/m2-foundation`. Need verified CI jobs, signed stable APK only at M6. Preserve reproducible builds.
-
+Gauntlet Loop required; fail/blocked/unverified stays explicit; don't mark milestone complete without real end-to-end evidence.

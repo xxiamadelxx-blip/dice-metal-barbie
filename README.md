@@ -1,45 +1,45 @@
 # D&D 3D Dice 🎲
 
-Offline physics-driven D&D dice for Android, initially targeted at **OnePlus Nord 3**.
+Offline Android physics-driven D&D dice for OnePlus Nord 3. Uses **Godot 4.6.3 / Jolt Physics / GDScript**.
 
-## State of the project
+## Current state (2026-10-10)
 
-- **M0 / Discovery:** approved 2026-10-10.
-- **M1 / Architecture:** approved 2026-10-10: Godot 4.6 family, Jolt Physics, GDScript.
-- **M2 / Foundation:** automated gates **PASS** on 2026-10-10 ([PR #1](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/1), [CI evidence](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38043718230)). The runnable Godot scene is a **physics sandbox**, **not** a validated dice roller, final UI, or production-signed release. On-device launch remains **NOT VERIFIED** ([Issue #5](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/5)).
-- **M3 / 3D Dice:** underway. The first research spike ([PR #6](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/6)) passed **149 exhaustive mathematical checks** of 24 proper cube symmetries, but **no real numbered die / physics fairness / visible face invariant** has been verified yet. M4–M6 remain unimplemented.
+| Phase | Status |
+|---|---|
+| M0 Discovery | User approved |
+| M1 Architecture | User approved |
+| M2 Foundation | Automated PASS; device still NOT VERIFIED |
+| M3 Polyhedra | **IN PROGRESS**: real numbered Jolt D6 and D20 integrated and passing short physical trials |
+| M4 Mechanics | NOT complete: full formulas, groups, history and presets missing |
+| M5 Polish | NOT started: final UI, realistic sound, haptics and critical VFX missing |
+| M6 Release | NOT started: stable production signing and device release QA |
 
-## Run / test
+**Latest automated evidence:** [CI #38046017124](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38046017124) · [PR #10](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/10): 14/14 mechanics, D6 symmetry 149/149, D6 numbered physics 12/12 (123 checks), D20 geometry 1026/1026, D20 numbered physics 8/8 (135 checks), Android ARM64 debug export. **These tiny samples do not statistically prove physical fairness.**
 
-Install **Godot 4.6.3 standard**. Open `project.godot`; press F6/F5 or run:
+The app currently contains a **technical M3 tabletop testbed**, not final UI. Select **D6 / D20**, press Throw, let a numbered 3D body collide with a black velvet table and settle, read the actual top-face result, then optionally copy it. Text-only natural 1/20 D20 critical status. The top-down camera is fixed.
+
+No network/backend/account/payment service. No release signature yet. Fonts, graphics and actual Android handset behavior are **NOT VERIFIED** by tests run in a headless cloud CI environment. Real physical D4/D8/D10/D12/D100 have not been built yet.
+
+## Run and test
+
+Install Godot 4.6.3 (standard) or use GitHub Actions; a local PC is not required for cloud CI.
 
 ```sh
 godot --headless --path . --editor --quit
 godot --headless --path . --script res://tests/smoke.gd
 godot --headless --path . --script res://tests/physics_smoke.gd
 godot --headless --path . --script res://tests/cube_symmetry.gd
-godot --path .
+godot --headless --path . --script res://tests/numbered_d6_physics.gd
+godot --headless --path . --script res://tests/d20_geometry.gd
+godot --headless --path . --script res://tests/numbered_d20_physics.gd
 ```
 
-The test scene creates an actual 3D table and a rigid-body D6 when you tap **Бросить D6**. This is deliberately labeled an M2 physics experiment. No number is advertised as a result yet.
+## Android test artifact
 
-GitHub Actions **passed** project import, 14 mechanics tests, physical Jolt smoke and the M3 cubic symmetry test; it also produced an Android **debug** APK, verified as an archive and using a debug signature. [Successful run](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38044176479). Debug builds are NOT production-signed releases.
+Debug APK from [CI #38046017124](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38046017124): `org.dicemetalbarbie.dnddice`, versionCode **3**, versionName `0.0.3-m3-d20`. The signer matches previous **debug** packages; upgrade on the user's handset is still NOT VERIFIED. Production signing and release upgrade testing belong to M6 (see [docs/RELEASE.md](docs/RELEASE.md)).
 
-## Android export
+## Project documentation
 
-`export_presets.cfg` contains the preliminary Android preset for `org.dicemetalbarbie.dnddice`. For local Android exports install matching Godot export templates, Android SDK and debug keystore. **Do not install an M2 debug APK over any future release signed by a different key.**
+[PRD](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Design](docs/DESIGN.md) · [Roadmap](docs/ROADMAP.md) · [Milestones](docs/MILESTONES.md) · [Test plan](docs/TEST_PLAN.md) · [Gauntlet Loop](docs/GAUNTLET_LOOP.md) · [Physics design](docs/PHYSICS_DESIGN.md) · [M3 D6](docs/research/M3_NUMBERED_D6.md) · [M3 D20](docs/research/M3_NUMBERED_D20.md)
 
-A stable release keystore is **not committed**. Android release signing and reproducible upgrade testing are M6 gates (see `docs/RELEASE.md`).
-
-## Documentation
-
-- [Product requirements](docs/PRD.md)
-- [Architecture and risks](docs/ARCHITECTURE.md)
-- [Design direction](docs/DESIGN.md)
-- [Roadmap and gates](docs/MILESTONES.md)
-- [Gauntlet Loop](docs/GAUNTLET_LOOP.md)
-- [Tests and evidence](docs/TEST_PLAN.md)
-- [Decisions](docs/decisions/0001-godot-jolt.md)
-- [M3 cubic symmetry research](docs/research/M3_CUBE_SYMMETRY.md)
-
-**No backend, tracking, accounts, paid services or remote AI inference.**
+We only claim PASS when actual command/test/artifact evidence exists. Independent UI/device critic remains NOT VERIFIED.
