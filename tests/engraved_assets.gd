@@ -41,7 +41,7 @@ func _run() -> void:
             12: die = D12.new()
         root.add_child(die)
         await process_frame
-        var collider_name := {20:"IcosahedronCollision",6:"SymmetricCubeCollision",
+        var collider_name: String = {20:"IcosahedronCollision",6:"SymmetricCubeCollision",
             8:"OctahedronCollision",12:"DodecahedronCollision"}[sides]
         var shape := die.get_node(collider_name) as CollisionShape3D
         var old_shape: Shape3D = shape.shape
@@ -76,7 +76,7 @@ func _run() -> void:
                 if mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0:
                     _check(mesh_node.mesh.surface_get_material(0) != null,
                         "D%d GLB lacks imported physical material" % sides)
-            var legacy_name := {20:"ObsidianD20",6:"Obsidian",
+            var legacy_name: String = {20:"ObsidianD20",6:"Obsidian",
                 8:"ObsidianD8",12:"ObsidianD12"}[sides]
             var original_stone := die.get_node_or_null(legacy_name)
             _check(original_stone != null and not original_stone.visible, "Legacy die geometry should be hidden")

@@ -351,11 +351,11 @@ def export_and_preview(sides,out,font,maps):
     # geometry inspection. It is only a QA candidate, never a Jolt hull.
     obj_file=out/('d%d_stone_qa.obj'%sides)
     with obj_file.open('w') as fh:
-        fh.write('# Final carved stone, visual-only, Blender-local coordinates\\n')
+        fh.write('# Final carved stone, visual-only, Blender-local coordinates\n')
         for v in shell.data.vertices:
-            fh.write('v %.8f %.8f %.8f\\n' % tuple(v.co))
+            fh.write('v %.8f %.8f %.8f\n' % tuple(v.co))
         for polygon in shell.data.polygons:
-            fh.write('f %s\\n' % ' '.join(str(index+1) for index in polygon.vertices))
+            fh.write('f %s\n' % ' '.join(str(index+1) for index in polygon.vertices))
     filepath=out/('d%d_boolean_engraved.glb'%sides)
     bpy.ops.object.select_all(action='DESELECT')
     shell.select_set(True)
