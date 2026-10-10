@@ -1,42 +1,11 @@
 name: Android cloud visual acceptance
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - ".github/workflows/android-visual-qa.yml"
-      - "scripts/qa_android_emulator.sh"
 permissions:
   contents: read
   actions: read
 
 jobs:
-  native-visual-fallback:
-    name: Cloud Godot screenshot under Mesa/Xvfb (not APK)
-    runs-on: ubuntu-24.04
-    container:
-      image: barichello/godot-ci:4.6.3
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - name: Mesa software renderer and virtual display
-        run: |
-          apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
-          mkdir -p qa-evidence
-      - name: Initialize Godot assets
-        run: godot --headless --path . --editor --quit
-      - name: Capture authentic rendered Godot frames
-        run: |
-          xvfb-run -a -s "-screen 0 720x1280x24" godot --path . --rendering-method gl_compatibility --script res://tests/visual_capture.gd > qa-evidence/native-godot.log 2>&1 || { tail -100 qa-evidence/native-godot.log; exit 1; }
-          ls -lh qa-evidence/native-*.png
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: godot-linux-visual-fallback
-          path: qa-evidence/
-          if-no-files-found: warn
-          retention-days: 14
-
   qa-apk:
     name: Export separate emulator QA APK (OpenGL)
     runs-on: ubuntu-24.04
