@@ -1,0 +1,52 @@
+name: M3 Real Jolt long-run fairness evidence
+on:
+  push:
+    branches: [qa/m3-jolt-fairness]
+  workflow_dispatch:
+    inputs:
+      d10_trials:
+        type: number
+        description: Real D10 throws (default 150)
+        default: 150
+      d100_trials:
+        type: number
+        description: Real physical 100-sided throws (default 200)
+        default: 200
+      pair_trials:
+        type: number
+        description: Real pairs of percentile D10 throws (default 100)
+        default: 100
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3-longrun-physics-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  true-jolt-distribution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    container:
+      image: barichello/godot-ci:4.6.3
+    env:
+      M3_FAIR_D10: ${{ github.event.inputs.d10_trials || '150' }}
+      M3_FAIR_D100: ${{ github.event.inputs.d100_trials || '200' }}
+      M3_FAIR_D100_PAIR: ${{ github.event.inputs.pair_trials || '100' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import actual production Godot project for Jolt
+        run: godot --headless --path . --editor --quit
+      - name: Preflight long-run statistical study
+        run: godot --headless --path . --check-only --script res://tests/m3_physical_fairness_study.gd
+      - name: Real Jolt physical bias and reliability study (not fairness proof)
+        run: godot --headless --path . --script res://tests/m3_physical_fairness_study.gd
+      - name: Always preserve every individual trial and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-longrun-jolt-physical-outcomes
+          path: qa-evidence/m3-fairness/
+          retention-days: 30
+          if-no-files-found: warn
