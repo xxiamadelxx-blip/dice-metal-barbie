@@ -9,6 +9,13 @@ import sys
 from pathlib import Path
 from PIL import Image, ImageStat
 
+def pulse_overspill(path):
+    """Count visible pulse-color pixels in the safety strip above the HUD."""
+    im = Image.open(path).convert("RGB")
+    return sum(1 for r, g, b in im.crop((40, 1000, 680, 1040)).getdata()
+               if r > 128 and (r > g * 1.30 and g > b * 1.15
+                                or r > g * 1.65 and r > b * 1.30))
+
 def analyze(path):
     im = Image.open(path).convert("RGB")
     w, h = im.size
@@ -26,10 +33,12 @@ def analyze(path):
             "clipped_fraction":round(clipped/len(pixels),4)}
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.exit("usage: critique_native.py <native-06-d20-detail.png>")
+    if len(sys.argv) != 4:
+        sys.exit("usage: critique_native.py <D20-detail.png> <staged-gold.png> <staged-crimson.png>")
     try:
         metrics = analyze(Path(sys.argv[1]))
+        metrics["gold_pulse_hud_overspill_pixels"] = pulse_overspill(Path(sys.argv[2]))
+        metrics["crimson_pulse_hud_overspill_pixels"] = pulse_overspill(Path(sys.argv[3]))
         Path("qa-evidence/native-visual-metrics.json").write_text(json.dumps(metrics,indent=2)+"\n")
         print("Native contrast critic:", json.dumps(metrics))
         # Absolute guardrails, intentionally conservative about random die
@@ -37,6 +46,8 @@ if __name__ == "__main__":
         assert metrics["p75"] >= .12, "Face contrast too dark/flat"
         assert metrics["bronze_pixels"] >= 100, "Engraved bronze not readable"
         assert metrics["clipped_fraction"] < .04, "Blown-out specular highlights"
+        assert metrics["gold_pulse_hud_overspill_pixels"] < 50, "Gold aura invades HUD safety region"
+        assert metrics["crimson_pulse_hud_overspill_pixels"] < 50, "Crimson aura invades HUD safety region"
         print("PASS native smoke thresholds; ARTISTIC ACCEPTANCE STILL OPEN")
     except Exception as exc:
         print("FAIL native pixel smoke critic:", exc, file=sys.stderr)
