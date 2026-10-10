@@ -1,0 +1,43 @@
+name: Dice temporal Gauntlet — sequential 24 FPS real physical throws
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/temporal_roll_capture.gd"
+      - "tools/visual/run_temporal_capture.sh"
+      - "tools/visual/audit_roll_sequence.py"
+      - ".github/workflows/temporal-roll-24fps.yml"
+      - "project.godot"
+permissions:
+  contents: read
+jobs:
+  every-frame:
+    name: Record five actual Jolt throws at 24fps; analyze every frame
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install FFmpeg/Xvfb/Mesa and Pillow
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ffmpeg xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 \
+            libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 \
+            libxkbcommon0 libwayland-cursor0 python3-pil
+      - name: Import pinned 3D sculpted meshes
+        run: godot --headless --path . --editor --quit
+      - name: Record complete five-throw 24fps physical timeline
+        run: bash tools/visual/run_temporal_capture.sh
+      - name: Sequentially decode and inspect EVERY video frame
+        run: python3 tools/visual/audit_roll_sequence.py qa-evidence/temporal
+      - name: Publish full videos, per-frame metrics, result logs and contact sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-godot-24fps-every-throw
+          path: qa-evidence/temporal/
+          if-no-files-found: warn
+          retention-days: 14
