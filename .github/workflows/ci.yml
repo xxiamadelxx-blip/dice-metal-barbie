@@ -24,6 +24,8 @@ jobs:
         run: godot --headless --path . --editor --quit
       - name: Deterministic mechanics tests
         run: godot --headless --path . --script res://tests/smoke.gd
+      - name: Physical scene integration smoke
+        run: godot --headless --path . --script res://tests/physics_smoke.gd
 
   android-debug:
     name: Android ARM64 debug export
