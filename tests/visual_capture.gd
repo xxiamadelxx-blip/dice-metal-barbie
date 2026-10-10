@@ -91,6 +91,13 @@ func _run() -> void:
             push_error("Missing real physical D%d for imported GLB macro QA" % sides)
             quit(9)
             return
+        # The image must reflect a completed physical result, not a random
+        # airborne pose; the legacy HUD result is the oracle for all five dice.
+        var rolled_number: int = int(scene.get("last_result"))
+        if rolled_number < 1 or rolled_number > sides:
+            push_error("D%d visual QA requires a completed physical roll, got %d" % [sides, rolled_number])
+            quit(11)
+            return
         var imported := die.get_node_or_null("BlenderRecessedGLB") as Node3D
         if imported == null:
             push_error("D%d is showing old procedural fallback, not new Blender GLB" % sides)
