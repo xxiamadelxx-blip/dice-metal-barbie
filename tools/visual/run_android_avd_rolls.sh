@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Real Android AVD: five UI-tapped die rolls and genuine Android screenrecord.
+# Real Android AVD: eight UI-tapped Jolt rolls and genuine Android screenrecord.
 # screenrecord does not promise 24 source FPS; ffmpeg selects nominal 24fps
 # screenshots for sequential pixel QA (repeats are reported, not hidden).
 set -euo pipefail
@@ -78,8 +78,12 @@ for spec in '4 85 1115 0' '6 220 1115 0' '8 355 1115 0' '12 490 1115 0' '20 625 
   # and the D20-labelled video still displayed D12 rolling. Fail on absent
   # Godot start + physically-completed result before selecting the next die.
   adb logcat -c || true
+  # Software-rendered Android 35 AVD can take >30 seconds to advance a
+  # genuine physical throw. The prior exact D12 test had STARTED and a
+  # visible die but no completed signal before screenrecord hard-stopped.
+  # Give 90 seconds, but stop at the real signal + a short settling tail.
   adb shell screenrecord --size 720x1280 --bit-rate 4500000 \
-    --time-limit 30 "/sdcard/dice-D$sides.mp4" &
+    --time-limit 90 "/sdcard/dice-D$sides.mp4" &
   record_pid=$!
   sleep 1
   adb shell input tap "$xpos" "$ypos"
@@ -90,12 +94,15 @@ for spec in '4 85 1115 0' '6 220 1115 0' '8 355 1115 0' '12 490 1115 0' '20 625 
   fi
   adb shell input tap 655 1215
   completed=0
+  failed=0
   roll_log="qa-evidence/android-avd/roll-D$sides-godot.log"
-  for attempt in $(seq 1 14); do
+  # 41 polls ×2s = 82s, leaving shutdown/finalize before recorder limit.
+  for attempt in $(seq 1 41); do
     sleep 2
     adb logcat -d -v time -s godot:I '*:S' > "$roll_log" || true
     if grep -Fq "DICE_QA_FAILED D$sides=" "$roll_log"; then
-      echo "FAIL: Godot reported physically invalid D$sides roll"
+      failed=1
+      echo "FAIL: real Godot/Jolt reported physically invalid D$sides roll"
       tail -40 "$roll_log"
       break
     fi
@@ -105,27 +112,37 @@ for spec in '4 85 1115 0' '6 220 1115 0' '8 355 1115 0' '12 490 1115 0' '20 625 
       break
     fi
   done
-  # screenrecord exits normally after 30s, finalizing a real MP4, even if
-  # the game did not finish. Never advance to a new die while it is rolling.
-  wait "$record_pid"
+  # Finalize after a *genuine* event, preserving another 1.5s of real HUD
+  # footage. screenrecord handles SIGINT and writes a complete MP4; a hard
+  # host adb kill could corrupt it and must not be used.
+  if test "$completed" = 1 || test "$failed" = 1; then
+    sleep 1.5
+    recorder_pids="$(adb shell pidof screenrecord | tr -d '\r' || true)"
+    if test -n "$recorder_pids"; then
+      adb shell kill -2 $recorder_pids || true
+    fi
+  fi
+  wait "$record_pid" || true
   adb logcat -d -v time -s godot:I '*:S' > "$roll_log" || true
   adb exec-out screencap -p > "qa-evidence/android-avd/completed-D$sides.png"
-  if test "$completed" != 1; then
-    echo "FAIL: D$sides never both started and reached a real Jolt result within 30s"
-    tail -50 "$roll_log"
-    exit 15
-  fi
-  grep -E "DICE_QA_(STARTED|COMPLETED) D$sides" "$roll_log" > "qa-evidence/android-avd/result-D$sides.txt"
   test -s "qa-evidence/android-avd/completed-D$sides.png"
+  # ALWAYS retain the failed source MP4 before raising a red gate.
   adb pull "/sdcard/dice-D$sides.mp4" "qa-evidence/android-avd/dice-D$sides-source.mp4"
   adb shell rm "/sdcard/dice-D$sides.mp4"
   test -s "qa-evidence/android-avd/dice-D$sides-source.mp4"
-  # Nominal 24fps frame extraction never fabricates physical animation.
-  # The auditor rejects missing motion, blackouts, and missing Godot events.
   ffmpeg -hide_banner -loglevel error -y \
     -i "qa-evidence/android-avd/dice-D$sides-source.mp4" \
     -vf fps=24 -c:v libx264 -preset ultrafast -crf 20 \
     -pix_fmt yuv420p "qa-evidence/android-avd/roll-D$sides-24fps.mp4"
+  if test "$completed" != 1; then
+    echo "FAIL: D$sides did not reach real Jolt COMPLETED in 82s software AVD"
+    # Even a red run must include all chronological source frames and sheets.
+    python3 tools/visual/snapshot_failed_avd_frames.py \
+      "qa-evidence/android-avd" "$sides" || true
+    tail -60 "$roll_log"
+    exit 15
+  fi
+  grep -E "DICE_QA_(STARTED|COMPLETED) D$sides" "$roll_log" > "qa-evidence/android-avd/result-D$sides.txt"
 done
 cat qa-evidence/android-avd/roll-D*-godot.log > qa-evidence/android-avd/godot-qa-events-all.log
 adb logcat -d -v time > qa-evidence/android-avd/logcat.txt || true
