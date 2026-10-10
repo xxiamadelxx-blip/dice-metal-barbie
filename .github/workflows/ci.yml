@@ -2,7 +2,12 @@ name: Godot M3 validation and Android debug
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_call:
+    inputs:
+      fresh_assets:
+        type: boolean
+        required: false
+        default: false
   workflow_dispatch:
 
 permissions:
@@ -20,6 +25,24 @@ jobs:
       image: barichello/godot-ci:4.6.3
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Consume same-run fresh GLBs (not stale repository binaries)
+        if: inputs.fresh_assets
+        uses: actions/download-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb
+      - name: Check GLB SHA256 and install before Godot import
+        if: inputs.fresh_assets
+        run: |
+          set -euo pipefail
+          (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
+          mkdir -p src/assets/generated
+          for die in d4 d6 d8 d12 d20; do
+            test -s "build/gauntlet-glb/${die}_boolean_engraved.glb"
+            cp "build/gauntlet-glb/${die}_boolean_engraved.glb" "src/assets/generated/${die}_boolean_engraved.glb"
+          done
       - name: Initialize Godot import
         run: godot --headless --path . --editor --quit
       - name: Deterministic mechanics tests
@@ -57,6 +80,24 @@ jobs:
       image: barichello/godot-ci:4.6.3
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Consume same-run fresh GLBs (not stale repository binaries)
+        if: inputs.fresh_assets
+        uses: actions/download-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb
+      - name: Check GLB SHA256 and install before Godot import
+        if: inputs.fresh_assets
+        run: |
+          set -euo pipefail
+          (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
+          mkdir -p src/assets/generated
+          for die in d4 d6 d8 d12 d20; do
+            test -s "build/gauntlet-glb/${die}_boolean_engraved.glb"
+            cp "build/gauntlet-glb/${die}_boolean_engraved.glb" "src/assets/generated/${die}_boolean_engraved.glb"
+          done
       - name: Prepare export templates and debug credentials
         run: |
           mkdir -p ~/.local/share/godot/export_templates

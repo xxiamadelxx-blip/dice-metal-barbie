@@ -1,15 +1,6 @@
 name: Creative toolchain install + execution probe
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - "AGENTS.md"
-      - "README.md"
-      - "docs/CREATIVE_TOOLCHAIN.md"
-      - "docs/TOOLCHAIN_ARCHITECTURE.md"
-      - "docs/TOOL_INSTALL_AUDIT.md"
-      - "tools/toolchain/**"
-      - ".github/workflows/creative-toolchain-probe.yml"
 permissions:
   contents: read
 jobs:
