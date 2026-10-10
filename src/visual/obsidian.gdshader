@@ -26,7 +26,7 @@ void fragment() {
     SPECULAR = 0.88;
     // Visible graphite-blue mineral under dark stage lighting. Without a
     // studio reflection probe, metallic black would be a featureless void.
-    EMISSION = vec3(0.041, 0.050, 0.064)
-               + needle * vec3(0.012, 0.014, 0.017)
+    EMISSION = vec3(0.075, 0.089, 0.108)
+               + needle * vec3(0.018, 0.020, 0.024)
                + rim * vec3(0.042, 0.048, 0.068);
 }
