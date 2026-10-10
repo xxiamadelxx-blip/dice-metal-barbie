@@ -60,6 +60,9 @@ func _run() -> void:
         if not settled:
             break
         _expect(active.failure == "", "D8 invalid result: %s" % active.failure)
+        _expect(active.edge_recovery_count <= 3, "Too many physical edge recoveries")
+        if active.failure != "":
+            break
         var value: int = Octa.top_value(active.global_transform.basis.orthonormalized())
         _expect(value >= 1 and value <= 8, "D8 outside numeric range")
         _expect(active.result == value, "Outcome differs from physical top face")

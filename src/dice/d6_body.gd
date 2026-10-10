@@ -11,6 +11,7 @@ const SIDE := 0.72
 const MAX_ROLL_SECONDS := 9.0
 
 var elapsed := 0.0
+var edge_recovery_count := 0
 var rolling := false
 var result := -1
 var failure := ""
@@ -77,6 +78,7 @@ func throw_from_top() -> void:
     result = -1
     failure = ""
     elapsed = 0.0
+    edge_recovery_count = 0
     rolling = true
     sleeping = false
     entropy_rotation = CubeSymmetry.pick_rotation()
@@ -105,7 +107,15 @@ func _physics_process(delta: float) -> void:
         var alignment: float = (global_transform.basis * normal).normalized().dot(Vector3.UP)
         best_alignment = maxf(best_alignment, alignment)
     if top < 1 or best_alignment < 0.92:
-        _abort("Кубик остановился на ребре; результат не определён")
+        ## A physically unsteady edge rest must never yield a fabricated number.
+        ## Wake with a tiny world-space knock, independent of face labels.
+        if edge_recovery_count < 3 and elapsed < MAX_ROLL_SECONDS - 1.5:
+            edge_recovery_count += 1
+            sleeping = false
+            apply_central_impulse(Vector3(0.005, 0.008, 0.004))
+            apply_torque_impulse(Vector3(0.004, 0.003, -0.004))
+            return
+        _abort("D6 не смог устойчиво остановиться на грани")
         return
     rolling = false
     result = top

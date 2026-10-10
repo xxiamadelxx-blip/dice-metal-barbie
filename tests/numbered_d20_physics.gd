@@ -63,6 +63,9 @@ func _run() -> void:
         if not finished:
             break
         _check(active.failure == "", "D20 failed: %s" % active.failure)
+        _check(active.edge_recovery_count <= 3, "D20 physical recovery exceeded budget")
+        if active.failure != "":
+            break
         var top: int = Ico.top_value(active.global_transform.basis.orthonormalized(), 0.02)
         _check(active.result == top, "D20 output must equal upper numbered face")
         _check(scene.last_result == top, "UI result must equal physical upper face")

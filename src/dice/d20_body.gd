@@ -13,6 +13,7 @@ var rolling := false
 var result := -1
 var failure := ""
 var elapsed := 0.0
+var edge_recovery_count := 0
 
 func _ready() -> void:
     name = "PhysicalD20"
@@ -80,6 +81,7 @@ func throw_from_top() -> void:
     result = -1
     failure = ""
     elapsed = 0.0
+    edge_recovery_count = 0
     sleeping = false
     rolling = true
 
@@ -116,7 +118,14 @@ func _physics_process(delta: float) -> void:
         var dot_up: float = (pose * Ico.face_normal(i)).dot(Vector3.UP)
         best_alignment = maxf(best_alignment, dot_up)
     if face < 0 or best_alignment < 0.88:
-        _abort("D20 остановился на ребре; число не определено")
+        ## Real world-frame impulse only; never twist to a selected number.
+        if edge_recovery_count < 3 and elapsed < MAX_ROLL_SECONDS - 1.5:
+            edge_recovery_count += 1
+            sleeping = false
+            apply_central_impulse(Vector3(0.005, 0.007, 0.004))
+            apply_torque_impulse(Vector3(0.004, 0.003, -0.004))
+            return
+        _abort("D20 не смог устойчиво остановиться на грани")
         return
     rolling = false
     result = Ico.numbers()[face]
