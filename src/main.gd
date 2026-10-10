@@ -378,11 +378,17 @@ func _begin_throw(die: RigidBody3D, sides: int) -> void:
     die.connect("roll_completed", Callable(self, "_on_die_completed"))
     die.connect("roll_failed", Callable(self, "_on_die_failed"))
     die.call("throw_from_top")
+    # Debug-only Android AVD handshake. Reflects REAL physical signals,
+    # never replaces or sets the numeric outcome.
+    if OS.is_debug_build():
+        print("DICE_QA_STARTED D%d" % sides)
     status_label.text = "D%d  ·  БРОСОК…" % sides
     copy_button.visible = false
 
 func _on_die_completed(value: int) -> void:
     last_result = value
+    if OS.is_debug_build():
+        print("DICE_QA_COMPLETED D%d=%d" % [active_sides, value])
     # Only the physically settled face signal can trigger a critical aura.
     # This effect attaches in 3D space, never to the result HUD.
     if is_instance_valid(active_die):
@@ -399,6 +405,8 @@ func _on_die_completed(value: int) -> void:
     copy_button.visible = true
 
 func _on_die_failed(message: String) -> void:
+    if OS.is_debug_build():
+        print("DICE_QA_FAILED D%d=%s" % [active_sides, message])
     status_label.text = "Бросок не засчитан: %s" % message
     copy_button.visible = false
     throw_button.disabled = false

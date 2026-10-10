@@ -49,29 +49,59 @@ if test "$ready" != 1; then
   echo "FAIL: Android AVD never rendered playable dice scene in 100 seconds"
   exit 8
 fi
-adb logcat -c || true
 for spec in '4 85' '6 220' '8 355' '12 490' '20 625'; do
   read -r sides xpos <<< "$spec"
-  echo "AVD live Jolt D$sides: tapping actual Android Control UI"
+  echo "AVD real D$sides: begin recording before Android UI taps"
+  # Previous AVD capture incorrectly marked D8 PASS with 263 identical frames,
+  # and the D20-labelled video still displayed D12 rolling. Fail on absent
+  # Godot start + physically-completed result before selecting the next die.
+  adb logcat -c || true
   adb shell screenrecord --size 720x1280 --bit-rate 4500000 \
-    --time-limit 13 "/sdcard/dice-D$sides.mp4" &
+    --time-limit 30 "/sdcard/dice-D$sides.mp4" &
   record_pid=$!
   sleep 1
   adb shell input tap "$xpos" 1115
-  sleep .3
+  sleep 0.6
   adb shell input tap 655 1215
-  # The genuine game settles within 9s or reports a failure; retain tail.
+  completed=0
+  roll_log="qa-evidence/android-avd/roll-D$sides-godot.log"
+  for attempt in $(seq 1 14); do
+    sleep 2
+    adb logcat -d -v time -s godot:I '*:S' > "$roll_log" || true
+    if grep -Fq "DICE_QA_FAILED D$sides=" "$roll_log"; then
+      echo "FAIL: Godot reported physically invalid D$sides roll"
+      tail -40 "$roll_log"
+      break
+    fi
+    if grep -Fq "DICE_QA_STARTED D$sides" "$roll_log" &&
+       grep -Eq "DICE_QA_COMPLETED D$sides=[0-9]+" "$roll_log"; then
+      completed=1
+      break
+    fi
+  done
+  # screenrecord exits normally after 30s, finalizing a real MP4, even if
+  # the game did not finish. Never advance to a new die while it is rolling.
   wait "$record_pid"
+  adb logcat -d -v time -s godot:I '*:S' > "$roll_log" || true
+  adb exec-out screencap -p > "qa-evidence/android-avd/completed-D$sides.png"
+  if test "$completed" != 1; then
+    echo "FAIL: D$sides never both started and reached a real Jolt result within 30s"
+    tail -50 "$roll_log"
+    exit 15
+  fi
+  grep -E "DICE_QA_(STARTED|COMPLETED) D$sides" "$roll_log" > "qa-evidence/android-avd/result-D$sides.txt"
+  test -s "qa-evidence/android-avd/completed-D$sides.png"
   adb pull "/sdcard/dice-D$sides.mp4" "qa-evidence/android-avd/dice-D$sides-source.mp4"
   adb shell rm "/sdcard/dice-D$sides.mp4"
   test -s "qa-evidence/android-avd/dice-D$sides-source.mp4"
-  # Select 24 actual source-time images per second for the frame critic.
-  # No user-facing synthetic throw or replacement of captured physics.
+  # Nominal 24fps frame extraction never fabricates physical animation.
+  # The auditor rejects missing motion, blackouts, and missing Godot events.
   ffmpeg -hide_banner -loglevel error -y \
     -i "qa-evidence/android-avd/dice-D$sides-source.mp4" \
     -vf fps=24 -c:v libx264 -preset ultrafast -crf 20 \
     -pix_fmt yuv420p "qa-evidence/android-avd/roll-D$sides-24fps.mp4"
 done
+cat qa-evidence/android-avd/roll-D*-godot.log > qa-evidence/android-avd/godot-qa-events-all.log
 adb logcat -d -v time > qa-evidence/android-avd/logcat.txt || true
 if grep -Eq 'QueuePresentKHR failed|FATAL EXCEPTION.*org.dicemetalbarbie' qa-evidence/android-avd/logcat.txt; then
   echo "FAIL: Android renderer/device error appeared during screenrecord"

@@ -57,8 +57,10 @@ jobs:
 
   pin:
     name: 3 - Pin only GLBs already tested by all three consumers
-    needs: [assets, native, temporal, android]
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: [assets, native, temporal, android, avd]
+    # Do not pin/push fresh assets until real Android screenshots and videos
+    # have finished, preserving their evidence from concurrency cancellation.
+    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.assets.result == 'success' && needs.native.result == 'success' && needs.temporal.result == 'success' && needs.android.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -139,6 +141,10 @@ jobs:
           test "$NATIVE" = success
           test "$TEMPORAL" = success
           test "$ANDROID" = success
+          if test "$AVD" != success; then
+            echo "FAIL: real Android AVD five-die visual Gauntlet incomplete."
+            exit 12
+          fi
           if test "$EVENT" = pull_request && test "$PIN" = failure; then
             echo "FAIL: verified art could not be pinned to the feature branch"
             exit 9
