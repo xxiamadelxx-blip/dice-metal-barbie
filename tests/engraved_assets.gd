@@ -43,7 +43,7 @@ func _run() -> void:
             var node := art.get_node_or_null(node_name) as MeshInstance3D
             _check(node != null, "D%d missing %s" % [sides, node_name])
             if node != null:
-                var min_vertices := sides * 3 if node_name == "RecessedPocketFloors" else sides * 6
+                var min_vertices: int = int(sides) * (3 if node_name == "RecessedPocketFloors" else 6)
                 _check(node.mesh.get_faces().size() >= min_vertices, "Mesh %s contains too few vertices" % node_name)
                 _check(node.material_override != null, "Missing PBR material on %s" % node_name)
         var values: Array = []
