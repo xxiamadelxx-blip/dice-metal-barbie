@@ -1,9 +1,10 @@
 extends Node3D
-## M3 physical D6 / D20 testbed. A numeral is shown only after Jolt settles.
+## M3 physical D6 / D8 / D20 testbed. A numeral is shown only after Jolt settles.
 ## Not final UX, not yet approved as statistical fairness evidence.
 
 const DieScript = preload("res://src/dice/d6_body.gd")
 const D20Script = preload("res://src/dice/d20_body.gd")
+const D8Script = preload("res://src/dice/d8_body.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
 
@@ -84,7 +85,7 @@ func _make_overlay() -> void:
     canvas.add_child(root)
 
     var top := Label.new()
-    top.text = "D&D 3D Dice   ·   M3 D6 / D20 testbed"
+    top.text = "D&D 3D Dice   ·   M3 D6 / D8 / D20 testbed"
     top.position = Vector2(20, 25)
     root.add_child(top)
 
@@ -100,6 +101,7 @@ func _make_overlay() -> void:
     column.add_child(heading)
     selected_chooser = OptionButton.new()
     selected_chooser.add_item("D6", 6)
+    selected_chooser.add_item("D8", 8)
     selected_chooser.add_item("D20", 20)
     selected_chooser.item_selected.connect(_on_type_selected)
     column.add_child(selected_chooser)
@@ -123,20 +125,26 @@ func _copy_result() -> void:
         status_label.text = "Скопировано: D%d = %d" % [active_sides, last_result]
 
 func _on_type_selected(index: int) -> void:
-    selected_die = 6 if index == 0 else 20
+    selected_die = selected_chooser.get_item_id(index)
     throw_button.text = "Бросить D%d" % selected_die
 
 func _throw_selected_die() -> void:
-    if selected_die == 20:
-        _throw_physical_d20()
-    else:
-        _throw_physical_d6()
+    match selected_die:
+        8:
+            _throw_physical_d8()
+        20:
+            _throw_physical_d20()
+        _:
+            _throw_physical_d6()
 
 func _throw_physical_d6() -> void:
     _begin_throw(DieScript.new(), 6)
 
 func _throw_physical_d20() -> void:
     _begin_throw(D20Script.new(), 20)
+
+func _throw_physical_d8() -> void:
+    _begin_throw(D8Script.new(), 8)
 
 func _begin_throw(die: RigidBody3D, sides: int) -> void:
     if not throw_button or throw_button.disabled:
