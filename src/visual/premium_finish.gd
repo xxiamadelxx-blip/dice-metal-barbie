@@ -1,0 +1,107 @@
+extends RefCounted
+## Procedural, locally generated visual assets. No licensed textures or
+## external service. All embellishments are NON-COLLIDING.
+const GOLD := Color(0.77, 0.57, 0.31)
+const OBSIDIAN := Color(0.018, 0.024, 0.037)
+
+static func velvet_material() -> StandardMaterial3D:
+    var material := StandardMaterial3D.new()
+    material.albedo_color = Color(1, 1, 1, 1)
+    material.albedo_texture = _velvet_texture()
+    material.roughness = 0.94
+    material.metallic = 0.0
+    return material
+
+static func _velvet_texture() -> ImageTexture:
+    var texture := Image.create(256, 256, false, Image.FORMAT_RGBA8)
+    var noise := FastNoiseLite.new()
+    noise.seed = 57321
+    noise.frequency = 0.055
+    for y in range(256):
+        for x in range(256):
+            var grain: float = noise.get_noise_2d(float(x), float(y))
+            var thread: float = sin(float(x) * 0.41 + float(y) * 0.31) * 0.003
+            var value := clampf(0.067 + grain * 0.018 + thread, 0.036, 0.105)
+            texture.set_pixel(x, y, Color(value * 0.83, value * 0.85, value, 1.0))
+    texture.generate_mipmaps()
+    return ImageTexture.create_from_image(texture)
+
+static func obsidian_material() -> StandardMaterial3D:
+    var stone := StandardMaterial3D.new()
+    stone.albedo_color = OBSIDIAN
+    stone.metallic = 0.37
+    stone.roughness = 0.11
+    stone.clearcoat_enabled = true
+    stone.clearcoat = 0.72
+    stone.clearcoat_roughness = 0.11
+    return stone
+
+static func gold_material() -> StandardMaterial3D:
+    var metal := StandardMaterial3D.new()
+    metal.albedo_color = GOLD
+    metal.metallic = 0.82
+    metal.roughness = 0.23
+    return metal
+
+static func blackened_metal() -> StandardMaterial3D:
+    var metal := StandardMaterial3D.new()
+    metal.albedo_color = Color(0.095, 0.10, 0.115)
+    metal.metallic = 0.74
+    metal.roughness = 0.34
+    return metal
+
+static func decorate_die(die: RigidBody3D, sides: int) -> void:
+    ## The physics hull never changes. Metallic hairline inlays attach only
+    ## to the graphics and share the die's physical orientation.
+    var collision: CollisionShape3D
+    for node in die.get_children():
+        if node is CollisionShape3D:
+            collision = node
+        elif node is MeshInstance3D and node.name.begins_with("Obsidian"):
+            node.material_override = obsidian_material()
+        elif node is Label3D:
+            node.modulate = Color(1.0, 0.80, 0.52)
+            node.outline_modulate = Color(0.015, 0.015, 0.018)
+            node.outline_size = 6
+            node.shaded = false
+    if collision == null:
+        return
+    var points := PackedVector3Array()
+    if collision.shape is BoxShape3D:
+        var half: Vector3 = (collision.shape as BoxShape3D).size * 0.5
+        for sx in [-1.0, 1.0]:
+            for sy in [-1.0, 1.0]:
+                for sz in [-1.0, 1.0]:
+                    points.append(Vector3(sx * half.x, sy * half.y, sz * half.z))
+    elif collision.shape is ConvexPolygonShape3D:
+        points = (collision.shape as ConvexPolygonShape3D).points
+    if points.size() < 4:
+        return
+    var shortest := INF
+    for i in range(points.size()):
+        for j in range(i + 1, points.size()):
+            shortest = minf(shortest, points[i].distance_to(points[j]))
+    var gold := gold_material()
+    var decoration := Node3D.new()
+    decoration.name = "NonCollidingMetalInlay"
+    die.add_child(decoration)
+    var edge_count := 0
+    for i in range(points.size()):
+        for j in range(i + 1, points.size()):
+            var delta: Vector3 = points[j] - points[i]
+            if delta.length() > shortest * 1.012:
+                continue
+            var cylinder := CylinderMesh.new()
+            cylinder.top_radius = 0.012
+            cylinder.bottom_radius = 0.012
+            cylinder.height = delta.length()
+            cylinder.radial_segments = 6
+            var edge := MeshInstance3D.new()
+            edge.mesh = cylinder
+            edge.material_override = gold
+            edge.position = (points[j] + points[i]) * 0.5
+            edge.quaternion = Quaternion(Vector3.UP, delta.normalized())
+            decoration.add_child(edge)
+            edge_count += 1
+    if edge_count == 0:
+        push_warning("Non-colliding visual edge set empty for D%d" % sides)
