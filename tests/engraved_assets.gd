@@ -3,6 +3,8 @@ extends SceneTree
 ## Existing Jolt numeric regressions remain separate and authoritative.
 const D20 = preload("res://src/dice/d20_body.gd")
 const D6 = preload("res://src/dice/d6_body.gd")
+const D8 = preload("res://src/dice/d8_body.gd")
+const D12 = preload("res://src/dice/d12_body.gd")
 const Premium = preload("res://src/visual/premium_finish.gd")
 const Ico = preload("res://src/core/icosahedron.gd")
 const Cube = preload("res://src/core/cube_symmetry.gd")
@@ -30,17 +32,24 @@ func _imported_meshes(node: Node) -> Array[MeshInstance3D]:
 
 
 func _run() -> void:
-    for sides in [20, 6]:
-        var die: RigidBody3D = D20.new() if sides == 20 else D6.new()
+    for sides in [20, 6, 8, 12]:
+        var die: RigidBody3D
+        match sides:
+            20: die = D20.new()
+            6: die = D6.new()
+            8: die = D8.new()
+            12: die = D12.new()
         root.add_child(die)
         await process_frame
-        var shape: CollisionShape3D = die.get_node("IcosahedronCollision") if sides == 20 else die.get_node("SymmetricCubeCollision")
+        var collider_name := {20:"IcosahedronCollision",6:"SymmetricCubeCollision",
+            8:"OctahedronCollision",12:"DodecahedronCollision"}[sides]
+        var shape := die.get_node(collider_name) as CollisionShape3D
         var old_shape: Shape3D = shape.shape
         var old_mass := die.mass
         Premium.decorate_die(die, sides)
         Premium.decorate_die(die, sides)
         var baked := die.get_node_or_null("BlenderRecessedGLB") as Node3D
-        var glb_path := "res://src/assets/generated/d20_boolean_engraved.glb" if sides == 20 else "res://src/assets/generated/d6_boolean_engraved.glb"
+        var glb_path := "res://src/assets/generated/d%d_boolean_engraved.glb" % sides
         _check(ResourceLoader.exists(glb_path), "M5 pinned Blender GLB missing for D%d" % sides)
         if baked != null:
             _check(shape.shape == old_shape, "Imported D%d GLB must not change Jolt collision resource" % sides)
@@ -67,10 +76,17 @@ func _run() -> void:
                 if mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0:
                     _check(mesh_node.mesh.surface_get_material(0) != null,
                         "D%d GLB lacks imported physical material" % sides)
-            var original_stone := die.get_node_or_null("ObsidianD20") if sides == 20 else die.get_node_or_null("Obsidian")
+            var legacy_name := {20:"ObsidianD20",6:"Obsidian",
+                8:"ObsidianD8",12:"ObsidianD12"}[sides]
+            var original_stone := die.get_node_or_null(legacy_name)
             _check(original_stone != null and not original_stone.visible, "Legacy die geometry should be hidden")
             var original_label := die.get_node_or_null("Face_1") as Label3D
             _check(original_label != null and not original_label.visible, "Face mapping retained but old label hidden")
+            die.queue_free()
+            await process_frame
+            continue
+        if sides == 8 or sides == 12:
+            _check(false, "D%d authored GLB unavailable; cannot promote fallback as premium art" % sides)
             die.queue_free()
             await process_frame
             continue
@@ -120,5 +136,5 @@ func _run() -> void:
                 _check(glyph.position.dot(glyph.basis.z) > 0.0, "Engraved glyph should remain on its outward face")
         die.queue_free()
         await process_frame
-    print("M5 sculpted D20/D6 asset contracts: %d checks, %d FAIL" % [count, fails])
+    print("M5 sculpted D20/D6/D8/D12 asset contracts: %d checks, %d FAIL" % [count, fails])
     quit(0 if fails == 0 else 1)

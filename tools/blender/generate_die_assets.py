@@ -45,6 +45,43 @@ def model(sides):
             next_low+=1
         assert sorted(values)==list(range(1,21))
         return verts,faces,values
+    if sides == 8:
+        # Exact index/number contract of src/core/octahedron.gd.
+        godot_verts=[(.93,0,0),(-.93,0,0),(0,.93,0),(0,-.93,0),
+                     (0,0,.93),(0,0,-.93)]
+        octa_verts=[vec(p) for p in godot_verts]
+        octa_faces=[[1 if i&4 else 0,3 if i&2 else 2,5 if i&1 else 4]
+                    for i in range(8)]
+        # Opposite face i XOR 7 sums to 9.
+        return octa_verts,octa_faces,list(range(1,9))
+    if sides == 12:
+        # Verified Dodecahedron Godot source: dual of canonical icosahedron.
+        primal_verts,primal_faces,_=model(20)
+        dodeca_verts=[sum((primal_verts[j] for j in face),Vector()).normalized()*.98
+                       for face in primal_faces]
+        dodeca_faces=[]
+        for vertex_id,normal in enumerate(primal_verts):
+            outward=normal.normalized()
+            ref=Vector((0,0,1)) if abs(outward.z)<.95 else Vector((1,0,0))
+            tangent_x=outward.cross(ref).normalized()
+            tangent_y=outward.cross(tangent_x)
+            adjacent=[fi for fi,indices in enumerate(primal_faces) if vertex_id in indices]
+            assert len(adjacent)==5, 'D12 requires five faces at each primal vertex'
+            adjacent.sort(key=lambda fi:math.atan2(dodeca_verts[fi].dot(tangent_y),
+                                                    dodeca_verts[fi].dot(tangent_x)))
+            dodeca_faces.append(adjacent)
+        values=[0]*12
+        nxt=1
+        for i,normal in enumerate(primal_verts):
+            if values[i]:
+                continue
+            opposite=next(j for j,n in enumerate(primal_verts)
+                          if normal.normalized().dot(n.normalized())<-.999)
+            values[i],values[opposite]=nxt,13-nxt
+            nxt+=1
+        assert values==[1,2,11,12,3,4,9,10,5,6,7,8]
+        return dodeca_verts,dodeca_faces,values
+    assert sides == 6, 'Unsupported Blender dice shape'
     verts=[]
     faces=[]
     for n0 in NORMALS6:
@@ -219,7 +256,7 @@ def text_mesh(value,center,normal,size,depth,font,name,as_cutter=False):
 
 def bevel_shell(shell,sides):
     m=shell.modifiers.new('Three_segment_physically_beveled_edges','BEVEL')
-    m.width=.035 if sides==20 else .075
+    m.width={20:.035,6:.075,8:.042,12:.035}[sides]
     m.segments=3
     m.limit_method='ANGLE'
     m.angle_limit=.35
@@ -255,7 +292,14 @@ def engraved_die(sides, font, maps):
         center=sum(p,Vector())/len(p)
         normal=(p[1]-p[0]).cross(p[2]-p[0]).normalized()
         if normal.dot(center)<0: normal=-normal
-        size=(.225 if values[i]>=10 else .295) if sides==20 else .47
+        if sides==20:
+            size=.225 if values[i]>=10 else .295
+        elif sides==6:
+            size=.47
+        elif sides==8:
+            size=.25
+        else:
+            size=.21 if values[i]>=10 else .275
         cutter=text_mesh(values[i],center-normal*.006,normal,
                          size,.042,font,'BooleanDigitCut_%02d'%i,as_cutter=True)
         cutters.append(cutter)
@@ -303,6 +347,15 @@ def export_and_preview(sides,out,font,maps):
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
     shell,gold,values=engraved_die(sides,font,maps)
+    # MeshLab receives the same final Boolean-cut shell via OBJ for actual
+    # geometry inspection. It is only a QA candidate, never a Jolt hull.
+    obj_file=out/('d%d_stone_qa.obj'%sides)
+    with obj_file.open('w') as fh:
+        fh.write('# Final carved stone, visual-only, Blender-local coordinates\\n')
+        for v in shell.data.vertices:
+            fh.write('v %.8f %.8f %.8f\\n' % tuple(v.co))
+        for polygon in shell.data.polygons:
+            fh.write('f %s\\n' % ' '.join(str(index+1) for index in polygon.vertices))
     filepath=out/('d%d_boolean_engraved.glb'%sides)
     bpy.ops.object.select_all(action='DESELECT')
     shell.select_set(True)
@@ -367,10 +420,10 @@ def main():
                      'albedo_linear_mean':float(np.mean(np.asarray(maps['albedo'].pixels[:]).reshape((256,256,4))[:,:,:3])),
                      'description':'Deterministic offline generated PBR maps, not Cycles geometric bake'},
               'dice':{}}
-    for sides in (20,6):
+    for sides in (20,6,8,12):
         manifest['dice']['D%d'%sides]=export_and_preview(sides,out,font,maps)
     (out/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
-    print('PASS Blender true digit Boolean engraving + GLB export, D20 and D6')
+    print('PASS Blender true digit Boolean engraving + GLB export, D20 D6 D8 D12')
 
 if __name__=='__main__':
     main()

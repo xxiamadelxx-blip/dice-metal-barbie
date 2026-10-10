@@ -13,7 +13,7 @@ def validate(root):
     for filename in pbr['images']:
         png=(root/filename).read_bytes()
         assert png[:8]==bytes.fromhex("89504e470d0a1a0a") and len(png)>8000, 'Empty texture '+filename
-    for sides in (20,6):
+    for sides in (20,6,8,12):
         entry=manifest['dice'][f'D{sides}']
         values=entry['numbers']
         assert len(values)==sides and sorted(values)==list(range(1,sides+1)),f'D{sides} bad numeric face map'
@@ -24,6 +24,10 @@ def validate(root):
             assert values==expected,'D20 visual index mapping deviates from Jolt'
         if sides==6:
             assert values==[1,6,2,5,3,4],'D6 visual index mapping deviates from Jolt'
+        if sides==8:
+            assert values==list(range(1,9)),'D8 visual index mapping deviates from Jolt'
+        if sides==12:
+            assert values==[1,2,11,12,3,4,9,10,5,6,7,8], 'D12 visual index mapping deviates from Jolt'
         blob=(root/entry['glb']).read_bytes()
         assert len(blob)==entry['glb_bytes'] and len(blob)>40000,f'D{sides} empty GLB'
         magic,version,length=struct.unpack_from('<4sII',blob,0)
@@ -50,14 +54,16 @@ def validate(root):
         stone=scene['meshes'][0]['primitives'][0]
         position=scene['accessors'][stone['attributes']['POSITION']]
         mins,maxs=position['min'],position['max']
-        expected_half=.61 if sides==6 else .7486
+        expected_half={6:.61,20:.7486,8:.93,12:.98}[sides]
         for bound in [*mins,*maxs]:
             assert abs(bound)<=expected_half+.015,f'D{sides} shell exceeds original Jolt hull'
         assert entry['triangles']>sides*5, f'D{sides} no cut mesh detail'
+        qa_obj=(root/f'd{sides}_stone_qa.obj').read_text()
+        assert len(qa_obj)>1000 and qa_obj.count('\\nv ')>100 and qa_obj.count('\\nf ')>sides*2, f'D{sides} OBJ for MeshLab QA not valid'
         preview=(root/entry['preview']).read_bytes()
         assert preview[:8]==b'\x89PNG\r\n\x1a\n' and len(preview)>50000,f'D{sides} missing true Blender preview'
         print(f'PASS D{sides}: {len(blob):,} bytes, {entry["triangles"]} Blender shell polygons, 2 meshes, exact face numbering, real PNG')
-    print('PASS: both actual exported GLBs and Blender scene captures validated')
+    print('PASS: four actual exported GLBs and Blender scene captures validated')
 
 if __name__=='__main__':
     validate(Path(sys.argv[1] if len(sys.argv)>1 else 'build/premium-glb'))

@@ -133,7 +133,7 @@ static func _attach_blender_glb(die: RigidBody3D, sides: int) -> bool:
     ## CI; true Jolt collision remains in the original RigidBody.
     if die.get_node_or_null("BlenderRecessedGLB") != null:
         return true
-    var path := "res://src/assets/generated/d20_boolean_engraved.glb" if sides == 20 else "res://src/assets/generated/d6_boolean_engraved.glb"
+    var path := "res://src/assets/generated/d%d_boolean_engraved.glb" % sides
     if not ResourceLoader.exists(path):
         return false
     var packed: Resource = load(path)
@@ -155,14 +155,17 @@ static func _attach_blender_glb(die: RigidBody3D, sides: int) -> bool:
     return true
 
 static func decorate_die(die: RigidBody3D, sides: int) -> void:
-    # Dedicated sculptural D20/D6 assets replace the legacy overlay and
-    # floating edge wires. The RigidBody3D and numeric metadata remain intact.
-    if sides == 20 or sides == 6:
+    # Production-grade visual GLBs for D6/D8/D12/D20, with legacy
+    # Jolt collision and numeric metadata unchanged. All bodies remain offline.
+    if sides in [4,6,8,12,20] and sides != 4:
         if _attach_blender_glb(die, sides):
             return
-        # Safe fallback for code-only checkouts without exported binary assets.
-        EngravedGem.apply(die, sides)
-        return
+        # Current D20/D6 custom fallback already has actual pocket geometry.
+        if sides == 20 or sides == 6:
+            EngravedGem.apply(die, sides)
+            return
+        # Preserve working D8/D12 procedural scene on code-only checkouts.
+    # D4 apex-numbering needs different visual engraving placement.
     ## The physics hull never changes. Metallic hairline inlays attach only
     ## to the graphics and share the die's physical orientation.
     var collision: CollisionShape3D
