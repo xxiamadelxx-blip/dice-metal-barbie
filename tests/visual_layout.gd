@@ -22,7 +22,6 @@ func _run() -> void:
     var app: Node3D = packed.instantiate()
     root.size = Vector2i(720, 1280)
     root.add_child(app)
-    await process_frame
 
     var camera: Camera3D = app.get_node("FixedOverheadCamera")
     var panel: PanelContainer = app.get_node("CanvasLayer/Control/PanelContainer")
