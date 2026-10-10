@@ -1,0 +1,14 @@
+.godot/
+.import/
+build/
+dist/
+*.apk
+*.aab
+*.keystore
+*.jks
+*.log
+.DS_Store
+.vscode/
+.idea/
+android/build/
+

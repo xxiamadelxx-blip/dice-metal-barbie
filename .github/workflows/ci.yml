@@ -1,0 +1,61 @@
+name: M2 Godot and Android debug
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godot-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Import and unit tests
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize Godot import
+        run: godot --headless --path . --editor --quit
+      - name: Deterministic mechanics tests
+        run: godot --headless --path . --script res://tests/smoke.gd
+      - name: Physical scene integration smoke
+        run: godot --headless --path . --script res://tests/physics_smoke.gd
+
+  android-debug:
+    name: Android ARM64 debug export
+    needs: verify
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare export templates and debug credentials
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          cp -r /root/.local/share/godot/export_templates/4.6.3.stable ~/.local/share/godot/export_templates/ || true
+          mkdir -p ~/.config/godot
+          [ ! -d /root/.config/godot ] || cp -rn /root/.config/godot/. ~/.config/godot/ || true
+          test -f /root/debug.keystore
+          mkdir -p build/android
+      - name: Import resources
+        run: godot --headless --path . --editor --quit
+      - name: Export debug APK
+        run: |
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore
+          export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+          godot --headless --path . --export-debug "Android Debug" build/android/dice-3d-m2-debug.apk
+          test -s build/android/dice-3d-m2-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m2-android-debug
+          path: build/android/dice-3d-m2-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
