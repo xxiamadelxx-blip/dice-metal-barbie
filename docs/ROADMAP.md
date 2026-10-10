@@ -14,4 +14,7 @@ Active delivery gate is **M3 PARTIAL**. Finish missing physical D10, both D100 m
 
 Prior completed M5 experiments and issue #24 remain preserved in the draft PR, **ARTISTIC ACCEPTANCE OPEN**. Route every new asset through the exact `AGENTS.md` + `CREATIVE_TOOLCHAIN.md` tool selection; do not create purely performative editor jobs or conflate green automated QA with visual approval.
 
+## Verified legacy HTML UX reference (2026-10-11)
+The user-supplied *Adel Dice Roll Alpha 3 Obsidian Atelier* HTML was exercised in a real mobile Chromium browser (buttons, mixed pools, history, presets, sheets, menus), plus two genuine 24fps-cadenced screen captures and exhaustive frame sheets. Preserve transferable interaction patterns during **M4 mechanics** and **M5 interface polish**, but the approved Concept 3 visual authority is unchanged. See [the verified UX map](references/ALPHA3_OBSIDIAN_ATELIER_UX_AUDIT.md). This HTML is an interface reference only, not a D10/D100 physical result engine or approved 3D renderer.
+
 Gauntlet Loop remains mandatory: artifact → actual test → independent critic where available → FAIL/FIX/RETEST, with real test evidence stored in PR.
