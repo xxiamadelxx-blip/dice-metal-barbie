@@ -99,6 +99,12 @@ func _run() -> void:
         if not _write("done-D%d" % sides, "D%d physical result=%d\n" % [sides, result]):
             quit(30)
             return
+        # Keep the actual Godot window alive until the recorder confirms it
+        # flushed this video. Without this handshake the last D20 clip ended
+        # with five false black-screen frames after Godot quit.
+        if not await _wait_for("saved-D%d" % sides, 30.0):
+            quit(31)
+            return
         print("TEMPORAL_ROLL D%d=%d drawn_frames=%d" % [sides,result,frame_count])
     print("PASS all five real physical throws finished with timeline markers")
     quit(0)

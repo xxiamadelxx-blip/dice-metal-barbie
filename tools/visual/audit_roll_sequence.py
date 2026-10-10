@@ -63,6 +63,7 @@ def inspect_throw(root, sides):
     max_duplicate_run = 0
     duplicate_run = 0
     black_frames = 0
+    black_during_capture = 0
     movement_frames = 0
     frames = 0
     brightness_range = [255.0, 0.0]
@@ -82,6 +83,7 @@ def inspect_throw(root, sides):
             if black_share > .97:
                 black_frames += 1
                 if index / FPS > t_to_go_approx + .2:
+                    black_during_capture += 1
                     anomalies.append({"frame": index, "kind": "nearly_black_scene"})
             changed = 0
             if previous is not None:
@@ -131,11 +133,19 @@ def inspect_throw(root, sides):
         "frames_with_motion": movement_frames,
         "longest_identical_streak": max_duplicate_run,
         "nearly_black_frames": black_frames,
+        "black_frames_after_physical_go": black_during_capture,
+        "native_engine_render_fps_to_result": round(
+            timeline["godot_drawn_frames_to_result"] / timeline["seconds_to_result"], 2),
+        "engine_achieved_24_distinct_render_frames_per_second":
+            (timeline["godot_drawn_frames_to_result"] / timeline["seconds_to_result"]) >= 23.5,
         "playfield_mean_luminance_range": [round(v, 2) for v in brightness_range],
         "anomalies": anomalies[:30],
         "anomaly_total": len(anomalies),
     })
     print(json.dumps(result))
+    assert black_during_capture == 0, (
+        "D%d has %d truly black video frames during the actual recording; "
+        "see full video and every-frame JSONL" % (sides,black_during_capture))
     return result
 
 
@@ -144,6 +154,7 @@ def main(root):
     summary = {
         "status": "PASS_AUTOMATED_PER_FRAME_METRICS",
         "recording_frame_rate": FPS,
+        "actual_engine_rate_note": "see each die's native_engine_render_fps_to_result field; do not treat video rate as engine FPS",
         "frames_examined_sequentially": sum(x["frames_read_in_order"] for x in runs),
         "dice": runs,
         "limitations": [

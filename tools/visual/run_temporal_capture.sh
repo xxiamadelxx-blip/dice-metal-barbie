@@ -3,7 +3,7 @@
 # This is NOT an Android emulator. Five real die throws, five videos.
 set -euo pipefail
 mkdir -p qa-evidence/temporal
-rm -f qa-evidence/temporal/ready-D* qa-evidence/temporal/go-D* qa-evidence/temporal/done-D* qa-evidence/temporal/timeline-D*
+rm -f qa-evidence/temporal/ready-D* qa-evidence/temporal/go-D* qa-evidence/temporal/done-D* qa-evidence/temporal/saved-D* qa-evidence/temporal/timeline-D*
 Xvfb :99 -screen 0 720x1280x24 -nolisten tcp > qa-evidence/temporal/xvfb.log 2>&1 &
 xvfb_pid=$!
 godot_pid=""
@@ -66,6 +66,8 @@ for sides in 4 6 8 12 20; do
   wait "$rec_pid" || true
   rec_pid=""
   test -s "qa-evidence/temporal/roll-D$sides-24fps.mp4"
+  # Let Godot move to the next throw (or quit) ONLY after FFmpeg flush.
+  touch "qa-evidence/temporal/saved-D$sides"
   echo "Completed sequential recording for D$sides"
 done
 wait "$godot_pid"
