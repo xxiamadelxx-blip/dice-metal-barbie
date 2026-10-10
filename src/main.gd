@@ -42,6 +42,17 @@ func _make_world() -> void:
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color(0.42, 0.45, 0.54)
     env.ambient_light_energy = 0.8
+    # Studio environment light is reflected in the obsidian but NOT displayed
+    # as a sky/background. Dark table and clean void stay user-approved.
+    var studio_sky := Sky.new()
+    var studio := ProceduralSkyMaterial.new()
+    studio.sky_top_color = Color(0.20, 0.25, 0.35)
+    studio.sky_horizon_color = Color(0.48, 0.42, 0.34)
+    studio.ground_bottom_color = Color(0.05, 0.06, 0.08)
+    studio.ground_horizon_color = Color(0.12, 0.14, 0.19)
+    studio_sky.sky_material = studio
+    env.sky = studio_sky
+    env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     environment.environment = env
     add_child(environment)
 
