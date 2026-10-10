@@ -61,7 +61,7 @@ static func chamfers(vertices: PackedVector3Array, faces: Array) -> ArrayMesh:
         var f = faces[i]
         var center := _face_center(vertices, f)
         for j in range(f.size()):
-            var k := (j + 1) % f.size()
+            var k: int = (j + 1) % f.size()
             var p: Vector3 = vertices[f[j]].lerp(center, INSET)
             var q: Vector3 = vertices[f[k]].lerp(center, INSET)
             var r: Vector3 = vertices[f[k]] * (1.0 - CORNER_DEPTH)
