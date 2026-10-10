@@ -32,6 +32,8 @@ jobs:
         run: godot --headless --path . --script res://tests/numbered_d6_physics.gd
       - name: M3 D20 geometry and 60 rotations
         run: godot --headless --path . --script res://tests/d20_geometry.gd
+      - name: M3 numbered physical D20 and face outcome
+        run: godot --headless --path . --script res://tests/numbered_d20_physics.gd
 
   android-debug:
     name: Android ARM64 debug export
