@@ -5,6 +5,8 @@ production-ready simply because apt/dpkg or unpack succeeded.
 """
 import json
 import os
+import signal
+import time
 import shutil
 import subprocess
 import sys
@@ -25,6 +27,31 @@ def run(cmd, timeout=15, env=None):
     except OSError as err:
         return {"exit_code": None, "output": str(err), "timeout": False}
 
+def gui_smoke(binary, seconds=5):
+    """Virtual-display process liveness is GUI SMOKE, never export proof."""
+    if not shutil.which("xvfb-run"):
+        return {"status": "xvfb_not_installed"}
+    cmd = ["xvfb-run", "-a", "-s", "-screen 0 1280x800x24", binary]
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, start_new_session=True)
+        time.sleep(seconds)
+        still_running = proc.poll() is None
+        return {"status": "gui_smoke_ok" if still_running else "gui_failed",
+                "exit_code": proc.poll(),
+                "note": "process alive under Xvfb, no real UI screenshot or authored export"}
+    except OSError as err:
+        return {"status": "gui_failed", "note": str(err)}
+    finally:
+        if "proc" in locals() and proc.poll() is None:
+            try: os.killpg(proc.pid, signal.SIGTERM)
+            except ProcessLookupError: pass
+            try: proc.communicate(timeout=3)
+            except subprocess.TimeoutExpired:
+                try: os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError: pass
+                proc.communicate()
+
 def main(root):
     root.mkdir(parents=True, exist_ok=True)
     report = {"runner": "GitHub Actions ubuntu-24.04 x86_64",
@@ -41,6 +68,21 @@ def main(root):
             # only a successful command is cli_ok.
             item["cli"] = attempt
             item["status"] = "cli_ok" if attempt["exit_code"] == 0 else "installed"
+            if item["status"] != "cli_ok":
+                virtual = run(["xvfb-run", "-a", binary] + data["args"], timeout=12)
+                item["xvfb_cli"] = virtual
+                if virtual["exit_code"] == 0:
+                    item["status"] = "cli_ok_xvfb"
+                else:
+                    check = gui_smoke(binary)
+                    item["gui_probe"] = check
+                    if check["status"] == "gui_smoke_ok":
+                        item["status"] = "gui_smoke_ok"
+            if name == "meshlab":
+                server = shutil.which("meshlabserver")
+                item["meshlabserver_binary"] = server
+                if server:
+                    item["meshlabserver_cli"] = run([server, "-h"], timeout=12)
         else:
             item["status"] = "not_found"
         report["results"][name] = item
