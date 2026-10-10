@@ -8,7 +8,10 @@ static func velvet_material() -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
     material.albedo_color = Color(1, 1, 1, 1)
     material.albedo_texture = _velvet_texture()
-    material.roughness = 0.94
+    material.normal_enabled = true
+    material.normal_texture = _velvet_normal_texture()
+    material.normal_scale = 0.42
+    material.roughness = 0.96
     material.metallic = 0.0
     return material
 
@@ -24,6 +27,23 @@ static func _velvet_texture() -> ImageTexture:
             var fine: float = noise.get_noise_2d(float(x * 3 + 400), float(y * 3 - 700))
             var value := clampf(0.062 + grain * 0.025 + fine * 0.018 + thread, 0.029, 0.11)
             texture.set_pixel(x, y, Color(value * 0.83, value * 0.85, value, 1.0))
+    texture.generate_mipmaps()
+    return ImageTexture.create_from_image(texture)
+
+static func _velvet_normal_texture() -> ImageTexture:
+    # Tangent-space felt microfibers introduce real rough surface shading,
+    # rather than painting decorative blotches on an otherwise flat plane.
+    var texture := Image.create(256, 256, false, Image.FORMAT_RGBA8)
+    var noise := FastNoiseLite.new()
+    noise.seed = 57491
+    noise.frequency = 0.11
+    for y in range(256):
+        for x in range(256):
+            var nx: float = noise.get_noise_2d(float(x + 1), float(y)) - noise.get_noise_2d(float(x - 1), float(y))
+            var ny: float = noise.get_noise_2d(float(x), float(y + 1)) - noise.get_noise_2d(float(x), float(y - 1))
+            var fiber: float = sin(float(x) * 1.7 + float(y) * 0.09) * 0.075
+            var n := Vector3(-nx * 0.8 - fiber, -ny * 0.8, 1.0).normalized()
+            texture.set_pixel(x, y, Color(0.5 + n.x * 0.5, 0.5 + n.y * 0.5, 0.5 + n.z * 0.5, 1.0))
     texture.generate_mipmaps()
     return ImageTexture.create_from_image(texture)
 
