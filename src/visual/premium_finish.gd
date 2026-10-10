@@ -1,7 +1,7 @@
 extends RefCounted
 ## Procedural, locally generated visual assets. No licensed textures or
 ## external service. All embellishments are NON-COLLIDING.
-const GOLD := Color(0.77, 0.57, 0.31)
+const GOLD := Color(0.56, 0.41, 0.25)
 const OBSIDIAN := Color(0.075, 0.085, 0.105)
 
 static func velvet_material() -> StandardMaterial3D:
@@ -88,8 +88,8 @@ static func decorate_die(die: RigidBody3D, sides: int) -> void:
             if delta.length() > shortest * 1.012:
                 continue
             var cylinder := CylinderMesh.new()
-            cylinder.top_radius = 0.012
-            cylinder.bottom_radius = 0.012
+            cylinder.top_radius = 0.011 if sides == 6 else 0.0035
+            cylinder.bottom_radius = 0.011 if sides == 6 else 0.0035
             cylinder.height = delta.length()
             cylinder.radial_segments = 6
             var edge := MeshInstance3D.new()
