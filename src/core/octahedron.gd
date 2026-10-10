@@ -2,7 +2,7 @@ extends RefCounted
 ## Perfect regular octahedron: 6 symmetric vertices, 8 triangular faces,
 ## 24 proper rotations. Flat labels do not modify collision mass.
 const CUBE = preload("res://src/core/cube_symmetry.gd")
-const RADIUS := 0.63
+const RADIUS := 0.93
 
 static func vertices() -> PackedVector3Array:
     return PackedVector3Array([
