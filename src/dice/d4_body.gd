@@ -71,7 +71,7 @@ func _create_visual() -> void:
             label.name = "Apex_%d_OnFace_%d" % [apex + 1, opposite]
             label.text = str(apex + 1)
             label.font_size = 48
-            label.pixel_size = 0.0030
+            label.pixel_size = 0.0040
             label.outline_size = 5
             label.modulate = Color(0.94, 0.87, 0.73)
             label.outline_modulate = Color(0.04, 0.05, 0.08)
