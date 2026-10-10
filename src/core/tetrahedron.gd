@@ -3,7 +3,7 @@ extends RefCounted
 ## the sloping faces adjacent to the uppermost vertex (apex-reading D4).
 ## A conventional tetrahedron NEVER rests with a horizontal upper face.
 const CubeGroup = preload("res://src/core/cube_symmetry.gd")
-const RADIUS := 0.68
+const RADIUS := 0.98
 
 static func vertices() -> PackedVector3Array:
     var points := PackedVector3Array()
