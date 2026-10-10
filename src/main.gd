@@ -120,6 +120,7 @@ func _throw_physical_d6() -> void:
     copy_button.disabled = true
     throw_button.disabled = true
     if is_instance_valid(active_die):
+        remove_child(active_die)
         active_die.queue_free()
     var die = DieScript.new()
     die.name = "PhysicalD6"
