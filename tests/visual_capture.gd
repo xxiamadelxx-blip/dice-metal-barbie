@@ -36,5 +36,13 @@ func _run() -> void:
     await _capture("native-02-moving")
     await create_timer(5.0).timeout
     await _capture("native-03-after")
-    print("Native Godot visual capture completed; must inspect pixels separately.")
+    # The user-approved concept emphasizes sculptural polyhedra. The old
+    # screenshot suite showed D6 only, which looks square from 90° overhead.
+    # Also inspect the real faceted D20, not a staged illustration.
+    scene.call("_throw_physical_d20")
+    await create_timer(0.7).timeout
+    await _capture("native-04-d20-moving")
+    await create_timer(5.0).timeout
+    await _capture("native-05-d20-after")
+    print("Native Godot visual capture completed; inspect actual dice and HUD.")
     quit(0)
