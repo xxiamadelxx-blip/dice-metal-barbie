@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased / M3 developer testbed (2026-10-10)
-- Added physically simulated, numbered black obsidian D6 on bounded overhead velvet table. Secure cubic pre-roll symmetry, actual upper-face result after Jolt sleep; 12/12 simulated trials.
-- Added regular icosahedral D20: 12 vertices, 20 faces, 60 proper rotations (1026 mathematical checks), real convex Jolt collision, numbered face labels and 8/8 physical trials with result matching top face.
-- Choose D6/D20 on main testbed screen. Copy result. Natural 1 and 20 on D20 shown as text; VFX deferred.
-- Android debug APK package `org.dicemetalbarbie.dnddice`, versionCode 3 (`0.0.3-m3-d20`), CI reproducibly built. Debug certificate unchanged across M2–M3 packages.
-- M2 pure rules and D6 math regression tests still PASS.
-- NOT VERIFIED: Nordic device test, glyph visual legibility, long-run statistical physical fairness, production release signing. Remaining D&D dice and UI polish unfinished.
+## Unreleased / M3 developer build · 2026-10-10
+- Implemented real physical, individually numbered D6, D8, D12 and D20 on bounded black velvet table with strictly overhead camera.
+- Real Jolt rigid-body motion; secure, unbiased pre-roll rotational symmetry selection; final UI value equals physical uppermost face after sleep in tested simulations. No post-roll face snap.
+- D8: 269 geometry checks; 12/12 throws and 167 physical assertions.
+- D12: dual of regular icosahedron with 20 vertices/12 pentagons/60 proper rotations, 1542 mathematical checks; 10/10 throws and 151 physical assertions.
+- Hardened D6, D8 and D20 against rare Jolt edge-rest sleeps with bounded small physical nudges. Unresolved outcomes remain errors. Strict integration tests no longer call invalid throws completed.
+- CI Android debug APK versionCode 5, `0.0.5-m3-d12`. [Verified run](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38047981975). Signature remains debug-only.
+- NOT VERIFIED: device install/upgrade, display and audio quality, long-run statistical fairness, D4/D10/D100, full mechanics, release key.
