@@ -102,7 +102,7 @@ func _physics_process(delta: float) -> void:
     var top := CubeSymmetry.top_value(global_transform.basis.orthonormalized(), 0.02)
     var best_alignment := 0.0
     for normal in CubeSymmetry.D6_FACE_NORMALS:
-        var alignment := (global_transform.basis * normal).normalized().dot(Vector3.UP)
+        var alignment: float = (global_transform.basis * normal).normalized().dot(Vector3.UP)
         best_alignment = maxf(best_alignment, alignment)
     if top < 1 or best_alignment < 0.92:
         _abort("Кубик остановился на ребре; результат не определён")
