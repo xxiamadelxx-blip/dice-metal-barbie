@@ -39,6 +39,7 @@ func _run() -> void:
     # The user-approved concept emphasizes sculptural polyhedra. The old
     # screenshot suite showed D6 only, which looks square from 90° overhead.
     # Also inspect the real faceted D20, not a staged illustration.
+    scene.call("_select_die_type", 20)
     scene.call("_throw_physical_d20")
     await create_timer(0.7).timeout
     await _capture("native-04-d20-moving")
