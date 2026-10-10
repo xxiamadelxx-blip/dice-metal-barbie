@@ -15,20 +15,22 @@ adb shell monkey -p org.dicemetalbarbie.dnddice 1
 sleep 9
 adb exec-out screencap -p > qa-evidence/android-avd/launch-initial-avd.png
 test "$(stat -c%s qa-evidence/android-avd/launch-initial-avd.png)" -gt 10000
-# AVD #38090191673 real screenshot: Android immersive tutorial covers dice,
-# "Got it" is x533..673/y399..496. Previous x593/y388 missed entirely.
+# Pixel-derived actual system button, not a guessed fixed coordinate.
+# Failed AVD #38093383377: the (605,447) tap was BELOW the blue button
+# at x533..671, y331..426; all 20 screenshots still showed the overlay.
+dismiss_immersive_tutorial() {
+  local screenshot="$1"
+  local button_x button_y target
+  target="$(python3 tools/visual/detect_android_immersive.py "$screenshot")" || return 1
+  if test -n "$target"; then
+    read -r button_x button_y <<< "$target"
+    echo "Detected actual Android SYSTEM fullscreen 'Got it' button at ($button_x,$button_y)"
+    adb shell input tap "$button_x" "$button_y"
+    sleep 2
+  fi
+}
 cp qa-evidence/android-avd/launch-initial-avd.png qa-evidence/android-avd/launch-before-consent.png
-if python3 - <<'PY'
-from PIL import Image
-im=Image.open('qa-evidence/android-avd/launch-initial-avd.png').convert('RGB')
-panel=all(min(im.getpixel(p))>190 for p in [(180,220),(350,245),(250,340)])
-print('Android immersive system overlay present:',panel)
-raise SystemExit(0 if panel else 1)
-PY
-then
-  adb shell input tap 605 447
-  sleep 2
-fi
+dismiss_immersive_tutorial qa-evidence/android-avd/launch-initial-avd.png
 adb exec-out screencap -p > qa-evidence/android-avd/launch-after-system-consent.png
 # SwiftShader may require >10 s to compile the first 3D scene on Android 35.
 # Review genuine ADB screenshots every 5 s; reject Android pop-ups, black
@@ -36,6 +38,9 @@ adb exec-out screencap -p > qa-evidence/android-avd/launch-after-system-consent.
 ready=0
 for attempt in $(seq 1 20); do
   adb exec-out screencap -p > qa-evidence/android-avd/launch-after-immersive-dismiss.png
+  # Dialog may animate in AFTER the initial screenshot; safely re-detect
+  # on every readiness iteration. The resulting frame is not falsely PASS.
+  dismiss_immersive_tutorial qa-evidence/android-avd/launch-after-immersive-dismiss.png
   if python3 - <<'PY'
 from PIL import Image,ImageStat
 im=Image.open('qa-evidence/android-avd/launch-after-immersive-dismiss.png').convert('RGB')

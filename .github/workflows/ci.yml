@@ -65,6 +65,10 @@ jobs:
         run: godot --headless --path . --script res://tests/percentile_pair_mapping.gd
       - name: M3 D10, single D100, dual-D10 percentile real Jolt integration
         run: godot --headless --path . --script res://tests/trapezohedron_physics.gd
+      - name: M3 secure source RNG frequency sanity (not physical fairness proof)
+        run: godot --headless --path . --script res://tests/m3_secure_rng_sanity.gd
+      - name: M3 extended Jolt endurance with real D10, D100 and percentile pair
+        run: godot --headless --path . --script res://tests/m3_trapezohedron_endurance.gd
       - name: M3 D6 mathematical symmetry proof
         run: godot --headless --path . --script res://tests/cube_symmetry.gd
       - name: M3 real numbered D6 physics and result agreement
@@ -85,6 +89,14 @@ jobs:
         run: godot --headless --path . --script res://tests/d4_geometry.gd
       - name: M3 numbered tetrahedral D4 Jolt physics
         run: godot --headless --path . --script res://tests/numbered_d4_physics.gd
+      - name: Upload physical endurance evidence even if trials fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-physical-jolt-endurance
+          path: qa-evidence/m3-stress/endurance.json
+          if-no-files-found: warn
+          retention-days: 14
 
   android-debug:
     name: Android ARM64 debug export
