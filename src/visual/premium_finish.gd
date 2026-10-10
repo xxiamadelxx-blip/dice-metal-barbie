@@ -68,6 +68,9 @@ static func blackened_metal() -> StandardMaterial3D:
     return metal
 
 
+## The offline Blender albedo is now real charcoal; when this imported
+## texture exists it must not be re-tinted by a second dark factor.
+## Trigger native/Mesa render QA against refreshed pinned GLBs.
 static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
     # Clean polished volcanic glass. Unlike the high-frequency mineral
     # shader, this PBR response avoids zebra/moiré artifacts when GLB
