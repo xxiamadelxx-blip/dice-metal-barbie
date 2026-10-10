@@ -33,3 +33,6 @@ Blender geometry and UV (canonical physical face mapping) → Material Maker **o
 
 ## Usage example: HUD and release art
 Figma **if connected** or Inkscape SVG prototype → actual Godot Control layout → native 720x1280 screenshots and tap/accessibility review → FFmpeg authentic video of real screen recordings → Canva/Adobe Express **only if authorized** to publish peripheral promotional art. External integrations are NEVER required to compile a game.
+
+## Verified Ubuntu invocation policy (2026-10-10)
+See [Xvfb installation CI #38075709599](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38075709599): `gimp --version` can run without X, `xvfb-run -a krita --version` and `xvfb-run -a meshlab -h` returned 0 on Ubuntu 24.04, and the official Material Maker 1.7 archive passed SHA256 and bounded `--version` under Xvfb. `meshlabserver` is present but CLI without display failed, so run a real input/output conversion in Xvfb before processing production models. Material Maker exports `.ptex` via documented CLI but that workflow is still NOT VERIFIED. GUI paint/export workflow for Krita/GIMP similarly unverified. Prefer the established Python/Blender scripts whenever batch headlessness is not proven.
