@@ -44,10 +44,12 @@ func _ready() -> void:
     shell.material_override = obsidian
     add_child(shell)
     var font_scale := 0.0040 if sides == 10 else 0.00052
+    var values := ShapeMath.numbers(sides)
     for face in range(sides):
+        var value: int = values[face]
         var label := Label3D.new()
-        label.name = "Face_%d" % (face + 1)
-        label.text = str(face + 1)
+        label.name = "Face_%d" % value
+        label.text = str(value % 10) if sides == 10 else str(value)
         label.font_size = 54
         label.pixel_size = font_scale
         label.modulate = Color(0.89, 0.72, 0.47)
@@ -78,7 +80,12 @@ func throw_from_top(lane: int = 0) -> void:
     var spin := TAU * float(selection % ring) / float(ring)
     var turn := Basis(Vector3.UP, spin)
     if flip:
-        turn = Basis(Vector3.RIGHT, PI) * turn
+        # The antiprism's upper/lower rings are offset by pi/n.
+        # Rotate 180° around a horizontal axis at pi/(2n), not global X:
+        # only this is an actual proper shape symmetry for BOTH sizes.
+        var symmetry_axis := Vector3(cos(PI / float(sides)), 0.0,
+            sin(PI / float(sides))).normalized()
+        turn = Basis(symmetry_axis, PI) * turn
     var axis := Vector3(randf_range(0.3, 1.0), randf_range(0.3, 1.0), randf_range(0.3, 1.0)).normalized()
     basis = Basis(Quaternion(axis, randf_range(-1.8, 1.8))) * turn
     position = Vector3(float(lane) * 1.0 + randf_range(-0.16, 0.16), 2.65, -3.25)
@@ -113,7 +120,7 @@ func _physics_process(delta: float) -> void:
         _abort("D%d остался на неоднозначном ребре" % sides)
         return
     rolling = false
-    result = face + 1
+    result = ShapeMath.numbers(sides)[face]
     roll_completed.emit(result)
 
 func _abort(message: String) -> void:

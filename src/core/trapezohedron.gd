@@ -94,6 +94,11 @@ static func numbers(sides: int) -> PackedInt32Array:
     var result := PackedInt32Array()
     if _n(sides) == 0:
         return result
+    if sides == 10:
+        # Canonical D10 visible labels 0..9; the physical 0 represents 10
+        # when used as an ordinary ten-sided die. Antipodal printed digits
+        # add to 9, preserving familiar tabletop orientation.
+        return PackedInt32Array([10, 2, 4, 6, 8, 3, 1, 9, 7, 5])
     for value in range(1, sides + 1):
         result.append(value)
     return result
@@ -119,4 +124,4 @@ static func top_face(sides: int, pose: Basis) -> int:
 
 static func top_value(sides: int, pose: Basis) -> int:
     var face := top_face(sides, pose)
-    return -1 if face < 0 else face + 1
+    return -1 if face < 0 else numbers(sides)[face]

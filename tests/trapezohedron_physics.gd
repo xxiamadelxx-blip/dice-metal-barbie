@@ -19,7 +19,7 @@ func _wait_for_dice(dice: Array, limit: int) -> bool:
         await physics_frame
         var done := true
         for die in dice:
-            if not is_instance_valid(die) or die.rolling:
+            if not is_instance_valid(die) or die.get("rolling"):
                 done = false
         if done:
             return true
@@ -42,17 +42,17 @@ func _run() -> void:
         var collision := die.get_node("TrapezohedronCollision") as CollisionShape3D
         _check(collision.shape is ConvexPolygonShape3D, "D%d convex Jolt hull missing" % sides)
         _check((collision.shape as ConvexPolygonShape3D).points.size() == sides + 2, "D%d wrong convex vertex count" % sides)
-        _check(die.numeral_node(1) != null and die.numeral_node(sides) != null,
+        _check(die.call("numeral_node", 1) != null and die.call("numeral_node", sides) != null,
             "D%d missing smallest/largest real attached glyph" % sides)
         var done := await _wait_for_dice([die], 2500)
         _check(done, "D%d never completed a physical throw" % sides)
         if not done:
             break
-        _check(die.failure == "", "D%d physical failure: %s" % [sides,die.failure])
-        if die.failure != "":
+        _check(die.get("failure") == "", "D%d physical failure: %s" % [sides,die.get("failure")])
+        if die.get("failure") != "":
             break
         var top := ShapeMath.top_value(sides, die.global_transform.basis.orthonormalized())
-        _check(top == die.result, "D%d result differs from actual upper face" % sides)
+        _check(top == die.get("result"), "D%d result differs from actual upper face" % sides)
         _check(scene.last_result == top, "D%d HUD differs from physically visible face" % sides)
         _check(die.sleeping, "D%d not physically asleep" % sides)
         _check(top >= 1 and top <= sides, "D%d result outside range" % sides)
@@ -70,10 +70,10 @@ func _run() -> void:
                 var done := await _wait_for_dice([tens,ones], 2500)
                 _check(done, "Two percentile Jolt bodies did not settle")
                 if done:
-                    _check(tens.failure == "" and ones.failure == "", "Failed percentile physical rolls")
+                    _check(tens.get("failure") == "" and ones.get("failure") == "", "Failed percentile physical rolls")
                     var tval := ShapeMath.top_value(10,tens.global_transform.basis.orthonormalized())
                     var oval := ShapeMath.top_value(10,ones.global_transform.basis.orthonormalized())
-                    _check(tval == tens.result and oval == ones.result, "Percentile digits differ from actual faces")
+                    _check(tval == tens.get("result") and oval == ones.get("result"), "Percentile digits differ from actual faces")
                     var value := Rules.percentile((tval % 10) * 10, oval % 10)
                     _check(scene.last_result == value, "D100 pair result not computed from its two visible faces")
                     _check(value >= 1 and value <= 100, "Invalid percentile result")
