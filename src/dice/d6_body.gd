@@ -7,6 +7,7 @@ signal roll_completed(value: int)
 signal roll_failed(reason: String)
 
 const CubeSymmetry = preload("res://src/core/cube_symmetry.gd")
+const BeveledCube = preload("res://src/visual/beveled_cube.gd")
 const SIDE := 1.22
 const MAX_ROLL_SECONDS := 9.0
 
@@ -43,8 +44,7 @@ func _ready() -> void:
     stone.roughness = 0.18
     var mesh_node := MeshInstance3D.new()
     mesh_node.name = "Obsidian"
-    var cube := BoxMesh.new()
-    cube.size = Vector3.ONE * SIDE
+    var cube := BeveledCube.create(SIDE, 0.105)
     mesh_node.mesh = cube
     mesh_node.material_override = stone
     add_child(mesh_node)
