@@ -20,9 +20,11 @@ var selected_die := 6
 var active_sides := 6
 var last_result := -1
 var die_buttons: Dictionary = {}
+var idle_display: Node3D
 
 func _ready() -> void:
     _make_world()
+    _make_idle_showcase()
     _make_overlay()
 
 func _make_world() -> void:
@@ -127,6 +129,32 @@ func _chip_style(selected: bool) -> StyleBoxFlat:
     box_style.content_margin_top = 10
     box_style.content_margin_bottom = 9
     return box_style
+
+func _make_idle_showcase() -> void:
+    # Non-rolling collectible display. They are actual numbered 3D models,
+    # visibly arranged across the velvet like the approved third concept.
+    # All preview collision layers are disabled and the showcase is removed
+    # before the first real throw; it never invents a numeric roll result.
+    idle_display = Node3D.new()
+    idle_display.name = "IdleDiceDisplay"
+    add_child(idle_display)
+    var layout := [
+        {"script": D20Script, "sides": 20, "location": Vector3(-1.5, 0.77, -2.6), "angle": Vector3(14, -25, 18)},
+        {"script": D12Script, "sides": 12, "location": Vector3(1.45, 0.73, -2.1), "angle": Vector3(-18, 40, 20)},
+        {"script": DieScript, "sides": 6, "location": Vector3(-1.35, 0.62, 0.6), "angle": Vector3(9, 35, -12)},
+        {"script": D4Script, "sides": 4, "location": Vector3(1.55, 0.58, 1.55), "angle": Vector3(8, -20, 22)}
+    ]
+    for item in layout:
+        var scene_script: GDScript = item["script"]
+        var preview: RigidBody3D = scene_script.new()
+        idle_display.add_child(preview)
+        preview.name = "PreviewD%d" % item["sides"]
+        preview.freeze = true
+        preview.collision_layer = 0
+        preview.collision_mask = 0
+        preview.position = item["location"]
+        preview.rotation_degrees = item["angle"]
+        Premium.decorate_die(preview, item["sides"])
 
 func _make_overlay() -> void:
     var canvas := CanvasLayer.new()
@@ -319,6 +347,9 @@ func _begin_throw(die: RigidBody3D, sides: int) -> void:
         return
     active_sides = sides
     last_result = -1
+    if is_instance_valid(idle_display):
+        idle_display.queue_free()
+        idle_display = null
     copy_button.disabled = true
     throw_button.disabled = true
     selected_chooser.disabled = true
