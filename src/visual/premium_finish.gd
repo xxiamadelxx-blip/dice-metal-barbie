@@ -1,6 +1,7 @@
 extends RefCounted
 ## Procedural, locally generated visual assets. No licensed textures or
 ## external service. All embellishments are NON-COLLIDING.
+const EngravedGem = preload("res://src/visual/engraved_gem.gd")
 const GOLD := Color(0.56, 0.41, 0.25)
 const OBSIDIAN := Color(0.075, 0.085, 0.105)
 
@@ -67,6 +68,11 @@ static func blackened_metal() -> StandardMaterial3D:
     return metal
 
 static func decorate_die(die: RigidBody3D, sides: int) -> void:
+    # Dedicated sculptural D20/D6 assets replace the legacy overlay and
+    # floating edge wires. The RigidBody3D and numeric metadata remain intact.
+    if sides == 20 or sides == 6:
+        EngravedGem.apply(die, sides)
+        return
     ## The physics hull never changes. Metallic hairline inlays attach only
     ## to the graphics and share the die's physical orientation.
     var collision: CollisionShape3D
