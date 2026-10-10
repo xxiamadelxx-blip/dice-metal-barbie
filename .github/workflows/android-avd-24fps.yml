@@ -3,6 +3,12 @@ name: Android AVD dice screen recorder + 24fps frame critic
 # NOT a second PR gate. The real release pipeline is gauntlet-release-gate.yml.
 # The SwiftShader/AVD incompatibility must not multiply PR workflow runs.
 on:
+  workflow_call:
+    inputs:
+      fresh_assets:
+        type: boolean
+        required: false
+        default: false
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,6 +21,24 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Consume exact Blender GLBs from this Gauntlet
+        if: inputs.fresh_assets
+        uses: actions/download-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb
+      - name: Verify and install exact Blender GLBs before APK export
+        if: inputs.fresh_assets
+        run: |
+          set -eu
+          (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
+          mkdir -p src/assets/generated
+          for die in d4 d6 d8 d12 d20; do
+            test -s "build/gauntlet-glb/${die}_boolean_engraved.glb"
+            cp "build/gauntlet-glb/${die}_boolean_engraved.glb" "src/assets/generated/${die}_boolean_engraved.glb"
+          done
       - name: Select emulator ABI WITHOUT changing phone ARM64 preset in git
         run: |
           sed -i 's/^architectures\/arm64-v8a=true/architectures\/arm64-v8a=false\narchitectures\/x86_64=true/' export_presets.cfg
@@ -53,6 +77,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/download-artifact@v4
         with:
           name: dice-avd-x86-debug-apk
@@ -70,7 +96,10 @@ jobs:
           target: google_apis
           profile: pixel_6
           disable-animations: true
-          emulator-options: "-no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader_indirect"
+          # API 37 deprecated swiftshader_indirect; prior AVD screenshots were
+          # uniformly black with SceneShaderGLES3 SwiftShader 261-uniform error.
+          # Mesa Lavapipe is an isolated emulator diagnostic, not phone config.
+          emulator-options: "-no-window -no-audio -no-snapshot -no-boot-anim -gpu lavapipe -feature -Vulkan"
           script: bash tools/visual/run_android_avd_rolls.sh
       - name: Decode every Android emulator image and keep time ordered evidence
         run: python3 tools/visual/audit_android_avd_sequence.py qa-evidence/android-avd

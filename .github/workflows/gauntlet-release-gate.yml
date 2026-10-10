@@ -46,6 +46,15 @@ jobs:
     permissions:
       contents: read
 
+  avd:
+    name: 2d - Android emulator real-screen capture (diagnostic)
+    needs: assets
+    uses: ./.github/workflows/android-avd-24fps.yml
+    with:
+      fresh_assets: true
+    permissions:
+      contents: read
+
   pin:
     name: 3 - Pin only GLBs already tested by all three consumers
     needs: [assets, native, temporal, android]
@@ -90,7 +99,7 @@ jobs:
 
   report:
     name: 4 - One final verdict in Actions Summary
-    needs: [assets, native, temporal, android, pin]
+    needs: [assets, native, temporal, android, avd, pin]
     if: always()
     runs-on: ubuntu-24.04
     env:
@@ -98,6 +107,7 @@ jobs:
       NATIVE: ${{ needs.native.result }}
       TEMPORAL: ${{ needs.temporal.result }}
       ANDROID: ${{ needs.android.result }}
+      AVD: ${{ needs.avd.result }}
       PIN: ${{ needs.pin.result }}
       EVENT: ${{ github.event_name }}
     steps:
@@ -112,11 +122,14 @@ jobs:
             echo "| Live Godot native screenshots/pixel critique | $NATIVE |"
             echo "| Complete five-die real-Jolt 24fps video/frame audit | $TEMPORAL |"
             echo "| Physics tests and signed Android ARM64 APK | $ANDROID |"
+            echo "| Android AVD live capture (diagnostic, separate from phone gate) | $AVD |"
             echo "| Pin verified GLB bytes to PR (same repository only) | $PIN |"
             echo
             echo "Artifacts in THIS run: generated mesh bytes, original native PNGs, full videos"
             echo "and frame JSONLs, Android debug APK. No cross-run artifact assumptions."
             echo
+            echo "Android AVD FAIL is an unresolved rendering/driver diagnostic; it never"
+            echo "becomes a claimed Android screenshot PASS because native Godot passed."
             echo "NOT VERIFIED by cloud CI: OnePlus Nord 3 installation/FPS and independent"
             echo "premium aesthetic approval. These remain real-world acceptance gates."
             echo

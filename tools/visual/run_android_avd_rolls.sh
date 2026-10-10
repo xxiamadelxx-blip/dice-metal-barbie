@@ -8,6 +8,8 @@ adb wait-for-device
 adb shell wm size 720x1280
 adb shell wm density 320
 adb install -r dice-emulator-x86-debug.apk
+adb shell getprop ro.hardware.egl > qa-evidence/android-avd/egl-driver.txt || true
+adb shell getprop ro.opengles.version >> qa-evidence/android-avd/egl-driver.txt || true
 adb shell am force-stop org.dicemetalbarbie.dnddice || true
 adb shell monkey -p org.dicemetalbarbie.dnddice 1
 sleep 9
@@ -40,6 +42,9 @@ PY
 done
 if test "$ready" != 1; then
   adb logcat -d -v time > qa-evidence/android-avd/logcat-on-black-screen.txt || true
+  grep -Ei 'SceneShaderGLES3|CanvasShaderGLES3|GL_MAX_FRAGMENT_UNIFORM|QueuePresentKHR|EGL_BAD|godot|FATAL EXCEPTION' qa-evidence/android-avd/logcat-on-black-screen.txt > qa-evidence/android-avd/renderer-errors.txt || true
+  adb shell dumpsys SurfaceFlinger > qa-evidence/android-avd/surfaceflinger.txt || true
+  printf "Source EGL diagnostic and filtered renderer errors retained for Gauntlet review.\n"
   adb shell dumpsys activity activities > qa-evidence/android-avd/activities-on-black-screen.txt || true
   echo "FAIL: Android AVD never rendered playable dice scene in 100 seconds"
   exit 8
