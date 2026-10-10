@@ -27,14 +27,9 @@ static func _velvet_texture() -> ImageTexture:
     texture.generate_mipmaps()
     return ImageTexture.create_from_image(texture)
 
-static func obsidian_material() -> StandardMaterial3D:
-    var stone := StandardMaterial3D.new()
-    stone.albedo_color = OBSIDIAN
-    stone.metallic = 0.24
-    stone.roughness = 0.16
-    stone.clearcoat_enabled = true
-    stone.clearcoat = 0.91
-    stone.clearcoat_roughness = 0.07
+static func obsidian_material() -> ShaderMaterial:
+    var stone := ShaderMaterial.new()
+    stone.shader = preload("res://src/visual/obsidian.gdshader")
     return stone
 
 static func gold_material() -> StandardMaterial3D:
