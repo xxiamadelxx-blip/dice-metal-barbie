@@ -11,7 +11,7 @@ permissions:
   contents: read
 jobs:
   every-frame:
-    name: Record five actual Jolt throws at 24fps; analyze every frame
+    name: Record eight actual Jolt throws at 24fps; analyze every frame
     runs-on: ubuntu-24.04
     container:
       image: barichello/godot-ci:4.6.3
@@ -45,7 +45,7 @@ jobs:
             libxkbcommon0 libwayland-cursor0 python3-pil
       - name: Import pinned 3D sculpted meshes
         run: godot --headless --path . --editor --quit
-      - name: Record complete five-throw 24fps physical timeline
+      - name: Record complete eight-throw 24fps physical timeline
         run: bash tools/visual/run_temporal_capture.sh
       - name: Sequentially decode and inspect EVERY video frame
         run: python3 tools/visual/audit_roll_sequence.py qa-evidence/temporal

@@ -103,7 +103,7 @@ jobs:
           script: bash tools/visual/run_android_avd_rolls.sh
       - name: Decode every Android emulator image and keep time ordered evidence
         run: python3 tools/visual/audit_android_avd_sequence.py qa-evidence/android-avd
-      - name: Upload captured AVD screens, all five videos and per-frame logs
+      - name: Upload captured AVD screens, all eight videos and per-frame logs
         if: always()
         uses: actions/upload-artifact@v4
         with:

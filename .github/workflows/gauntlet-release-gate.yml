@@ -122,7 +122,7 @@ jobs:
             echo "| --- | --- |"
             echo "| Offline Blender/MeshLab verified GLBs | $ASSETS |"
             echo "| Live Godot native screenshots/pixel critique | $NATIVE |"
-            echo "| Complete five-die real-Jolt 24fps video/frame audit | $TEMPORAL |"
+            echo "| Complete eight-mode real-Jolt 24fps video/frame audit | $TEMPORAL |"
             echo "| Physics tests and signed Android ARM64 APK | $ANDROID |"
             echo "| Android AVD live capture (diagnostic, separate from phone gate) | $AVD |"
             echo "| Pin verified GLB bytes to PR (same repository only) | $PIN |"

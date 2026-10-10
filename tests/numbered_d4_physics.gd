@@ -28,7 +28,17 @@ func _run() -> void:
             _assert(nonrolling.collision_layer == 0 and nonrolling.collision_mask == 0, "Idle prop must NEVER affect Jolt randomness")
     _assert(scene.selected_chooser.get_selected_id() == scene.selected_die, "Initial chooser must match selected die")
     _assert(scene.throw_button.tooltip_text == "Бросить D6", "D6 must be the initial selected throw")
-    _assert(scene.selected_chooser.get_item_count() == 5, "D4 D6 D8 D12 D20 all selectable")
+    var required: Array[int] = [4, 6, 8, 10, 12, 20, 100]
+    _assert(scene.selected_chooser.get_item_count() == required.size(),
+        "All seven approved physical dice must be selectable")
+    for sides in required:
+        var in_chooser := false
+        for index in range(scene.selected_chooser.get_item_count()):
+            if scene.selected_chooser.get_item_id(index) == sides:
+                in_chooser = true
+                break
+        _assert(in_chooser, "Missing D%d in physical die chooser" % sides)
+        _assert(scene.die_buttons.has(sides), "Missing accessible D%d chip" % sides)
     var die = D4.new()
     root.add_child(die)
 

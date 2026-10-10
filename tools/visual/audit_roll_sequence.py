@@ -15,7 +15,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageStat
 
 WIDTH, HEIGHT, FPS = 720, 1280, 24
 BYTES_PER_FRAME = WIDTH * HEIGHT * 3
-DICE = (4, 6, 8, 12, 20)
+DICE = (4, 6, 8, 12, 20, 10, 100)
 
 
 def video_frames(path):
@@ -55,17 +55,21 @@ def save_every_frame_sheet(root, sides, second, imgs):
         sheet.paste(thumb,(x,y+20))
         pen.text((x+5,y+4),"F%04d %.2fs"%(frame_id,frame_id/24),
                  fill=(230,222,195))
-    sheet.save(root/("ALL-24-frames-D%d-second-%02d.jpg"%(sides,second)),quality=88)
+    sheet.save(root/("ALL-24-frames-D%s-second-%02d.jpg"%(sides,second)),quality=88)
 
-def inspect_throw(root, sides):
-    timeline = json.loads((root / ("timeline-D%d.json" % sides)).read_text())
+def inspect_throw(root, sides, key=None):
+    capture_key = str(sides) if key is None else key
+    timeline = json.loads((root / ("timeline-D%s.json" % capture_key)).read_text())
+    assert timeline.get("capture_key", capture_key) == capture_key
     assert timeline["die"] == sides and timeline["status"] == "completed"
     assert 1 <= timeline["result"] <= sides
     assert timeline["environment"] == "LINUX_MESA_NATIVE_NOT_ANDROID_EMULATOR"
-    video = root / ("roll-D%d-24fps.mp4" % sides)
+    video = root / ("roll-D%s-24fps.mp4" % capture_key)
     assert video.stat().st_size > 25000, "Missing real footage of D%d" % sides
     result = {
-        "die": sides, "physically_resolved_value": timeline["result"],
+        "die": sides, "capture_key": capture_key,
+        "physics_bodies": timeline.get("physics_bodies", 1),
+        "physically_resolved_value": timeline["result"],
         "recording_target_fps": FPS,
         "godot_drawn_frames_before_result": timeline["godot_drawn_frames_to_result"],
         "seconds_to_physical_result": timeline["seconds_to_result"],
@@ -83,7 +87,7 @@ def inspect_throw(root, sides):
     preview = []
     full_second_frames = []
     t_to_go_approx = 0.8
-    with (root / ("every-frame-D%d.jsonl" % sides)).open("w") as out:
+    with (root / ("every-frame-D%s.jsonl" % capture_key)).open("w") as out:
         for index, image in video_frames(video):
             # Playfield: exclude static HUD and black screen-edge rails.
             sample = image.crop((110, 180, 610, 930)).resize((96, 144)).convert("L")
@@ -127,12 +131,12 @@ def inspect_throw(root, sides):
             # contact, this retains every screen, ordered 24 per second.
             full_second_frames.append((index,image.resize((120,215))))
             if len(full_second_frames)==24:
-                save_every_frame_sheet(root,sides,index//24,full_second_frames)
+                save_every_frame_sheet(root,capture_key,index//24,full_second_frames)
                 full_second_frames=[]
             previous = sample
             frames += 1
     if full_second_frames:
-        save_every_frame_sheet(root,sides,(frames-1)//24,full_second_frames)
+        save_every_frame_sheet(root,capture_key,(frames-1)//24,full_second_frames)
     assert frames >= 48, "D%d missing 2+ seconds at 24fps" % sides
     assert movement_frames >= 8, "D%d moved in too few decoded frames" % sides
     assert black_frames < frames * .65, "D%d captured a mostly black renderer" % sides
@@ -147,7 +151,7 @@ def inspect_throw(root, sides):
         strip.paste(thumb, (x, y + 26))
         pen.text((x + 5, y + 6), "D%d F%04d %.2fs" % (sides, frame_number, frame_number/FPS),
                  fill=(243, 235, 207))
-    strip.save(root / ("contact-D%d.jpg" % sides), quality=88)
+    strip.save(root / ("contact-D%s.jpg" % capture_key), quality=88)
     result.update({
         "frames_read_in_order": frames,
         "duration_s": round(frames / FPS, 3),
@@ -172,6 +176,7 @@ def inspect_throw(root, sides):
 
 def main(root):
     runs = [inspect_throw(root, sides) for sides in DICE]
+    runs.append(inspect_throw(root, 100, key="100_PAIR"))
     summary = {
         "status": "PASS_AUTOMATED_PER_FRAME_METRICS",
         "recording_frame_rate": FPS,
@@ -186,7 +191,7 @@ def main(root):
         ]
     }
     (root / "temporal-report.json").write_text(json.dumps(summary, indent=2) + "\n")
-    print("PASS: every decoded frame of five real physical dice was processed")
+    print("PASS: every decoded frame of eight real physical throws was processed")
     print("Total frames:", summary["frames_examined_sequentially"])
 
 

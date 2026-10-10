@@ -529,7 +529,8 @@ func _on_die_completed(value: int) -> void:
 
 func _on_die_failed(message: String) -> void:
     if OS.is_debug_build():
-        print("DICE_QA_FAILED D%d=%s" % [active_sides, message])
+        var key := "100_PAIR" if active_sides == 100 and is_instance_valid(active_percentile) else str(active_sides)
+        print("DICE_QA_FAILED D%s=%s" % [key, message])
     status_label.text = "Бросок не засчитан: %s" % message
     copy_button.visible = false
     throw_button.disabled = false

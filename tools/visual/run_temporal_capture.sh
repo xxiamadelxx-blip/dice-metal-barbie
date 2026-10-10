@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Live 720x1280 Godot/Mesa/Jolt window captured by FFmpeg at target 24fps.
-# This is NOT an Android emulator. Five real die throws, five videos.
+# This is NOT an Android emulator. Eight true Jolt throws, eight videos.
 set -euo pipefail
 mkdir -p qa-evidence/temporal
 rm -f qa-evidence/temporal/ready-D* qa-evidence/temporal/go-D* qa-evidence/temporal/done-D* qa-evidence/temporal/saved-D* qa-evidence/temporal/timeline-D*
@@ -19,7 +19,7 @@ export DISPLAY=:99
 sleep 1
 godot --path . --rendering-method gl_compatibility --script res://tests/temporal_roll_capture.gd > qa-evidence/temporal/godot-live.log 2>&1 &
 godot_pid=$!
-for sides in 4 6 8 12 20; do
+for sides in 4 6 8 12 20 10 100 100_PAIR; do
   echo "Waiting for REAL Jolt D$sides scene..."
   attempts=0
   until test -f "qa-evidence/temporal/ready-D$sides"; do
@@ -58,7 +58,7 @@ for sides in 4 6 8 12 20; do
       exit 1
     fi
     attempts=$((attempts+1))
-    if (( attempts > 165 )); then echo "FAIL: D$sides roll recording timed out" >&2; exit 1; fi
+    if (( attempts > 380 )); then echo "FAIL: D$sides roll recording timed out" >&2; exit 1; fi
     sleep .1
   done
   sleep .2
@@ -72,5 +72,5 @@ for sides in 4 6 8 12 20; do
 done
 wait "$godot_pid"
 godot_pid=""
-grep -F "PASS all five real physical throws finished" qa-evidence/temporal/godot-live.log
-echo "PASS 5 screen recordings at target 24fps"
+grep -F "PASS all eight real physical throws finished" qa-evidence/temporal/godot-live.log
+echo "PASS 8 screen recordings at target 24fps"

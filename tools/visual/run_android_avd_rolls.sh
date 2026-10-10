@@ -15,9 +15,21 @@ adb shell monkey -p org.dicemetalbarbie.dnddice 1
 sleep 9
 adb exec-out screencap -p > qa-evidence/android-avd/launch-initial-avd.png
 test "$(stat -c%s qa-evidence/android-avd/launch-initial-avd.png)" -gt 10000
-# Android immersive-mode tutorial can cover the full Godot view on a fresh
-# AVD. Its Got it button is at 594,390 on our forced 720x1280 emulated LCD.
-adb shell input tap 593 388
+# AVD #38090191673 real screenshot: Android immersive tutorial covers dice,
+# "Got it" is x533..673/y399..496. Previous x593/y388 missed entirely.
+cp qa-evidence/android-avd/launch-initial-avd.png qa-evidence/android-avd/launch-before-consent.png
+if python3 - <<'PY'
+from PIL import Image
+im=Image.open('qa-evidence/android-avd/launch-initial-avd.png').convert('RGB')
+panel=all(min(im.getpixel(p))>190 for p in [(180,220),(350,245),(250,340)])
+print('Android immersive system overlay present:',panel)
+raise SystemExit(0 if panel else 1)
+PY
+then
+  adb shell input tap 605 447
+  sleep 2
+fi
+adb exec-out screencap -p > qa-evidence/android-avd/launch-after-system-consent.png
 # SwiftShader may require >10 s to compile the first 3D scene on Android 35.
 # Review genuine ADB screenshots every 5 s; reject Android pop-ups, black
 # screens and the Godot splash. Never start recording until the game draws.
@@ -49,8 +61,13 @@ if test "$ready" != 1; then
   echo "FAIL: Android AVD never rendered playable dice scene in 100 seconds"
   exit 8
 fi
-for spec in '4 85' '6 220' '8 355' '12 490' '20 625'; do
-  read -r sides xpos <<< "$spec"
+# Actual 720x1280 Godot layout: old five chips at y1115,
+# extended M3 D10/D100 chips at y990, D100-mode toggle x465/y990.
+# D100 default mode is two D10. First toggle to single (D100);
+# next toggle back to pair (D100_PAIR). Verify Godot signal key, never
+# infer selection from the tap alone.
+for spec in '4 85 1115 0' '6 220 1115 0' '8 355 1115 0' '12 490 1115 0' '20 625 1115 0' '10 285 990 0' '100 365 990 1' '100_PAIR 365 990 1'; do
+  read -r sides xpos ypos mode_toggle <<< "$spec"
   echo "AVD real D$sides: begin recording before Android UI taps"
   # Previous AVD capture incorrectly marked D8 PASS with 263 identical frames,
   # and the D20-labelled video still displayed D12 rolling. Fail on absent
@@ -60,8 +77,12 @@ for spec in '4 85' '6 220' '8 355' '12 490' '20 625'; do
     --time-limit 30 "/sdcard/dice-D$sides.mp4" &
   record_pid=$!
   sleep 1
-  adb shell input tap "$xpos" 1115
+  adb shell input tap "$xpos" "$ypos"
   sleep 0.6
+  if test "$mode_toggle" = 1; then
+    adb shell input tap 465 990
+    sleep 0.4
+  fi
   adb shell input tap 655 1215
   completed=0
   roll_log="qa-evidence/android-avd/roll-D$sides-godot.log"
@@ -108,4 +129,4 @@ if grep -Eq 'QueuePresentKHR failed|FATAL EXCEPTION.*org.dicemetalbarbie' qa-evi
   grep -E 'QueuePresentKHR failed|FATAL EXCEPTION' qa-evidence/android-avd/logcat.txt | tail -12
   exit 7
 fi
-echo "PASS 5 genuine Android emulator screen recordings created"
+echo "PASS 8 genuine Android emulator physical screen recordings created"
