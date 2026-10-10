@@ -106,7 +106,7 @@ func _run() -> void:
         closeup_camera.size = 3.8
         closeup_camera.position = Vector3(die.position.x, 18.0, die.position.z)
         await create_timer(0.4).timeout
-        var output := {8:"native-09-d8-detail",12:"native-10-d12-detail",
+        var output: String = {8:"native-09-d8-detail",12:"native-10-d12-detail",
             4:"native-11-d4-apex-detail"}[sides]
         await _capture(output)
     print("Native Godot visual capture complete: D6/D20/D8/D12/D4 physical throws + explicitly staged D20 pulses.")
