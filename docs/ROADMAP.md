@@ -1,11 +1,11 @@
 # Roadmap
 
-**M0:** approved 2026-10-10.
-**M1:** approved Godot 4.6 + Jolt.
-**M2:** automated foundation gate passed; handset install still NOT VERIFIED (#5).
-**M3:** active. D6 + D20 genuine numbered physics bodies and mathematical symmetry verified via [CI #38046017124](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38046017124); D4, D8, D10, D12, **single real D100**, dual percentile D10, actual rendering review, mass/symmetry fairness sampling and robust 10+ dice collisions still required. Follow [#3](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/3).
-**M4:** mixed dice, advanced formulas, rerolls, modifiers, advantage/disadvantage; local history, stats and saved combinations.
-**M5:** user-approved minimalist UI, black velvet/obsidian polish, actual collision-driven audio/haptics, spatial D20 crit visuals and smooth state behavior.
-**M6:** Nord 3 compatibility, offline endurance, versioned local migration, permanent signing key, reproducible release APK and GitHub Release.
+**M0:** approved on 2026-10-10.
+**M1:** Godot 4.6.3 / Jolt approved.
+**M2:** cloud export and headless physics test automation passed; handset NOT VERIFIED.
+**M3:** **active; four numbered Jolt dice D6/D8/D12/D20 implemented, CI verified** ([CI #38047981975](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38047981975)). Remaining: D4 (special vertex-number convention under overhead camera), D10, D100 as real single polyhedron plus percentile pair, higher-load multi-die physics, long-run fairness, visual/glyph on-device captures and audio/haptic physical contact design. Issues #3, #12, #13.
+**M4:** mixed groups, full expressions/modifiers/rerolls, D20 advantage/disadvantage and natural critical rules, local history/statistics/saved combinations.
+**M5:** final minimalist UI, selectable cosmetics reserved for future, black obsidian/velvet material polish, spatial D20 crit aura/flash, realistic impact-driven sound and haptics.
+**M6:** physical Nord 3 QA, stable protected signing key, reproducible production Android build, seamless updates preserving data, release notes and GitHub Release.
 
-Always Gauntlet Loop with real regression evidence, report FAIL and NOT VERIFIED separately.
+Gauntlet Loop remains mandatory: artifact → actual test → independent critic where available → FAIL/FIX/RETEST, with real test evidence stored in PR.
