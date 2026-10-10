@@ -1,0 +1,51 @@
+name: Android cloud visual acceptance
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/android-visual-qa.yml"
+      - "scripts/qa_android_emulator.sh"
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  visual-qa:
+    name: Boot Pixel emulator and capture real APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download previously verified ARM64 APK from Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build/apk
+          gh run download 38054012551 -R ${{ github.repository }} --name m3-d4-android-debug --dir build/apk
+          ls -lh build/apk/
+      - name: Prepare KVM permission for Android virtualization
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm || true
+      - name: Run Android virtual handset, install APK, capture QA
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          cores: 2
+          ram-size: 4096M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          disable-animations: true
+          script: bash scripts/qa_android_emulator.sh build/apk/dice-3d-m3-d4-debug.apk
+      - name: Upload screenshots, process status and Android logs even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dnd-android-visual-qa
+          path: qa-evidence/
+          if-no-files-found: warn
+          retention-days: 14
