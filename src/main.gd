@@ -44,8 +44,8 @@ func _make_world() -> void:
     env.background_mode = Environment.BG_COLOR
     env.background_color = Color(0.006, 0.007, 0.011)
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_color = Color(0.42, 0.45, 0.54)
-    env.ambient_light_energy = 0.8
+    env.ambient_light_color = Color(0.51, 0.57, 0.67)
+    env.ambient_light_energy = 1.05
     # Studio environment light is reflected in the obsidian but NOT displayed
     # as a sky/background. Dark table and clean void stay user-approved.
     var studio_sky := Sky.new()
@@ -62,9 +62,20 @@ func _make_world() -> void:
 
     var light := DirectionalLight3D.new()
     light.rotation_degrees = Vector3(-63.0, 24.0, 0.0)
-    light.light_energy = 1.6
+    light.light_energy = 1.15
     light.shadow_enabled = true
     add_child(light)
+
+    # Opposing, broad-spectrum studio bounce lifts faceted shadows without
+    # changing the approved 90-degree camera or adding white rim tubes.
+    # Intentional secondary light, not a second shadow caster: mobile friendly.
+    var fill := DirectionalLight3D.new()
+    fill.name = "SoftStudioBounce"
+    fill.rotation_degrees = Vector3(-46.0, -133.0, 0.0)
+    fill.light_color = Color(0.72, 0.83, 1.0)
+    fill.light_energy = 0.68
+    fill.shadow_enabled = false
+    add_child(fill)
 
     var velvet := Premium.velvet_material()
     _make_static_box("VelvetTable", Vector3(0, -0.24, 0), Vector3(TABLE_WIDTH, 0.4, TABLE_LENGTH), velvet)

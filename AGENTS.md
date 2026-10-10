@@ -18,3 +18,7 @@ LEAD → BUILDER → INDEPENDENT CRITIC (when actually available) → COMPARISON
 
 Use feature branches and PRs. Do not push unreviewed work directly to `main` unless explicitly authorized. Never commit signing keys or passwords.
 
+
+## Autonomous Gauntlet mandate (user instruction 2026-10-10)
+Apply the loop to **every implementation change**, including art, UI, automation and builds, without asking the user to act as an iterative critic. The agent must own the compare/fix/retest decisions and prioritize the approved concept and running artifact. For high-impact work, set acceptance before coding, inspect raw engine output and record concrete defects. If independent reviewers are unavailable, perform explicit adversarial self-review using actual screenshots/logs and mark independence unverified; never fabricate a second agent.
+Do not gate ordinary iteration on user responses. Escalate only necessary approvals, missing secrets or actual handset actions that cannot be performed autonomously. Keep draft PRs unmerged until unresolved device/release gates have real evidence. If a specific test cannot be run, record NOT VERIFIED, not PASS.

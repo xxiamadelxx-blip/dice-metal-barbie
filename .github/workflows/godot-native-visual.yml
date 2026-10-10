@@ -23,7 +23,7 @@ jobs:
       - name: Install Mesa/X11 runtime libraries for Godot
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0 python3-pil
           mkdir -p qa-evidence
       - name: Import project
         run: godot --headless --path . --editor --quit
@@ -52,6 +52,8 @@ jobs:
             exit 2
           fi
           ls -lh qa-evidence/native-*.png
+      - name: Run autonomous native-frame pixel critic
+        run: python3 tools/visual/critique_native.py qa-evidence/native-06-d20-detail.png
       - name: Publish native screenshot evidence regardless of failure
         if: always()
         uses: actions/upload-artifact@v4

@@ -73,27 +73,27 @@ static func _stone_pbr_for_glb() -> StandardMaterial3D:
     # shader, this PBR response avoids zebra/moiré artifacts when GLB
     # triangulated face normals are rendered by Android/Mesa Mobile.
     var stone := StandardMaterial3D.new()
-    stone.albedo_color = Color(0.068, 0.081, 0.105)
-    stone.metallic = 0.15
-    stone.roughness = 0.29
+    stone.albedo_color = Color(0.082, 0.10, 0.13)
+    stone.metallic = 0.10
+    stone.roughness = 0.39
     stone.clearcoat_enabled = true
-    stone.clearcoat = 0.34
-    stone.clearcoat_roughness = 0.21
+    stone.clearcoat = 0.23
+    stone.clearcoat_roughness = 0.32
     stone.emission_enabled = true
-    stone.emission = Color(0.045, 0.057, 0.078)
-    stone.emission_energy_multiplier = 0.52
+    stone.emission = Color(0.050, 0.061, 0.079)
+    stone.emission_energy_multiplier = 0.60
     return stone
 
 static func _gold_inset_for_glb() -> StandardMaterial3D:
     var gold := StandardMaterial3D.new()
-    gold.albedo_color = Color(0.72, 0.48, 0.22)
-    gold.metallic = 0.62
-    gold.roughness = 0.30
+    gold.albedo_color = Color(0.84, 0.56, 0.27)
+    gold.metallic = 0.52
+    gold.roughness = 0.36
     gold.clearcoat_enabled = true
-    gold.clearcoat = 0.18
+    gold.clearcoat = 0.12
     gold.emission_enabled = true
-    gold.emission = Color(0.13, 0.070, 0.020)
-    gold.emission_energy_multiplier = 0.20
+    gold.emission = Color(0.17, 0.088, 0.026)
+    gold.emission_energy_multiplier = 0.26
     return gold
 
 static func _finish_glb_node(node: Node) -> void:
