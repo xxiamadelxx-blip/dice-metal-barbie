@@ -150,8 +150,9 @@ func _run() -> void:
     scene.add_child(staged)
     staged.position = Vector3(0, 1.1, 0)
     Premium.decorate_die(staged, 20)
-    if die != null:
-        die.visible = false
+    var previous_d4 := scene.get_node_or_null("PhysicalD4") as RigidBody3D
+    if previous_d4 != null:
+        previous_d4.visible = false
     closeup_camera.size = 3.8
     closeup_camera.position = Vector3(0, 18.0, 0)
     for target in [6, 9]:
