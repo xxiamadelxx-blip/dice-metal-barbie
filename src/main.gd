@@ -131,7 +131,7 @@ func _throw_physical_d6() -> void:
 
     add_child(die)
     active_die = die
-    die.apply_central_impulse(Vector3(randf_range(-0.8, 0.8), 0.75, randf_range(3.0, 5.0)))
-    die.apply_torque_impulse(Vector3(randf_range(-0.7, 0.7), randf_range(-0.7, 0.7), randf_range(-0.7, 0.7)))
+    die.apply_central_impulse(Vector3(randf_range(-0.02, 0.02), 0.024, randf_range(0.12, 0.18)))
+    die.apply_torque_impulse(Vector3(randf_range(-0.020, 0.020), randf_range(-0.020, 0.020), randf_range(-0.020, 0.020)))
     status_label.text = "Физический бросок. Значение пока не вычисляется."
 
