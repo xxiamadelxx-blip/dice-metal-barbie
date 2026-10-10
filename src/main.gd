@@ -26,10 +26,10 @@ func _ready() -> void:
 func _make_world() -> void:
     var camera := Camera3D.new()
     camera.name = "FixedOverheadCamera"
-    camera.position = Vector3(0.0, 18.0, 0.0)
+    camera.position = Vector3(0.0, 18.0, 1.5)
     camera.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 13.8
+    camera.size = 16.2
     camera.current = true
     add_child(camera)
 
@@ -50,12 +50,12 @@ func _make_world() -> void:
     add_child(light)
 
     var velvet := StandardMaterial3D.new()
-    velvet.albedo_color = Color(0.014, 0.014, 0.019)
+    velvet.albedo_color = Color(0.028, 0.031, 0.039)
     velvet.roughness = 0.96
     _make_static_box("VelvetTable", Vector3(0, -0.24, 0), Vector3(TABLE_WIDTH, 0.4, TABLE_LENGTH), velvet)
 
     var rail_material := StandardMaterial3D.new()
-    rail_material.albedo_color = Color(0.028, 0.029, 0.033)
+    rail_material.albedo_color = Color(0.054, 0.059, 0.069)
     rail_material.roughness = 0.78
     _make_static_box("RailLeft", Vector3(-TABLE_WIDTH * 0.5, 0.34, 0), Vector3(0.35, 0.9, TABLE_LENGTH), rail_material)
     _make_static_box("RailRight", Vector3(TABLE_WIDTH * 0.5, 0.34, 0), Vector3(0.35, 0.9, TABLE_LENGTH), rail_material)
@@ -87,21 +87,33 @@ func _make_overlay() -> void:
     canvas.add_child(root)
 
     var top := Label.new()
-    top.text = "D&D 3D Dice   ·   M3 D4 / D6 / D8 / D12 / D20 testbed"
-    top.position = Vector2(20, 25)
+    top.text = "D&D Dice"
+    top.position = Vector2(24, 26)
     root.add_child(top)
 
     var panel := PanelContainer.new()
     panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    panel.offset_top = -270.0
+    panel.offset_top = -266.0
+    var panel_style := StyleBoxFlat.new()
+    panel_style.bg_color = Color(0.048, 0.053, 0.065, 1.0)
+    panel_style.border_color = Color(0.11, 0.12, 0.15, 1.0)
+    panel_style.border_width_top = 1
+    panel_style.corner_radius_top_left = 14
+    panel_style.corner_radius_top_right = 14
+    panel_style.content_margin_left = 18
+    panel_style.content_margin_right = 18
+    panel_style.content_margin_top = 14
+    panel_style.content_margin_bottom = 14
+    panel.add_theme_stylebox_override("panel", panel_style)
     root.add_child(panel)
     var column := VBoxContainer.new()
     column.add_theme_constant_override("separation", 10)
     panel.add_child(column)
     var heading := Label.new()
-    heading.text = "Обсидиановые кости · физический тест"
+    heading.text = "Кубики"
     column.add_child(heading)
     selected_chooser = OptionButton.new()
+    selected_chooser.custom_minimum_size = Vector2(0, 42)
     selected_chooser.add_item("D4", 4)
     selected_chooser.add_item("D6", 6)
     selected_chooser.add_item("D8", 8)
@@ -120,6 +132,7 @@ func _make_overlay() -> void:
     status_label.text = "Выбери кубик и нажми «Бросить»"
     column.add_child(status_label)
     copy_button = Button.new()
+    copy_button.custom_minimum_size = Vector2(0, 40)
     copy_button.text = "Скопировать результат"
     copy_button.disabled = true
     copy_button.pressed.connect(_copy_result)
