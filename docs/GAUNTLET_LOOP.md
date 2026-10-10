@@ -30,3 +30,6 @@ Mandatory result matrix, maintained in PR for each iteration:
 | On-phone readability/performance | PASS / FAIL / NOT VERIFIED | handset test, never guessed |
 
 If a renderer artifact is available, compare it to the previous artifact, capture an explicit remaining-defects list, and do not mark art accepted merely because a pixel/contrast smoke test passes.
+
+## Tool-specific autonomous critique
+Choose minimum viable tool from `docs/CREATIVE_TOOLCHAIN.md` and collect direct evidence of its executable/capability. A successful apt install is NOT headless support. Model gate: watertightness/bounds/face index + glTF import; material gate: color space, texture channels, seam and macro crop; UI gate: screenshot/hit targets; video gate: genuine Godot-captured frames; APK gate: ARM64/export/signature and later on-device install. Reject misleading claims even if the build exits 0. If a newly tried optional editor fails, record the failure and use the documented fallback without blocking the entire project.

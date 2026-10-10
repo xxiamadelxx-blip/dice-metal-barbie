@@ -9,7 +9,7 @@ Offline Dungeons & Dragons 3D dice for Android (initial target OnePlus Nord 3). 
 - **M3:** PARTIAL PASS / IN PROGRESS. Five real, numbered 3D polyhedra **D4, D6, D8, D12, D20**, convex Jolt colliders, dice stay inside velvet table, actual face-derived result (top apex for D4) after physical sleep, no artificial end-of-roll face snap.
 - **M4–M6:** full rules/history/presets, polished UI/audio/haptics/VFX, production signing and release QA NOT completed.
 
-Choose one of **D4 / D6 / D8 / D12 / D20**, throw, watch the body bounce and settle on the fixed overhead table, see/copy its numeric result. Natural 1/20 D20 critical **text** exists, aura/flash not yet implemented. This is a developer physics testbed, not the approved final UI.
+Choose one of **D4 / D6 / D8 / D12 / D20**, throw, watch the body bounce and settle on the fixed overhead table, see/copy its numeric result. Draft PR #23 now includes an experimental die-origin 3D natural-1/natural-20 D20 pulse, verified in Godot native cloud captures; production visual/phone acceptance remains OPEN. This is a developer physics testbed, not the approved final UI.
 
 ### Real evidence
 
@@ -53,3 +53,10 @@ Package: `org.dicemetalbarbie.dnddice`; M3 debug versionCode **6**, versionName 
 ## Canonical documents
 
 [PRD](docs/PRD.md) · [ARCHITECTURE](docs/ARCHITECTURE.md) · [CONTEXT](docs/CONTEXT.md) · [DESIGN](docs/DESIGN.md) · [MILESTONES](docs/MILESTONES.md) · [ROADMAP](docs/ROADMAP.md) · [GAUNTLET_LOOP](docs/GAUNTLET_LOOP.md) · [TEST_PLAN](docs/TEST_PLAN.md) · [PHYSICS_DESIGN](docs/PHYSICS_DESIGN.md) · [D12 research](docs/research/M3_NUMBERED_D12.md) · [D4 research](docs/research/M3_NUMBERED_D4.md).
+
+## Creative production toolchain and automatic routing
+**Canonical agent policy:** [AGENTS.md](AGENTS.md) and [creative tool routing](docs/CREATIVE_TOOLCHAIN.md). [Tool installation audit](docs/TOOL_INSTALL_AUDIT.md) records what is really available, while [architecture diagram](docs/TOOLCHAIN_ARCHITECTURE.md) shows the dependency and acceptance gates. [Cloud installation probe](.github/workflows/creative-toolchain-probe.yml) tests Material Maker, MeshLab, Krita and GIMP on disposable Ubuntu GitHub Actions runners and publishes evidence.
+
+**Task-specific choices:** Blender sculpts and exports visual GLBs; OpenSCAD handles dimensional prototypes; Inkscape supplies SVG ornaments; Material Maker or Python generates PBR maps; Krita/GIMP retouch art; ImageMagick/Pillow pack/test textures; MeshLab/Trimesh check mesh complexity; Godot is the sole runtime for Jolt physics/UI/VFX and exports Android; FFmpeg analyzes actual clips; Figma/Canva/Adobe Express/to3D are optional authorized external workflows, not release dependencies.
+
+**Never silently treat an integration as authorized or an install probe as production-ready.** No paid API or external account is required. A green cloud job never replaces real Nord 3 performance/art review. All development remains in draft PR #23, not `main`.

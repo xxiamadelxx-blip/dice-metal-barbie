@@ -22,3 +22,6 @@ Approach A: physical final orientation determines face, then check each face dis
 ### Android
 Headless engine/editor validation, pure tests, Android ARM64 debug export in GitHub Actions. Stable signing and update-over-install smoke test after selecting protected release secrets. Never commit a keystore. CI artifacts are temporary and debug-key signed; release uploads are separate.
 
+
+## Offline creative toolchain separation (M5 development only)
+See [toolchain architecture](TOOLCHAIN_ARCHITECTURE.md) and [routing matrix](CREATIVE_TOOLCHAIN.md). Blender/Material Maker/2D art tools/MeshLab run **only at build time**, never inside the Android app. They produce static licensed assets with manifests and provenance. Source of truth for physical face outcome and collisions remains Godot/Jolt. Optional design integrations operate outside the Android runtime, can be bypassed with offline tools and require current user authorization. All model/art decisions are checked by autonomous Gauntlet Loop and recorded as evidence. `main` must remain untouched until acceptance.
