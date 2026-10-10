@@ -68,7 +68,7 @@ static func blackened_metal() -> StandardMaterial3D:
     return metal
 
 
-static func _stone_pbr_for_glb() -> StandardMaterial3D:
+static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
     # Clean polished volcanic glass. Unlike the high-frequency mineral
     # shader, this PBR response avoids zebra/moiré artifacts when GLB
     # triangulated face normals are rendered by Android/Mesa Mobile.
@@ -82,6 +82,14 @@ static func _stone_pbr_for_glb() -> StandardMaterial3D:
     stone.emission_enabled = true
     stone.emission = Color(0.050, 0.061, 0.079)
     stone.emission_energy_multiplier = 0.60
+    if source is StandardMaterial3D:
+        var original := source as StandardMaterial3D
+        stone.albedo_texture = original.albedo_texture
+        stone.roughness_texture = original.roughness_texture
+        stone.roughness_texture_channel = original.roughness_texture_channel
+        stone.normal_enabled = original.normal_enabled
+        stone.normal_texture = original.normal_texture
+        stone.normal_scale = 0.28
     return stone
 
 static func _gold_inset_for_glb() -> StandardMaterial3D:
@@ -103,7 +111,8 @@ static func _finish_glb_node(node: Node) -> void:
     if node is MeshInstance3D:
         var surface := node as MeshInstance3D
         if surface.name.begins_with("Sculpted_Obsidian"):
-            surface.material_override = _stone_pbr_for_glb()
+            var original: Material = surface.mesh.surface_get_material(0) if surface.mesh != null else null
+            surface.material_override = _stone_pbr_for_glb(original)
         elif surface.name.begins_with("Recessed_Bronze"):
             surface.material_override = _gold_inset_for_glb()
     for child in node.get_children():

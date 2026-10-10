@@ -7,6 +7,11 @@ from pathlib import Path
 def validate(root):
     manifest=json.loads((root/'manifest.json').read_text(encoding='utf-8'))
     assert '4.0' in manifest['blender'] or manifest['blender'].startswith('4.'), 'Blender 4 required'
+    pbr=manifest.get('pbr',{})
+    assert pbr.get('size')==256 and len(pbr.get('images',[]))==3, 'PBR texture source files missing'
+    for filename in pbr['images']:
+        png=(root/filename).read_bytes()
+        assert png[:8]==b'\\x89PNG\\r\\n\\x1a\\n' and len(png)>8000, 'Empty texture '+filename
     for sides in (20,6):
         entry=manifest['dice'][f'D{sides}']
         values=entry['numbers']
@@ -27,10 +32,17 @@ def validate(root):
         scene=json.loads(blob[20:20+chunk_bytes].decode('utf-8'))
         assert scene['asset']['version']=='2.0'
         assert len(scene['meshes'])==2 and len(scene['materials'])>=2, f'D{sides} missing stone or engraved gold'
+        assert len(scene.get('textures',[]))>=2 and len(scene.get('images',[]))>=2, f'D{sides} GLB missing embedded texture maps'
+        pbr_materials=[m for m in scene['materials']
+                       if m.get('normalTexture') and m.get('pbrMetallicRoughness',{}).get('baseColorTexture')
+                       and m.get('pbrMetallicRoughness',{}).get('metallicRoughnessTexture')]
+        assert len(pbr_materials)>=1, f'D{sides} GLB missing albedo/roughness/normal surface contract'
         for mesh in scene['meshes']:
             assert mesh['primitives'], f'D{sides} missing render primitives'
             for primitive in mesh['primitives']:
                 assert 'POSITION' in primitive['attributes']
+                if mesh==scene['meshes'][0]:
+                    assert 'TEXCOORD_0' in primitive['attributes'],f'D{sides} no stone UV map'
                 pos=scene['accessors'][primitive['attributes']['POSITION']]
                 indices=scene['accessors'][primitive['indices']]
                 assert pos['count']>100 and indices['count']>300

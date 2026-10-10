@@ -48,6 +48,16 @@ func _run() -> void:
             _check(die.get_node_or_null("RecessedGemAsset") == null, "M5 GLB cannot draw twice with procedural asset")
             _check(die.get_node_or_null("NonCollidingMetalInlay") == null, "No floating cylinder outlines")
             var meshes := _imported_meshes(baked)
+            var pbr_mesh: MeshInstance3D = null
+            for item in meshes:
+                if item.name.begins_with("Sculpted_Obsidian"):
+                    pbr_mesh = item
+            _check(pbr_mesh != null, "D%d obsidian art mesh must be present" % sides)
+            if pbr_mesh != null and pbr_mesh.material_override is StandardMaterial3D:
+                var mapped := pbr_mesh.material_override as StandardMaterial3D
+                _check(mapped.albedo_texture != null, "D%d generated albedo texture not applied to real Godot mesh" % sides)
+                _check(mapped.normal_enabled and mapped.normal_texture != null, "D%d tangent-space normal texture not applied" % sides)
+                _check(mapped.roughness_texture != null, "D%d scalar-only roughness is not PBR art" % sides)
             _check(meshes.size() == 2, "D%d GLB must contain separate stone and bronze geometry" % sides)
             for mesh_node in meshes:
                 _check(mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0,

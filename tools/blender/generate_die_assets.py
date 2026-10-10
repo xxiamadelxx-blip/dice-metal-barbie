@@ -9,6 +9,7 @@ import math
 import sys
 from pathlib import Path
 import bpy
+import numpy as np
 from mathutils import Vector
 
 PHI = (1 + math.sqrt(5)) / 2
@@ -102,6 +103,99 @@ def material(name,color,metallic,roughness):
     shader.inputs['Roughness'].default_value=roughness
     return m
 
+# UV maps and image-based PBR maps are deliberately generated offline. This
+# uses only numeric noise, no copyrighted photos and no network dependency.
+# A low-frequency, seam-safe texture is less prone to glTF moire than the old
+# high-frequency trig shader. It supplements rather than fakes engraved geometry.
+def tile_noise(rng, dim, cells):
+    grid = rng.random((cells, cells)).astype(np.float32)
+    grid = np.pad(grid, ((0, 1), (0, 1)), mode='wrap')
+    positions = np.linspace(0, cells, dim, endpoint=False, dtype=np.float32)
+    i0 = np.floor(positions).astype(np.int32)
+    blend = positions-i0
+    blend = blend*blend*(3.0-2.0*blend)
+    ax = (grid[i0[:, None], i0[None, :]] * (1.0-blend[:, None])
+         + grid[i0[:, None]+1, i0[None, :]] * blend[:, None])
+    bx = (grid[i0[:, None], i0[None, :]+1] * (1.0-blend[:, None])
+         + grid[i0[:, None]+1, i0[None, :]+1] * blend[:, None])
+    return ax * (1.0-blend[None, :]) + bx * blend[None, :]
+
+def write_pbr_image(out, name, rgb):
+    dim = rgb.shape[0]
+    assert rgb.shape == (dim,dim,3)
+    rgba=np.concatenate((np.clip(rgb,0.0,1.0),np.ones((dim,dim,1),dtype=np.float32)),axis=2)
+    image=bpy.data.images.new(name,width=dim,height=dim,alpha=True)
+    image.filepath_raw=str(out/(name+'.png'))
+    image.file_format='PNG'
+    # Blender's pixels use bottom-left origin, which is fine for seamless
+    # textures, as long as each channel is generated with the same convention.
+    image.pixels.foreach_set(rgba.astype(np.float32).ravel())
+    image.save()
+    image.pack()
+    return image
+
+def texture_set(out):
+    dim=256
+    rng=np.random.default_rng(210626)
+    low=tile_noise(rng,dim,7)-0.5
+    mid=tile_noise(rng,dim,24)-0.5
+    fine=tile_noise(rng,dim,64)-0.5
+    grain=np.clip(0.50+0.34*low+0.13*mid+0.045*fine,0.0,1.0)
+    # Keep texture values moderate. Overall charcoal tint comes from the
+    # Godot material; subtle local shifts break the plastic-looking uniformity.
+    luminance=np.clip(0.80+0.22*(grain-.5),0.70,0.94)
+    albedo=np.stack((luminance*.95,luminance*.98,luminance),axis=2)
+    # glTF roughness is stored in G (texture channel) by Blender exporter.
+    roughness=np.clip(0.79+0.18*low+0.05*mid,0.68,0.94)
+    rough=np.stack((np.ones_like(roughness),roughness,np.zeros_like(roughness)),axis=2)
+    # Smooth tangent-space micro relief with deliberately small slopes.
+    height=0.69*low+0.23*mid+0.08*fine
+    gx=(np.roll(height,-1,axis=1)-np.roll(height,1,axis=1))*.20
+    gy=(np.roll(height,-1,axis=0)-np.roll(height,1,axis=0))*.20
+    normal=np.stack((np.clip(.5-gx,.43,.57),np.clip(.5-gy,.43,.57),
+                     np.sqrt(np.maximum(.7,1.0-(gx*2)**2-(gy*2)**2))),axis=2)
+    return {'albedo':write_pbr_image(out,'obsidian_albedo',albedo),
+            'roughness':write_pbr_image(out,'obsidian_roughness',rough),
+            'normal':write_pbr_image(out,'obsidian_normal',normal)}
+
+def stone_uv(mesh):
+    uv=mesh.uv_layers.new(name='StoneUV')
+    # Angular UV projection on the 3D stone; no headless UI operator or
+    # mesh changes. Every exported stone primitive gets TEXCOORD_0.
+    for polygon in mesh.polygons:
+        for loop_index in polygon.loop_indices:
+            vertex=mesh.vertices[mesh.loops[loop_index].vertex_index].co
+            length=max(vertex.length,1.0e-8)
+            u=(math.atan2(vertex.y,vertex.x)+math.pi)/(2.0*math.pi)
+            v=math.acos(max(-1.0,min(1.0,vertex.z/length)))/math.pi
+            uv.data[loop_index].uv=(u,v)
+    return uv
+
+def apply_stone_maps(shell, maps):
+    stone_uv(shell.data)
+    stone=shell.data.materials[0]
+    nodes=stone.node_tree.nodes
+    links=stone.node_tree.links
+    bsdf=nodes.get('Principled BSDF')
+    for name,image in maps.items():
+        tex=nodes.new('ShaderNodeTexImage')
+        tex.name='PBR_Stone_'+name
+        tex.label='Offline procedural '+name
+        tex.image=image
+        tex.interpolation='Linear'
+        tex.extension='REPEAT'
+        if name == 'albedo':
+            links.new(tex.outputs['Color'],bsdf.inputs['Base Color'])
+        elif name == 'roughness':
+            image.colorspace_settings.name='Non-Color'
+            links.new(tex.outputs['Color'],bsdf.inputs['Roughness'])
+        elif name == 'normal':
+            image.colorspace_settings.name='Non-Color'
+            bump=nodes.new('ShaderNodeNormalMap')
+            bump.inputs['Strength'].default_value=.28
+            links.new(tex.outputs['Color'],bump.inputs['Color'])
+            links.new(bump.outputs['Normal'],bsdf.inputs['Normal'])
+
 def text_mesh(value,center,normal,size,depth,font,name,as_cutter=False):
     data=bpy.data.curves.new(name+'_contour','FONT')
     data.body=str(value)
@@ -137,7 +231,7 @@ def unwrap(shell):
     bpy.ops.uv.smart_project(island_margin=.025)
     bpy.ops.object.mode_set(mode='OBJECT')
 
-def engraved_die(sides, font):
+def engraved_die(sides, font, maps):
     verts,faces,values=model(sides)
     shell=geometry(verts,faces,material('BlackObsidan_D%d'%sides,(.048,.058,.079),.19,.19))
     bevel_shell(shell,sides)
@@ -200,12 +294,13 @@ def engraved_die(sides, font):
     print('Booleans D%d: stone polygons=%d bronze polygons=%d' % (sides, len(shell.data.polygons), len(bronze.data.polygons)))
     assert len(shell.data.polygons) >= sides*2
     assert len(bronze.data.polygons)>sides*5
+    apply_stone_maps(shell,maps)
     return shell,bronze,values
 
-def export_and_preview(sides,out,font):
+def export_and_preview(sides,out,font,maps):
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
-    shell,gold,values=engraved_die(sides,font)
+    shell,gold,values=engraved_die(sides,font,maps)
     filepath=out/('d%d_boolean_engraved.glb'%sides)
     bpy.ops.object.select_all(action='DESELECT')
     shell.select_set(True)
@@ -263,11 +358,14 @@ def main():
     out.mkdir(parents=True,exist_ok=True)
     fp=Path('/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf')
     font=bpy.data.fonts.load(str(fp)) if fp.exists() else bpy.data.fonts.get('Bfont')
+    maps=texture_set(out)
     manifest={'blender':bpy.app.version_string,
               'note':'visual-only source; Jolt hull and outcome unchanged',
+              'pbr':{'size':256,'images':[im.filepath_raw.split('/')[-1] for im in maps.values()],
+                     'description':'Deterministic offline generated PBR maps, not Cycles geometric bake'},
               'dice':{}}
     for sides in (20,6):
-        manifest['dice']['D%d'%sides]=export_and_preview(sides,out,font)
+        manifest['dice']['D%d'%sides]=export_and_preview(sides,out,font,maps)
     (out/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     print('PASS Blender true digit Boolean engraving + GLB export, D20 and D6')
 
