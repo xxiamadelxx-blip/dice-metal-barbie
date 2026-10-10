@@ -107,6 +107,8 @@ func _make_overlay() -> void:
     selected_chooser.add_item("D8", 8)
     selected_chooser.add_item("D12", 12)
     selected_chooser.add_item("D20", 20)
+    ## Keep the visual selection aligned with the default D6 throw button.
+    selected_chooser.select(1)
     selected_chooser.item_selected.connect(_on_type_selected)
     column.add_child(selected_chooser)
     throw_button = Button.new()
