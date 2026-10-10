@@ -305,7 +305,7 @@ def engraved_die(sides, font, maps):
             # Copy src/core/tetrahedron.gd::printed_position exactly.
             for apex in f:
                 position=verts[apex].lerp(center,.48)
-                placements.append((apex+1,position,normal,.20,
+                placements.append((apex+1,position,normal,.31,
                                    '%02d_Apex%d'%(i,apex+1)))
         else:
             if sides==20:
@@ -443,6 +443,13 @@ def main():
     out.mkdir(parents=True,exist_ok=True)
     fp=Path('/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf')
     font=bpy.data.fonts.load(str(fp)) if fp.exists() else bpy.data.fonts.get('Bfont')
+    # D4 apex glyphs are tiny under a strict overhead Android camera.
+    # A heavier typeface plus larger curves yield real cut strokes, not a
+    # screen-space outline that breaks visual/physics consistency.
+    heavy=Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')
+    apex_font=bpy.data.fonts.load(str(heavy)) if heavy.exists() else font
+    if not heavy.exists():
+        print('WARNING: DejaVuSans-Bold unavailable, falling back to current face',flush=True)
     maps=texture_set(out)
     manifest={'blender':bpy.app.version_string,
               'note':'visual-only source; Jolt hull and outcome unchanged',
@@ -451,7 +458,11 @@ def main():
                      'description':'Deterministic offline generated PBR maps, not Cycles geometric bake'},
               'dice':{}}
     for sides in (20,6,8,12,4):
-        manifest['dice']['D%d'%sides]=export_and_preview(sides,out,font,maps)
+        used_font=apex_font if sides==4 else font
+        manifest['dice']['D%d'%sides]=export_and_preview(sides,out,used_font,maps)
+        if sides==4:
+            manifest['dice']['D4']['typeface']=used_font.name
+            manifest['dice']['D4']['glyph_size']=.31
     (out/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     print('PASS Blender true digit Boolean engraving + GLB export, D20 D6 D8 D12 D4')
 
