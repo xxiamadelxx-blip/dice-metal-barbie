@@ -1,13 +1,13 @@
-# Milestones and exit gates
+# Milestones and verifiable gates
 
-| Phase | Status | Evidence |
+| Milestone | Status | Evidence / remaining blockers |
 |---|---|---|
-| M0 | APPROVED | User-approved interview 2026-10-10 |
-| M1 | APPROVED | User-approved Godot 4.6 / Jolt architecture |
-| M2 | AUTOMATED PASS · DEVICE NOT VERIFIED | [PR #1](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/1); [Hardware QA #5](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/5) open |
-| M3 | **PARTIAL PASS / IN PROGRESS** | D6 12/12 physics, D20 8/8 physics and correct UI values after actual sleep; [CI #38046017124](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38046017124); [PR #10](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/10). D4/D8/D10/D12/D100, long-run fairness, screen legibility and device QA remain NOT VERIFIED |
-| M4 | NOT COMPLETE | Formulas, mixed pools, advantage/disadvantage visual mechanics, history, statistics, presets, persistence |
-| M5 | NOT COMPLETE | Approved minimalist UI, obsidian/velvet polish, sound/haptic, critical aura/flash from D20, smoothing |
-| M6 | NOT STARTED | Stable release keystore, on-device install/upgrade, verified FPS, release APK, GitHub Release |
+| M0 Discovery | APPROVED | Interview / agreed product |
+| M1 Architecture | APPROVED | Godot 4.6 and Jolt selection |
+| M2 Foundation | AUTOMATED PASS; DEVICE NOT VERIFIED | [PR #1](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/1) / [Issue #5](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/5) |
+| M3 Physical dice | **PARTIAL PASS / IN PROGRESS** | [CI #38047981975](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38047981975): D6/D8/D12/D20 math and real physics checks green. D4/D10/D100, large-N fairness, visuals, Android device and collision stress NOT VERIFIED. [Issues #12](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/12), [#13](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/13) |
+| M4 Mechanics and state | NOT COMPLETE | Advanced formulas, rerolls, advantage/disadvantage, history, presets, persistence |
+| M5 UX & Polish | NOT COMPLETE | Approved minimalist UI, actual sound/haptics, critical aura/flash, design review |
+| M6 Release | NOT STARTED | Stable signing, on-device install/upgrade, FPS/long-run QA, GitHub Release |
 
-The shortest physical trial sample is **not** statistical fairness evidence. A Godot headless PASS is **not** proof of Android visual quality. Do not mark M3 complete until all required shapes and the facing/result invariant have been independently tested.
+**Do not claim M3 DONE based on 12/12, 10/10 or 8/8 stochastic trials.** These establish only basic simulation/face consistency under tested paths. Physical edge rests are handled via bounded actual impulses; any unresolved rest remains FAIL, not a fabricated die result. Independent UI review NOT VERIFIED.
