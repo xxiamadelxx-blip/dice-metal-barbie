@@ -19,6 +19,13 @@ func _run() -> void:
     var scene: Node3D = load("res://src/main.tscn").instantiate()
     root.add_child(scene)
     await process_frame
+    var showroom: Node3D = scene.get_node("IdleDiceDisplay")
+    _assert(showroom.get_child_count() == 4, "Approved idle composition must show exactly four real 3D dice")
+    for prop in showroom.get_children():
+        var nonrolling: RigidBody3D = prop as RigidBody3D
+        _assert(nonrolling != null and nonrolling.freeze, "Idle prop must be stationary")
+        if nonrolling != null:
+            _assert(nonrolling.collision_layer == 0 and nonrolling.collision_mask == 0, "Idle prop must NEVER affect Jolt randomness")
     _assert(scene.selected_chooser.get_selected_id() == scene.selected_die, "Initial chooser must match selected die")
     _assert(scene.throw_button.tooltip_text == "Бросить D6", "D6 must be the initial selected throw")
     _assert(scene.selected_chooser.get_item_count() == 5, "D4 D6 D8 D12 D20 all selectable")
@@ -54,6 +61,7 @@ func _run() -> void:
     counts.resize(5)
     for trial in range(TRIALS):
         scene.call("_throw_physical_d4")
+        _assert(scene.idle_display == null, "Real throw must clear the decorative display")
         await physics_frame
         var active: RigidBody3D = scene.get_node_or_null("PhysicalD4")
         _assert(active != null, "No actual D4 body in scene")
