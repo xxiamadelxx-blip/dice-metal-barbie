@@ -1,11 +1,12 @@
 extends Node3D
-## M3 physical D6 / D8 / D12 / D20 testbed. A numeral is shown only after Jolt settles.
+## M3 physical D4 / D6 / D8 / D12 / D20 testbed. A numeral is shown only after Jolt settles.
 ## Not final UX, not yet approved as statistical fairness evidence.
 
 const DieScript = preload("res://src/dice/d6_body.gd")
 const D20Script = preload("res://src/dice/d20_body.gd")
 const D8Script = preload("res://src/dice/d8_body.gd")
 const D12Script = preload("res://src/dice/d12_body.gd")
+const D4Script = preload("res://src/dice/d4_body.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
 
@@ -86,7 +87,7 @@ func _make_overlay() -> void:
     canvas.add_child(root)
 
     var top := Label.new()
-    top.text = "D&D 3D Dice   ·   M3 D6 / D8 / D12 / D20 testbed"
+    top.text = "D&D 3D Dice   ·   M3 D4 / D6 / D8 / D12 / D20 testbed"
     top.position = Vector2(20, 25)
     root.add_child(top)
 
@@ -101,6 +102,7 @@ func _make_overlay() -> void:
     heading.text = "Обсидиановые кости · физический тест"
     column.add_child(heading)
     selected_chooser = OptionButton.new()
+    selected_chooser.add_item("D4", 4)
     selected_chooser.add_item("D6", 6)
     selected_chooser.add_item("D8", 8)
     selected_chooser.add_item("D12", 12)
@@ -132,6 +134,8 @@ func _on_type_selected(index: int) -> void:
 
 func _throw_selected_die() -> void:
     match selected_die:
+        4:
+            _throw_physical_d4()
         8:
             _throw_physical_d8()
         12:
@@ -143,6 +147,9 @@ func _throw_selected_die() -> void:
 
 func _throw_physical_d6() -> void:
     _begin_throw(DieScript.new(), 6)
+
+func _throw_physical_d4() -> void:
+    _begin_throw(D4Script.new(), 4)
 
 func _throw_physical_d20() -> void:
     _begin_throw(D20Script.new(), 20)
