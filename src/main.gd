@@ -255,12 +255,6 @@ func _make_overlay() -> void:
     status_label.add_theme_font_size_override("font_size", 23)
     status_label.add_theme_color_override("font_color", Color(0.95, 0.91, 0.82))
     result_stack.add_child(status_label)
-    var hint := Label.new()
-    hint.text = "Физический бросок · результат по грани"
-    hint.add_theme_font_size_override("font_size", 11)
-    hint.add_theme_color_override("font_color", Color(0.49, 0.55, 0.63))
-    result_stack.add_child(hint)
-
     copy_button = Button.new()
     copy_button.name = "CopyRoll"
     copy_button.text = "⧉  КОПИРОВАТЬ"
