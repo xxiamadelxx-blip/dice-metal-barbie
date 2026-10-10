@@ -37,7 +37,7 @@ if ! adb install -r "$apk" 2>&1 | tee qa-evidence/install.txt; then
 fi
 adb shell pm path "$package" > qa-evidence/package-path.txt
 adb shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > qa-evidence/launch.txt 2>&1
-sleep 9
+sleep 24
 capture 00-before-system-overlay-dismiss
 # Fresh Android emulator may still show a system full-screen tutorial;
 # tap its Got it button before evaluating the actual rendered app.
@@ -50,11 +50,23 @@ if ! adb shell pidof "$package" > qa-evidence/app-pid.txt; then
 fi
 # User-equivalent tap on the button in the bottom control dock.
 adb shell input tap 360 1115
-sleep 3
+sleep 5
 capture 02-throw-motion
-sleep 10
+sleep 12
 capture 03-after-throw
 adb shell input tap 360 1048
 sleep 2
 capture 04-dice-picker
-echo "Emulator QA capture completed. Visual review still required." | tee qa-evidence/completed.txt
+# Reject a uniformly black surface or a screenshot unchanged by interactions.
+launch_bytes=$(stat -c%s qa-evidence/01-launch.png)
+result_bytes=$(stat -c%s qa-evidence/03-after-throw.png)
+echo "launch_png_bytes=$launch_bytes after_throw_png_bytes=$result_bytes" | tee qa-evidence/pixel-checks.txt
+if (( launch_bytes < 9000 || result_bytes < 9000 )); then
+  echo "FAIL: blank/near-uniform screenshot; inspect rendering logcat" | tee qa-evidence/FAIL.txt
+  exit 4
+fi
+if cmp -s qa-evidence/01-launch.png qa-evidence/03-after-throw.png; then
+  echo "FAIL: no visible change after user tap/throw" | tee qa-evidence/FAIL.txt
+  exit 5
+fi
+echo "Emulator visual smoke PASS (nonblank frames changed); review still required." | tee qa-evidence/completed.txt
