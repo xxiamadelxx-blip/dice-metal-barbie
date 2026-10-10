@@ -354,8 +354,12 @@ def export_and_preview(sides,out,font,maps):
         fh.write('# Final carved stone, visual-only, Blender-local coordinates\n')
         for v in shell.data.vertices:
             fh.write('v %.8f %.8f %.8f\n' % tuple(v.co))
-        for polygon in shell.data.polygons:
-            fh.write('f %s\n' % ' '.join(str(index+1) for index in polygon.vertices))
+        # The Blender Boolean creates concave N-gons. Legacy MeshLab OBJ
+        # importer asserts on those, so triangulate the *QA copy* without
+        # touching the authored GLB stone or Godot collision shape.
+        shell.data.calc_loop_triangles()
+        for triangle in shell.data.loop_triangles:
+            fh.write('f %s\n' % ' '.join(str(index+1) for index in triangle.vertices))
     filepath=out/('d%d_boolean_engraved.glb'%sides)
     bpy.ops.object.select_all(action='DESELECT')
     shell.select_set(True)
