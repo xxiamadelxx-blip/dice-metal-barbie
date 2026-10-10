@@ -1,0 +1,48 @@
+name: Godot cloud scene visual QA
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/visual_capture.gd"
+      - ".github/workflows/godot-native-visual.yml"
+      - "project.godot"
+permissions:
+  contents: read
+
+jobs:
+  native-scene:
+    name: Render actual Godot scene and capture frames (Linux Mesa)
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Mesa/X11 runtime libraries for Godot
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          mkdir -p qa-evidence
+      - name: Import project
+        run: godot --headless --path . --editor --quit
+      - name: Render real frame evidence under virtual display
+        run: |
+          xvfb-run -a -s "-screen 0 720x1280x24" godot --path . --rendering-method gl_compatibility --script res://tests/visual_capture.gd > qa-evidence/native-godot.log 2>&1 || { tail -100 qa-evidence/native-godot.log; exit 1; }
+          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png; do
+            test -s "$file"
+            test "$(stat -c%s "$file")" -ge 10000
+          done
+          if cmp -s qa-evidence/native-01-launch.png qa-evidence/native-03-after.png; then
+            echo "FAIL: image unchanged after actual physics throw"
+            exit 2
+          fi
+          ls -lh qa-evidence/native-*.png
+      - name: Publish native screenshot evidence regardless of failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-native-visual-evidence
+          path: qa-evidence/
+          if-no-files-found: warn
+          retention-days: 14
