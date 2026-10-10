@@ -17,6 +17,7 @@ window/handheld/orientation=1
 common/physics_ticks_per_second=120
 
 [rendering]
+textures/vram_compression/import_etc2_astc=true
 renderer/rendering_method="mobile"
 renderer/rendering_method.mobile="mobile"
 environment/defaults/default_clear_color=Color(0.006, 0.008, 0.012, 1)
