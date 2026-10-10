@@ -21,7 +21,7 @@ jobs:
       - name: Mesa software renderer and virtual display
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
           mkdir -p qa-evidence
       - name: Initialize Godot assets
         run: godot --headless --path . --editor --quit
