@@ -1,0 +1,131 @@
+extends RigidBody3D
+## M3 physically colliding numbered D20 (regular icosahedron).
+## Value comes ONLY from the settled upper face. No snap, no forced result.
+
+signal roll_completed(value: int)
+signal roll_failed(reason: String)
+
+const Ico = preload("res://src/core/icosahedron.gd")
+const DiceRng = preload("res://src/core/dice_rng.gd")
+const MAX_ROLL_SECONDS := 9.0
+
+var rolling := false
+var result := -1
+var failure := ""
+var elapsed := 0.0
+
+func _ready() -> void:
+    name = "PhysicalD20"
+    mass = 0.045
+    continuous_cd = true
+    can_sleep = true
+    linear_damp = 0.16
+    angular_damp = 0.19
+
+    var physics_material := PhysicsMaterial.new()
+    physics_material.friction = 0.72
+    physics_material.bounce = 0.16
+    physics_material_override = physics_material
+
+    var collision := CollisionShape3D.new()
+    collision.name = "IcosahedronCollision"
+    var shape := ConvexPolygonShape3D.new()
+    shape.points = Ico.vertices()
+    collision.shape = shape
+    add_child(collision)
+
+    _create_geometry_and_numerals()
+
+func _create_geometry_and_numerals() -> void:
+    var vertices := Ico.vertices()
+    var labels := Ico.numbers()
+
+    var surface := SurfaceTool.new()
+    surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for face_id in range(20):
+        var normal: Vector3 = Ico.face_normal(face_id)
+        for vertex_id in Ico.FACES[face_id]:
+            surface.set_normal(normal)
+            surface.add_vertex(vertices[vertex_id])
+    var mesh_node := MeshInstance3D.new()
+    mesh_node.name = "ObsidianD20"
+    mesh_node.mesh = surface.commit()
+    var obsidian := StandardMaterial3D.new()
+    obsidian.albedo_color = Color(0.026, 0.033, 0.052)
+    obsidian.metallic = 0.26
+    obsidian.roughness = 0.18
+    mesh_node.material_override = obsidian
+    add_child(mesh_node)
+
+    for face_id in range(20):
+        var normal: Vector3 = Ico.face_normal(face_id)
+        var number := labels[face_id]
+        var label := Label3D.new()
+        label.name = "Face_%d" % number
+        label.text = str(number)
+        label.font_size = 50
+        label.pixel_size = 0.0040
+        label.outline_size = 5
+        label.modulate = Color(0.95, 0.89, 0.74)
+        label.outline_modulate = Color(0.05, 0.06, 0.095)
+        label.double_sided = false
+        label.no_depth_test = false
+        label.shaded = true
+        label.position = Ico.face_center(face_id) + normal * 0.0025
+        var face_up := Vector3.BACK if absf(normal.y) > 0.7 else Vector3.UP
+        label.basis = Basis.looking_at(normal, face_up, true)
+        add_child(label)
+
+func throw_from_top() -> void:
+    result = -1
+    failure = ""
+    elapsed = 0.0
+    sleeping = false
+    rolling = true
+
+    var all_rotations := Ico.proper_rotations()
+    var selected_index := DiceRng.pick(60) - 1
+    if selected_index < 0:
+        _abort("Не удалось получить случайное значение")
+        return
+
+    var random_axis := Vector3(randf_range(0.2, 1.0), randf_range(0.2, 1.0), randf_range(0.2, 1.0)).normalized()
+    var base_pose := Basis(Quaternion(random_axis, randf_range(-1.8, 1.8)))
+    basis = base_pose * all_rotations[selected_index]
+    position = Vector3(randf_range(-1.0, 1.0), 2.45, -3.2)
+    apply_central_impulse(Vector3(randf_range(-0.028, 0.028), 0.027, randf_range(0.10, 0.17)))
+    apply_torque_impulse(Vector3(randf_range(-0.009, 0.009), randf_range(-0.009, 0.009), randf_range(-0.009, 0.009)))
+
+func _physics_process(delta: float) -> void:
+    if not rolling:
+        return
+    elapsed += delta
+    if elapsed > MAX_ROLL_SECONDS:
+        _abort("D20 не остановился за 9 секунд")
+        return
+    if position.y < -0.15 or absf(position.x) > 3.1 or absf(position.z) > 5.2:
+        _abort("D20 покинул игровую поверхность")
+        return
+    if not sleeping or elapsed < 0.3:
+        return
+
+    var pose := global_transform.basis.orthonormalized()
+    var face := Ico.top_face(pose, 0.02)
+    var best_alignment := 0.0
+    for i in range(20):
+        var dot_up: float = (pose * Ico.face_normal(i)).dot(Vector3.UP)
+        best_alignment = maxf(best_alignment, dot_up)
+    if face < 0 or best_alignment < 0.88:
+        _abort("D20 остановился на ребре; число не определено")
+        return
+    rolling = false
+    result = Ico.numbers()[face]
+    roll_completed.emit(result)
+
+func _abort(message: String) -> void:
+    rolling = false
+    failure = message
+    roll_failed.emit(message)
+
+func numeral_node(face: int) -> Label3D:
+    return get_node_or_null("Face_%d" % face) as Label3D
