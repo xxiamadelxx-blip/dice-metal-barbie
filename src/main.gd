@@ -33,7 +33,9 @@ func _make_world() -> void:
     camera.position = Vector3(0.0, 18.0, 1.5)
     camera.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 16.2
+    # Fill more of a 720x1280 phone screen while preserving every table rail
+    # in the 90-degree overhead orthographic frame.
+    camera.size = 14.2
     camera.current = true
     add_child(camera)
 

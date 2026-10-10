@@ -9,7 +9,7 @@ extends RefCounted
 
 const Ico = preload("res://src/core/icosahedron.gd")
 const Cube = preload("res://src/core/cube_symmetry.gd")
-const RECESS_DEPTH := 0.028
+const RECESS_DEPTH := 0.019
 const FACE_PLATE := 0.85
 const POCKET_SCALE := 0.49
 const POCKET_GOLD_SCALE := 0.515
@@ -170,7 +170,7 @@ static func apply(die: RigidBody3D, sides: int) -> void:
         # no committed font binary, no remote download during runtime.
         text_shape.font = ThemeDB.fallback_font
         text_shape.font_size = 60
-        text_shape.pixel_size = 0.0022 if sides == 20 else 0.0053
+        text_shape.pixel_size = 0.0029 if sides == 20 else 0.0053
         text_shape.depth = 0.007
         text_shape.curve_step = 0.9
         var glyph := MeshInstance3D.new()
@@ -179,7 +179,7 @@ static func apply(die: RigidBody3D, sides: int) -> void:
         glyph.material_override = _gold_material()
         # Real extruded glyph lies BELOW the outer facet and above the
         # recessed floor, so it cannot visually float on a face.
-        glyph.position = center - normal * 0.012
+        glyph.position = center - normal * 0.015
         var up := Vector3.BACK if absf(normal.y) > 0.7 else Vector3.UP
         glyph.basis = Basis.looking_at(normal, up, true)
         stage.add_child(glyph)

@@ -61,6 +61,13 @@ func _run() -> void:
                 var glyph_mesh := glyph.mesh as TextMesh
                 _check(glyph_mesh.text == str(number), "D%d engraved number mapping mismatch" % sides)
                 _check(glyph_mesh.depth > 0.0, "D%d engraved glyph requires 3D thickness" % sides)
+                _check(glyph_mesh.get_faces().size() > 0, "D%d numeral %d must emit real renderable triangles" % [sides, number])
+                var face_id: int = values.find(number)
+                var expected_normal: Vector3 = Ico.face_normal(face_id) if sides == 20 else Cube.D6_FACE_NORMALS[face_id]
+                var expected_center: Vector3 = Ico.face_center(face_id) if sides == 20 else expected_normal * (D6.SIDE * 0.5)
+                var below_surface: float = (glyph.position - expected_center).dot(expected_normal)
+                _check(absf(below_surface + 0.015) < 0.0005,
+                    "D%d numeral %d must sit recessed inside stone" % [sides, number])
                 _check(glyph.position.dot(glyph.basis.z) > 0.0, "Engraved glyph should remain on its outward face")
         die.queue_free()
         await process_frame

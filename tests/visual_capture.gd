@@ -45,5 +45,17 @@ func _run() -> void:
     await _capture("native-04-d20-moving")
     await create_timer(5.0).timeout
     await _capture("native-05-d20-after")
+    # This genuine overhead detail view is essential for evaluating whether
+    # 3D text and pocket geometry hold up beyond the tiny full-table preview.
+    var closeup_camera := scene.get_node_or_null("FixedOverheadCamera") as Camera3D
+    var closeup_die := scene.get_node_or_null("PhysicalD20") as RigidBody3D
+    if closeup_camera == null or closeup_die == null:
+        push_error("Cannot make a truthful native D20 detail capture")
+        quit(6)
+        return
+    closeup_camera.size = 3.8
+    closeup_camera.position = Vector3(closeup_die.position.x, 18.0, closeup_die.position.z)
+    await create_timer(0.5).timeout
+    await _capture("native-06-d20-detail")
     print("Native Godot visual capture completed; inspect actual dice and HUD.")
     quit(0)
