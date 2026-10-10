@@ -349,17 +349,21 @@ def export_and_preview(sides,out,font,maps):
     shell,gold,values=engraved_die(sides,font,maps)
     # MeshLab receives the same final Boolean-cut shell via OBJ for actual
     # geometry inspection. It is only a QA candidate, never a Jolt hull.
-    obj_file=out/('d%d_stone_qa.obj'%sides)
-    with obj_file.open('w') as fh:
-        fh.write('# Final carved stone, visual-only, Blender-local coordinates\n')
+    # MeshLab 2020's old OBJ importer asserts even on triangulated Boolean
+    # results. Transfer QA-only triangles as PLY: explicit vertex/face counts,
+    # no OBJ heuristics. The authored glTF and Jolt hull are NEVER changed.
+    qa_file=out/('d%d_stone_qa.ply'%sides)
+    shell.data.calc_loop_triangles()
+    with qa_file.open('w') as fh:
+        fh.write('ply\nformat ascii 1.0\ncomment Blender cut stone, QA only\n')
+        fh.write('element vertex %d\n'%len(shell.data.vertices))
+        fh.write('property float x\nproperty float y\nproperty float z\n')
+        fh.write('element face %d\n'%len(shell.data.loop_triangles))
+        fh.write('property list uchar int vertex_indices\nend_header\n')
         for v in shell.data.vertices:
-            fh.write('v %.8f %.8f %.8f\n' % tuple(v.co))
-        # The Blender Boolean creates concave N-gons. Legacy MeshLab OBJ
-        # importer asserts on those, so triangulate the *QA copy* without
-        # touching the authored GLB stone or Godot collision shape.
-        shell.data.calc_loop_triangles()
-        for triangle in shell.data.loop_triangles:
-            fh.write('f %s\n' % ' '.join(str(index+1) for index in triangle.vertices))
+            fh.write('%.8f %.8f %.8f\n'%tuple(v.co))
+        for tri in shell.data.loop_triangles:
+            fh.write('3 %d %d %d\n'%tuple(tri.vertices))
     filepath=out/('d%d_boolean_engraved.glb'%sides)
     bpy.ops.object.select_all(action='DESELECT')
     shell.select_set(True)

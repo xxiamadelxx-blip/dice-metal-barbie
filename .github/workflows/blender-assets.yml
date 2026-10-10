@@ -35,7 +35,7 @@ jobs:
           for die in d20 d6 d8 d12; do
             test -s "build/premium-glb/${die}_boolean_engraved.glb"
             test -s "build/premium-glb/${die}_boolean_preview.png"
-            test -s "build/premium-glb/${die}_stone_qa.obj"
+            test -s "build/premium-glb/${die}_stone_qa.ply"
           done
       - name: Verify asset manifest with no gameplay injection
         run: |
@@ -44,8 +44,8 @@ jobs:
         run: |
           set -euo pipefail
           for die in d20 d6 d8 d12; do
-            xvfb-run -a meshlabserver -i "build/premium-glb/${die}_stone_qa.obj" -o "build/premium-glb/${die}_checked.ply" > "build/premium-glb/${die}_meshlab.log" 2>&1 || { tail -50 "build/premium-glb/${die}_meshlab.log"; exit 1; }
-            test -s "build/premium-glb/${die}_checked.ply"
+            xvfb-run -a meshlabserver -i "build/premium-glb/${die}_stone_qa.ply" -o "build/premium-glb/${die}_checked.obj" > "build/premium-glb/${die}_meshlab.log" 2>&1 || { tail -50 "build/premium-glb/${die}_meshlab.log"; exit 1; }
+            test -s "build/premium-glb/${die}_checked.obj"
           done
           for tex in obsidian_albedo obsidian_roughness obsidian_normal; do
             identify -format "%f %wx%h %[colorspace]\\n" "build/premium-glb/${tex}.png"

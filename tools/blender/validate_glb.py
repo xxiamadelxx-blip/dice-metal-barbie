@@ -58,8 +58,10 @@ def validate(root):
         for bound in [*mins,*maxs]:
             assert abs(bound)<=expected_half+.015,f'D{sides} shell exceeds original Jolt hull'
         assert entry['triangles']>sides*5, f'D{sides} no cut mesh detail'
-        qa_obj=(root/f'd{sides}_stone_qa.obj').read_text()
-        assert len(qa_obj)>1000 and qa_obj.count('\nv ')>100 and qa_obj.count('\nf ')>sides*2, f'D{sides} OBJ for MeshLab QA not valid'
+        qa_ply=(root/f'd{sides}_stone_qa.ply').read_text()
+        assert qa_ply.startswith('ply\nformat ascii 1.0\n')
+        assert 'element vertex ' in qa_ply and 'element face ' in qa_ply
+        assert qa_ply.count('\n3 ')>sides*2 and len(qa_ply)>1000, f'D{sides} PLY for MeshLab QA not valid'
         preview=(root/entry['preview']).read_bytes()
         assert preview[:8]==b'\x89PNG\r\n\x1a\n' and len(preview)>50000,f'D{sides} missing true Blender preview'
         print(f'PASS D{sides}: {len(blob):,} bytes, {entry["triangles"]} Blender shell polygons, 2 meshes, exact face numbering, real PNG')
