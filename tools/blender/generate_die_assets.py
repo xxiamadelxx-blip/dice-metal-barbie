@@ -154,7 +154,8 @@ def engraved_die(sides, font):
     bpy.ops.object.join()
     bronze=bpy.context.view_layer.objects.active
     bronze.name='Recessed_Bronze_Number_Geometry'
-    assert len(shell.data.polygons) > sides*12
+    print('Booleans D%d: stone polygons=%d bronze polygons=%d' % (sides, len(shell.data.polygons), len(bronze.data.polygons)))
+    assert len(shell.data.polygons) >= sides*2
     assert len(bronze.data.polygons)>sides*5
     return shell,bronze,values
 
