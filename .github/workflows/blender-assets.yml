@@ -6,7 +6,7 @@ on:
       - "tools/blender/**"
       - ".github/workflows/blender-assets.yml"
 permissions:
-  contents: read
+  contents: write
 jobs:
   sculpt:
     name: Offline GLB sculpt and actual render evidence
@@ -14,6 +14,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Checkout actual draft head, not the synthetic PR merge commit.
+          ref: ${{ github.head_ref || github.ref_name }}
       - name: Install reproducible offline modeling dependencies
         run: |
           sudo apt-get update -qq
@@ -41,3 +44,20 @@ jobs:
           path: build/premium-glb/
           retention-days: 14
           if-no-files-found: warn
+
+      - name: Save validated GLBs once on this draft feature branch
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/m5-approved-minimal-premium-visual-pass-1' && github.event.pull_request.draft }}
+        run: |
+          set -euo pipefail
+          mkdir -p src/assets/generated
+          if test -s src/assets/generated/d20_boolean_engraved.glb && test -s src/assets/generated/d6_boolean_engraved.glb; then
+            echo "Already pinned: no CI writes of binary assets on subsequent PR updates."
+            exit 0
+          fi
+          cp build/premium-glb/d20_boolean_engraved.glb src/assets/generated/d20_boolean_engraved.glb
+          cp build/premium-glb/d6_boolean_engraved.glb src/assets/generated/d6_boolean_engraved.glb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/assets/generated/d20_boolean_engraved.glb src/assets/generated/d6_boolean_engraved.glb
+          git commit -m "assets(m5): pin verified offline Blender carved-gold D20 and D6 GLBs"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
