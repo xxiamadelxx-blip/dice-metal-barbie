@@ -6,6 +6,7 @@ signal roll_failed(reason: String)
 
 const Tetra = preload("res://src/core/tetrahedron.gd")
 const DiceRng = preload("res://src/core/dice_rng.gd")
+const Sculpt = preload("res://src/visual/sculpted_d20.gd")
 const MAX_ROLL_SECONDS := 9.0
 
 var rolling := false
@@ -36,22 +37,28 @@ func _ready() -> void:
 
 func _create_visual() -> void:
     var points := Tetra.vertices()
-    var surface := SurfaceTool.new()
-    surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-    for opposite in range(4):
-        var normal := Tetra.face_normal(opposite)
-        for id in Tetra.face_indices(opposite):
-            surface.set_normal(normal)
-            surface.add_vertex(points[id])
+    var face_indices: Array = []
+    for facet in range(4):
+        face_indices.append(Tetra.face_indices(facet))
     var body := MeshInstance3D.new()
     body.name = "ObsidianD4"
-    body.mesh = surface.commit()
+    body.mesh = Sculpt.face_planes(Tetra.vertices(), face_indices)
     var obsidian := StandardMaterial3D.new()
     obsidian.albedo_color = Color(0.024, 0.032, 0.049)
     obsidian.metallic = 0.25
     obsidian.roughness = 0.19
     body.material_override = obsidian
     add_child(body)
+    var bevel := MeshInstance3D.new()
+    bevel.name = "ActualSculptedBevels"
+    bevel.mesh = Sculpt.chamfers(Tetra.vertices(), face_indices)
+    bevel.material_override = Sculpt.bevel_material()
+    add_child(bevel)
+    var inlay := MeshInstance3D.new()
+    inlay.name = "FaceInsetBronzeHairlines"
+    inlay.mesh = Sculpt.inlaid_tracery(Tetra.vertices(), face_indices)
+    inlay.material_override = Sculpt.gold_groove_material()
+    add_child(inlay)
 
     ## Three glyphs of identical value appear around each apex.
     ## This makes the result legible from a fixed overhead camera.
