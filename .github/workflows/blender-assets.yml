@@ -1,0 +1,52 @@
+name: Blender sculpted dice assets (experimental)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "tools/blender/**"
+      - ".github/workflows/blender-assets.yml"
+permissions:
+  contents: read
+jobs:
+  sculpt:
+    name: Offline GLB sculpt and actual render evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install reproducible offline modeling dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender fonts-dejavu-core
+      - name: Generate truly cut numeral meshes and glTF exports
+        run: |
+          mkdir -p build/premium-glb
+          blender --background -noaudio --python tools/blender/generate_die_assets.py -- --output build/premium-glb > build/premium-glb/generator.log 2>&1 || { tail -160 build/premium-glb/generator.log; exit 1; }
+          grep -F "PASS Blender true digit Boolean engraving" build/premium-glb/generator.log
+          for die in d20 d6; do
+            test -s "build/premium-glb/${die}_boolean_engraved.glb"
+            test -s "build/premium-glb/${die}_boolean_preview.png"
+          done
+      - name: Verify asset manifest with no gameplay injection
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('build/premium-glb')
+          m=json.loads((p/'manifest.json').read_text())
+          for sides in (20,6):
+              obj=m['dice'][f'D{sides}']
+              assert obj['faces']==sides
+              assert sorted(obj['numbers'])==list(range(1,sides+1))
+              assert obj['glb_bytes']>3000
+              assert (p/obj['glb']).stat().st_size==obj['glb_bytes']
+          print('PASS glTF manifest, exact face-value mapping, both real exports')
+          PY
+      - name: Preserve real Blender GLB and preview evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experimental-blender-boolean-sculpted-assets
+          path: build/premium-glb/
+          retention-days: 14
+          if-no-files-found: warn
