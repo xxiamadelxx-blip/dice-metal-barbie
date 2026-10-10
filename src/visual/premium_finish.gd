@@ -60,6 +60,10 @@ static func decorate_die(die: RigidBody3D, sides: int) -> void:
             node.outline_modulate = Color(0.015, 0.015, 0.018)
             node.outline_size = 6
             node.shaded = false
+    # D20 has real planar chamfers and in-face flush bronze engraving.
+    # Do not layer a wireframe of cylinders over its physical facets.
+    if sides == 20:
+        return
     if collision == null:
         return
     var points := PackedVector3Array()
