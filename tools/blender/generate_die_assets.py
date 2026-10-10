@@ -124,6 +124,9 @@ def engraved_die(sides, font):
     verts,faces,values=model(sides)
     shell=geometry(verts,faces,material('BlackObsidan_D%d'%sides,(.048,.058,.079),.19,.19))
     bevel_shell(shell,sides)
+    print('PRE_CUT D%d: stone polygons=%d, verts=%d, dimensions=%s' % (
+        sides,len(shell.data.polygons),len(shell.data.vertices),str(tuple(round(v,3) for v in shell.dimensions))),flush=True)
+    assert len(shell.data.polygons) >= sides, 'Bevel destroyed original stone topology'
     gold=material('BronzeGold_D%d'%sides,(.66,.43,.19),.83,.26)
     inserts=[]
     for i,f in enumerate(faces):
@@ -139,7 +142,14 @@ def engraved_die(sides, font):
         modifier.solver='EXACT'
         modifier.object=cutter
         active(shell)
+        before = len(shell.data.polygons)
+        print('CUT D%d face=%d label=%d pre=%d cutter_faces=%d cutter_dimensions=%s' % (
+            sides,i,values[i],before,len(cutter.data.polygons),
+            str(tuple(round(v,3) for v in cutter.dimensions))),flush=True)
         bpy.ops.object.modifier_apply(modifier=modifier.name)
+        after = len(shell.data.polygons)
+        print('CUT_RESULT D%d face=%d post=%d' % (sides,i,after),flush=True)
+        assert after > sides, 'Boolean unexpectedly erased stone D%d face %d' % (sides,i)
         bpy.data.objects.remove(cutter,do_unlink=True)
         inset=text_mesh(values[i],center-normal*.035,normal,
                         size,.0025,font,'Bronze_Engraved_%d'%values[i])
