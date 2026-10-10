@@ -30,6 +30,14 @@ jobs:
           sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
           sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
           grep 'renderer/rendering_method' project.godot
+          # Godot GLES3 SceneShader exceeded SwiftShader's 256 fragment-vector limit
+          # (261 active vectors) in the previous real emulator logcat.
+          # Fewer compiled per-object OpenGL lights reduce required shader uniforms.
+          cat >> project.godot <<'EOF'
+          rendering/limits/opengl/max_lights_per_object=2
+          rendering/limits/opengl/max_renderable_lights=4
+          EOF
+          grep 'rendering/limits/opengl' project.godot
       - name: Export ARM64 debug with OpenGL compatibility
         run: |
           export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore
