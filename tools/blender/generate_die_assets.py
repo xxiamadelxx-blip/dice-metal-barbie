@@ -141,12 +141,14 @@ def texture_set(out):
     mid=tile_noise(rng,dim,24)-0.5
     fine=tile_noise(rng,dim,64)-0.5
     grain=np.clip(0.50+0.34*low+0.13*mid+0.045*fine,0.0,1.0)
-    # Keep texture values moderate. Overall charcoal tint comes from the
-    # Godot material; subtle local shifts break the plastic-looking uniformity.
-    luminance=np.clip(0.80+0.22*(grain-.5),0.70,0.94)
-    albedo=np.stack((luminance*.95,luminance*.98,luminance),axis=2)
-    # glTF roughness is stored in G (texture channel) by Blender exporter.
-    roughness=np.clip(0.79+0.18*low+0.05*mid,0.68,0.94)
+    # glTF/Blender image texture *replaces* BSDF Base Color.
+    # This MUST already be charcoal; a white grayscale swatch creates a pale
+    # stone despite the default Principled shader previously being dark.
+    # Values are linear in Blender's image pixels; exported PNG is sRGB.
+    luminance=np.clip(0.088+0.032*(grain-.5),0.065,0.11)
+    albedo=np.stack((luminance*.78,luminance*.88,luminance),axis=2)
+    # glTF roughness is read from the G channel (linear Non-Color image).
+    roughness=np.clip(0.36+0.13*low+0.045*mid,0.25,0.46)
     rough=np.stack((np.ones_like(roughness),roughness,np.zeros_like(roughness)),axis=2)
     # Smooth tangent-space micro relief with deliberately small slopes.
     height=0.69*low+0.23*mid+0.08*fine
@@ -362,6 +364,7 @@ def main():
     manifest={'blender':bpy.app.version_string,
               'note':'visual-only source; Jolt hull and outcome unchanged',
               'pbr':{'size':256,'images':[im.filepath_raw.split('/')[-1] for im in maps.values()],
+                     'albedo_linear_mean':float(np.mean(np.asarray(maps['albedo'].pixels[:]).reshape((256,256,4))[:,:,:3])),
                      'description':'Deterministic offline generated PBR maps, not Cycles geometric bake'},
               'dice':{}}
     for sides in (20,6):

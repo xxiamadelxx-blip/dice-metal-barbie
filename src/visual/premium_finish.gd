@@ -85,7 +85,13 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
     if source is StandardMaterial3D:
         var original := source as StandardMaterial3D
         stone.albedo_texture = original.albedo_texture
+        if stone.albedo_texture != null:
+            # Dark tint is already baked into the albedo map. Multiplying by
+            # another graphite color would make the imported D20 near black.
+            stone.albedo_color = Color(1.0, 1.0, 1.0)
         stone.roughness_texture = original.roughness_texture
+        if stone.roughness_texture != null:
+            stone.roughness = 1.0
         stone.roughness_texture_channel = original.roughness_texture_channel
         stone.normal_enabled = original.normal_enabled
         stone.normal_texture = original.normal_texture

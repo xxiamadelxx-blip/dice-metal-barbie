@@ -9,6 +9,7 @@ def validate(root):
     assert '4.0' in manifest['blender'] or manifest['blender'].startswith('4.'), 'Blender 4 required'
     pbr=manifest.get('pbr',{})
     assert pbr.get('size')==256 and len(pbr.get('images',[]))==3, 'PBR texture source files missing'
+    assert .03 < pbr.get('albedo_linear_mean',-1) < .13, 'Obsidian albedo too bright for charcoal material'
     for filename in pbr['images']:
         png=(root/filename).read_bytes()
         assert png[:8]==bytes.fromhex("89504e470d0a1a0a") and len(png)>8000, 'Empty texture '+filename
