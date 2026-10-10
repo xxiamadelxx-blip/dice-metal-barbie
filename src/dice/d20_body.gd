@@ -70,7 +70,7 @@ func _create_geometry_and_numerals() -> void:
         label.name = "Face_%d" % number
         label.text = str(number)
         label.font_size = 50
-        label.pixel_size = 0.0040
+        label.pixel_size = 0.0056
         label.outline_size = 5
         label.modulate = Color(0.95, 0.89, 0.74)
         label.outline_modulate = Color(0.05, 0.06, 0.095)
