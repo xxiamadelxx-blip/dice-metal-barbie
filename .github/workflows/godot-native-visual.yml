@@ -30,7 +30,7 @@ jobs:
       - name: Check GLB SHA256 and install before Godot import
         if: inputs.fresh_assets
         run: |
-          set -euo pipefail
+          set -eu
           (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
           mkdir -p src/assets/generated
           for die in d4 d6 d8 d12 d20; do
