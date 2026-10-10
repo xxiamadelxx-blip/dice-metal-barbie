@@ -5,6 +5,7 @@ on:
     paths:
       - "src/**"
       - "tests/visual_capture.gd"
+      - "tests/engraved_assets.gd"
       - ".github/workflows/godot-native-visual.yml"
       - "project.godot"
 permissions:
@@ -26,6 +27,14 @@ jobs:
           mkdir -p qa-evidence
       - name: Import project
         run: godot --headless --path . --editor --quit
+      - name: Verify production mesh geometry and 3D engraved numerals
+        run: |
+          godot --headless --path . --script res://tests/engraved_assets.gd > qa-evidence/engraved-assets.log 2>&1 || { tail -120 qa-evidence/engraved-assets.log; exit 1; }
+          cat qa-evidence/engraved-assets.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call\\.|FAIL:|FAIL [^0]' qa-evidence/engraved-assets.log; then
+            echo "FAIL: sculpted asset regression or GDScript error"
+            exit 5
+          fi
       - name: Render real frame evidence under virtual display
         run: |
           xvfb-run -a -s "-screen 0 720x1280x24" godot --path . --rendering-method gl_compatibility --script res://tests/visual_capture.gd > qa-evidence/native-godot.log 2>&1 || { tail -100 qa-evidence/native-godot.log; exit 1; }
