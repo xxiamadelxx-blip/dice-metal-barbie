@@ -142,7 +142,7 @@ func _make_idle_showcase() -> void:
         {"script": D20Script, "sides": 20, "location": Vector3(-1.5, 0.77, -2.6), "angle": Vector3(14, -25, 18)},
         {"script": D12Script, "sides": 12, "location": Vector3(1.45, 0.73, -2.1), "angle": Vector3(-18, 40, 20)},
         {"script": DieScript, "sides": 6, "location": Vector3(-1.35, 0.62, 0.6), "angle": Vector3(9, 35, -12)},
-        {"script": D4Script, "sides": 4, "location": Vector3(1.55, 0.58, 1.55), "angle": Vector3(8, -20, 22)}
+        {"script": D4Script, "sides": 4, "location": Vector3(1.55, 0.38, 1.55), "angle": Vector3(8, -20, 22)}
     ]
     for item in layout:
         var scene_script: GDScript = item["script"]
