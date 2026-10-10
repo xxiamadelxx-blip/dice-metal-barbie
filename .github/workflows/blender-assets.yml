@@ -32,19 +32,7 @@ jobs:
           done
       - name: Verify asset manifest with no gameplay injection
         run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path('build/premium-glb')
-          m=json.loads((p/'manifest.json').read_text())
-          for sides in (20,6):
-              obj=m['dice'][f'D{sides}']
-              assert obj['faces']==sides
-              assert sorted(obj['numbers'])==list(range(1,sides+1))
-              assert obj['glb_bytes']>3000
-              assert (p/obj['glb']).stat().st_size==obj['glb_bytes']
-          print('PASS glTF manifest, exact face-value mapping, both real exports')
-          PY
+          python3 tools/blender/validate_glb.py build/premium-glb
       - name: Preserve real Blender GLB and preview evidence
         if: always()
         uses: actions/upload-artifact@v4
