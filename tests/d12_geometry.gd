@@ -63,8 +63,11 @@ func _run() -> void:
 
     var poses := [
         Basis(Quaternion(Vector3(0.33, 0.5, 0.8).normalized(), 0.77)),
-        Basis(Quaternion(Vector3(0.83, 0.3, 0.47).normalized(), 1.13))
+        Basis(Quaternion(Vector3(0.47, 0.3, 0.82).normalized(), 2.43))
     ]
+    ## Deliberately ambiguous edge-up orientation should be rejected, not fabricated.
+    var edge_pose := Basis(Quaternion(Vector3(0.83, 0.3, 0.47).normalized(), 1.13))
+    _test(Dodeca.top_value(edge_pose) == -1, "D12 must reject nearly tied upper faces")
     for pose in poses:
         var occurrences := PackedInt32Array()
         occurrences.resize(13)
