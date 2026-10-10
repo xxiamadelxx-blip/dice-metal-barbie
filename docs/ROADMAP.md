@@ -8,4 +8,10 @@
 **M5:** final minimalist UI, selectable cosmetics reserved for future, black obsidian/velvet material polish, spatial D20 crit aura/flash, realistic impact-driven sound and haptics.
 **M6:** physical Nord 3 QA, stable protected signing key, reproducible production Android build, seamless updates preserving data, release notes and GitHub Release.
 
+## Execution priority confirmed 2026-10-11
+
+Active delivery gate is **M3 PARTIAL**. Finish missing physical D10, both D100 modes (actual D100 and two percentile D10s), multi-die stability and higher-volume fairness/invariants before declaring M3 done. Then M4 mechanics and offline state/history/presets. Schedule the premium black-obsidian/velvet finish, sound/haptics and final user-approved Concept 3 comparison during M5 rather than blocking every M3/M4 functional increment on nonessential art. M6 depends on M5 and hardware QA and cannot precede them.
+
+Prior completed M5 experiments and issue #24 remain preserved in the draft PR, **ARTISTIC ACCEPTANCE OPEN**. Route every new asset through the exact `AGENTS.md` + `CREATIVE_TOOLCHAIN.md` tool selection; do not create purely performative editor jobs or conflate green automated QA with visual approval.
+
 Gauntlet Loop remains mandatory: artifact → actual test → independent critic where available → FAIL/FIX/RETEST, with real test evidence stored in PR.

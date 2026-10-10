@@ -4,6 +4,11 @@ Read `docs/CONTEXT.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, and `docs/GAUNTLE
 
 Product and architecture were approved 2026-10-10. Never rewrite approved product decisions (top-down orthographic view, offline, obsidian/velvet, visible face = outcome, D100 two modes) without user consent.
 
+## Current execution order (user priority, 2026-10-11)
+**Current active milestone is M3, not M5.** Resume feature completion in strict dependency order: **M3 physical shapes and reliability → M4 rules, formulas and persistence → M5 production art, UX, audio and haptics → M6 Android device and signing/release.** Some M5 visual experiments have already been committed and tested; they do **not** make M5 accepted or move the active milestone forward. When M3/M4 are active, defer non-blocking studio lighting, premium skins, material retouching and aesthetic critique cycles; do only minimal legibility/accessibility improvements that unblock functional QA. No art-only CI churn that displaces missing dice/mechanics.
+
+The creative router in `docs/CREATIVE_TOOLCHAIN.md` remains mandatory **whenever relevant**: use Blender/MeshLab/ImageMagick for authored 3D geometry and assets, Godot/Jolt for real physics and interaction, FFmpeg/Python for authentic recording QA, optional editors only when their export capability is proven. Do not fake installed/used-tool claims, and do not hand-code production sculpting into GDScript to dodge the authored Blender asset contract. Full per-frame 24fps Gauntlet remains required for geometry/roll/UI changes. M5 premium look is a release prerequisite, so never claim M6 complete before M5 artistic acceptance; these priorities postpone polish until M5, **not** beyond release.
+
 ## Required Gauntlet Loop (M2 onward)
 
 LEAD → BUILDER → INDEPENDENT CRITIC (when actually available) → COMPARISON → FIX → REPEAT → INTEGRATION.

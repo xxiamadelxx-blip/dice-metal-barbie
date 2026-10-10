@@ -11,3 +11,7 @@
 | M6 Release | NOT STARTED | Stable signing, on-device install/upgrade, FPS/long-run QA, GitHub Release |
 
 **Do not claim M3 DONE based on 12/12, 10/10 or 8/8 stochastic trials. D4 is apex-read and has twelve face-attached glyphs.** These establish only basic simulation/face consistency under tested paths. Physical edge rests are handled via bounded actual impulses; any unresolved rest remains FAIL, not a fabricated die result. Independent UI review NOT VERIFIED.
+
+## Priority policy 2026-10-11
+
+**Current milestone: M3 (in progress).** M0/M1 approved; M2 automated PASS only. Earlier M5 Blender/Android prototypes are technical work ahead of sequence, not M5 acceptance. Avoid additional aesthetic-only passes until M3 and M4 functional criteria are met. Resume real sculpt/material/editor toolchain at M5, with approved reference comparison and physical Android evidence. M5 is mandatory **before** M6 release, not after publishing. Apply Gauntlet QA at every stage and retain M3/M4 development progress separate from M5 visual sign-off. `main` stays untouched until acceptance.
