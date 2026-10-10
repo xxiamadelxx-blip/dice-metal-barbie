@@ -51,6 +51,12 @@ jobs:
         run: godot --headless --path . --script res://tests/physics_smoke.gd
       - name: Natural D20-only non-colliding spatial critical aura
         run: godot --headless --path . --script res://tests/critical_aura.gd
+      # Exercise new D10/D100 before stochastic legacy regressions, so a
+      # rare unrelated D6 edge-rest does not hide new-shape diagnostics.
+      - name: M3 D10/D100 true kite-face convex geometry and result normals
+        run: godot --headless --path . --script res://tests/trapezohedron_geometry.gd
+      - name: M3 D10, single D100, dual-D10 percentile real Jolt integration
+        run: godot --headless --path . --script res://tests/trapezohedron_physics.gd
       - name: M3 D6 mathematical symmetry proof
         run: godot --headless --path . --script res://tests/cube_symmetry.gd
       - name: M3 real numbered D6 physics and result agreement
@@ -67,10 +73,6 @@ jobs:
         run: godot --headless --path . --script res://tests/d12_geometry.gd
       - name: M3 D12 real numbered Jolt physics
         run: godot --headless --path . --script res://tests/numbered_d12_physics.gd
-      - name: M3 D10/D100 true kite-face convex geometry and result normals
-        run: godot --headless --path . --script res://tests/trapezohedron_geometry.gd
-      - name: M3 D10, single D100, dual-D10 percentile real Jolt integration
-        run: godot --headless --path . --script res://tests/trapezohedron_physics.gd
       - name: M3 D4 exact tetrahedral apex-number symmetries
         run: godot --headless --path . --script res://tests/d4_geometry.gd
       - name: M3 numbered tetrahedral D4 Jolt physics
