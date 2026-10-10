@@ -20,7 +20,7 @@ func _run() -> void:
     root.add_child(scene)
     await process_frame
     _assert(scene.selected_chooser.get_selected_id() == scene.selected_die, "Initial chooser must match selected die")
-    _assert(scene.throw_button.text == "Бросить D6", "D6 must be the initial selected throw")
+    _assert(scene.throw_button.tooltip_text == "Бросить D6", "D6 must be the initial selected throw")
     _assert(scene.selected_chooser.get_item_count() == 5, "D4 D6 D8 D12 D20 all selectable")
     var die = D4.new()
     root.add_child(die)
