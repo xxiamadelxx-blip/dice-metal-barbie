@@ -59,3 +59,6 @@ Implementation checkpoint on 2026-10-10:
 
 ## M5 die-origin critical pulse Gauntlet
 A 3D, world-horizontal, emission-lit pair of expanding torus waves is now triggered *only* by the `roll_completed` result of a genuine physical D20 if its result is natural 1 (crimson) or 20 (gold). The transient pulse attaches to the real die, never to a HUD overlay, spawns no colliders and does not alter mass or the face mapping. `tests/critical_aura.gd` verifies non-D20, noncritical outcomes, idempotence, die origin, cleanup and Jolt invariants. Real native/GPU screenshots and handset FPS must still be reviewed; headless structural pass alone is not an artistic pass.
+
+### Autonomous QA iteration on critical aura
+A strict `mass == 1.1` test falsely rejected the unchanged physics body due to floating-point representation. The check now uses `is_equal_approx`; the physical collision-shape identity check remains exact. To prevent falsely claiming art without pixels, real Godot/Mesa QA now additionally captures the **explicitly staged** aura appearance in `native-07-staged-gold-pulse.png` and `native-08-staged-crimson-pulse.png`, requiring differences from no-aura and one another. These staged frames are evidence of effect visibility only, **not** evidence of physically rolling a natural 1/20.

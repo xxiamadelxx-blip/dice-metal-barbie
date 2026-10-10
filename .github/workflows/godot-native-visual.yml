@@ -45,13 +45,21 @@ jobs:
             grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call' qa-evidence/native-godot.log
             exit 3
           fi
-          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png qa-evidence/native-06-d20-detail.png; do
+          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png; do
             test -s "$file"
             test "$(stat -c%s "$file")" -ge 10000
           done
           if cmp -s qa-evidence/native-01-launch.png qa-evidence/native-03-after.png; then
             echo "FAIL: image unchanged after actual physics throw"
             exit 2
+          fi
+          if cmp -s qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png; then
+            echo "FAIL: golden crit pulse did not render a visible native change"
+            exit 4
+          fi
+          if cmp -s qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png; then
+            echo "FAIL: critical colors or pulse rendering indistinguishable"
+            exit 4
           fi
           ls -lh qa-evidence/native-*.png
       - name: Run autonomous native-frame pixel critic

@@ -1,4 +1,5 @@
 extends SceneTree
+const CriticalAura = preload("res://src/visual/critical_aura.gd")
 ## Cloud native visual fallback for inspecting the actual Godot render output.
 ## Runs under Xvfb/Mesa, not an Android APK. NEVER claim handset equivalence.
 
@@ -57,5 +58,23 @@ func _run() -> void:
     closeup_camera.position = Vector3(closeup_die.position.x, 18.0, closeup_die.position.z)
     await create_timer(0.5).timeout
     await _capture("native-06-d20-detail")
-    print("Native Godot visual capture completed; inspect actual dice and HUD.")
+    # Controlled *visual-only* effect staging on a genuine settled die.
+    # NOT evidence that the random physical result was a natural crit.
+    # Physics result triggering is separately guarded in main.gd and unit tests.
+    var gold_aura := CriticalAura.spawn(closeup_die, 20, 20)
+    if gold_aura == null:
+        push_error("Unable to stage golden spatial D20 aura in native renderer")
+        quit(7)
+        return
+    await create_timer(0.18).timeout
+    await _capture("native-07-staged-gold-pulse")
+    await create_timer(1.1).timeout
+    var red_aura := CriticalAura.spawn(closeup_die, 20, 1)
+    if red_aura == null:
+        push_error("Unable to stage crimson spatial D20 aura in native renderer")
+        quit(8)
+        return
+    await create_timer(0.18).timeout
+    await _capture("native-08-staged-crimson-pulse")
+    print("Native Godot visual capture complete; pulses are STAGED EFFECT PREVIEWS, not natural dice outcomes.")
     quit(0)

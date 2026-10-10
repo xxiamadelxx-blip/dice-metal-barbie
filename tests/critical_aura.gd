@@ -38,7 +38,7 @@ func _run() -> void:
             "Shockwave must originate at die, not HUD")
         for child in failure.get_children():
             check(not child is CollisionObject3D and not child is CollisionShape3D, "Critical decoration must not collide")
-    check(die.mass == 1.1 and collision.shape == original, "Critical effect cannot touch Jolt body")
+    check(is_equal_approx(die.mass, 1.1) and collision.shape == original, "Critical effect cannot touch Jolt body")
     await create_timer(1.1).timeout
     check(die.get_node_or_null("CriticalDiceAura") == null, "Transient aura must clean itself up")
     var success := Aura.spawn(die, 20, 20)
