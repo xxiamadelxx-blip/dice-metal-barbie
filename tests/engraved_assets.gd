@@ -20,6 +20,15 @@ func _check(ok: bool, message: String) -> void:
 func _initialize() -> void:
     call_deferred("_run")
 
+func _imported_meshes(node: Node) -> Array[MeshInstance3D]:
+    var found: Array[MeshInstance3D] = []
+    if node is MeshInstance3D:
+        found.append(node as MeshInstance3D)
+    for child in node.get_children():
+        found.append_array(_imported_meshes(child))
+    return found
+
+
 func _run() -> void:
     for sides in [20, 6]:
         var die: RigidBody3D = D20.new() if sides == 20 else D6.new()
@@ -30,6 +39,29 @@ func _run() -> void:
         var old_mass := die.mass
         Premium.decorate_die(die, sides)
         Premium.decorate_die(die, sides)
+        var baked := die.get_node_or_null("BlenderRecessedGLB") as Node3D
+        var glb_path := "res://src/assets/generated/d20_boolean_engraved.glb" if sides == 20 else "res://src/assets/generated/d6_boolean_engraved.glb"
+        _check(ResourceLoader.exists(glb_path), "M5 pinned Blender GLB missing for D%d" % sides)
+        if baked != null:
+            _check(shape.shape == old_shape, "Imported D%d GLB must not change Jolt collision resource" % sides)
+            _check(is_equal_approx(die.mass, old_mass), "Imported D%d GLB must not change mass" % sides)
+            _check(die.get_node_or_null("RecessedGemAsset") == null, "M5 GLB cannot draw twice with procedural asset")
+            _check(die.get_node_or_null("NonCollidingMetalInlay") == null, "No floating cylinder outlines")
+            var meshes := _imported_meshes(baked)
+            _check(meshes.size() == 2, "D%d GLB must contain separate stone and bronze geometry" % sides)
+            for mesh_node in meshes:
+                _check(mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0,
+                    "D%d imported GLB mesh has no render surfaces" % sides)
+                if mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0:
+                    _check(mesh_node.mesh.surface_get_material(0) != null,
+                        "D%d GLB lacks imported physical material" % sides)
+            var original_stone := die.get_node_or_null("ObsidianD20") if sides == 20 else die.get_node_or_null("Obsidian")
+            _check(original_stone != null and not original_stone.visible, "Legacy die geometry should be hidden")
+            var original_label := die.get_node_or_null("Face_1") as Label3D
+            _check(original_label != null and not original_label.visible, "Face mapping retained but old label hidden")
+            die.queue_free()
+            await process_frame
+            continue
         var art := die.get_node_or_null("RecessedGemAsset") as Node3D
         _check(art != null, "D%d must have dedicated engraved asset" % sides)
         if art == null:

@@ -67,10 +67,40 @@ static func blackened_metal() -> StandardMaterial3D:
     metal.roughness = 0.34
     return metal
 
+
+static func _attach_blender_glb(die: RigidBody3D, sides: int) -> bool:
+    ## GLB meshes are 100% VISUAL, never a physics hull or source of roll
+    ## numbers. Their canonical geometry and face IDs are pinned by Blender
+    ## CI; true Jolt collision remains in the original RigidBody.
+    if die.get_node_or_null("BlenderRecessedGLB") != null:
+        return true
+    var path := "res://src/assets/generated/d20_boolean_engraved.glb" if sides == 20 else "res://src/assets/generated/d6_boolean_engraved.glb"
+    if not ResourceLoader.exists(path):
+        return false
+    var packed: Resource = load(path)
+    if not packed is PackedScene:
+        push_warning("Validated Blender geometry import unavailable for D%d" % sides)
+        return false
+    var art := (packed as PackedScene).instantiate() as Node3D
+    if art == null:
+        push_warning("Blender geometry did not instantiate as Node3D for D%d" % sides)
+        return false
+    art.name = "BlenderRecessedGLB"
+    die.add_child(art)
+    for child in die.get_children():
+        if child == art:
+            continue
+        if child is MeshInstance3D or child is Label3D:
+            child.visible = false
+    return true
+
 static func decorate_die(die: RigidBody3D, sides: int) -> void:
     # Dedicated sculptural D20/D6 assets replace the legacy overlay and
     # floating edge wires. The RigidBody3D and numeric metadata remain intact.
     if sides == 20 or sides == 6:
+        if _attach_blender_glb(die, sides):
+            return
+        # Safe fallback for code-only checkouts without exported binary assets.
         EngravedGem.apply(die, sides)
         return
     ## The physics hull never changes. Metallic hairline inlays attach only

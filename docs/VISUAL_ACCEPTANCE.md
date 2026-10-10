@@ -46,3 +46,8 @@ Implementation checkpoint on 2026-10-10:
 - Actual Godot [macro capture](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38065091959), `native-06-d20-detail.png`, was reviewed, NOT accepted: the large dark pockets made D20 look like a hollow wireframe cage despite correct mesh/test counters. Full-screen D6 had the same issue.
 - Corrective sculpt: narrower bevel shoulder; substantially more continuous stone surface per face; shallow inset, with obsidian-shaded **stone floors** (same mineral shader as outer face) instead of pitch-black pocket cut-outs; metallic digits physically touch the pocket floor.
 - Added machine-checkable anti-cage constraints (pocket depth, face coverage and stone-floor shader). These do not replace a human artistic review of the next native PNGs.
+
+## M5 branch-only GLB scene integration (2026-10-10)
+- [Blender output from CI](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38069118714) is pinned into `src/assets/generated/d20_boolean_engraved.glb` and `d6_boolean_engraved.glb` by the trusted same-repo draft PR workflow. Commit `f6c1150`, no main mutation. The workflow will not rewrite assets on subsequent runs when both binaries exist.
+- Runtime `Premium.decorate_die` now loads these actual Blender-imported PackedScene visuals when available, disables redundant procedural mesh/legacy labels while keeping the original collision, mass, true physics result and test metadata. Missing assets fall back to prior procedural visuals.
+- The native visual CI must capture the running Godot GLB frame, not simply the standalone Blender render. The visual acceptance gate stays OPEN until inspecting that evidence and handset GPU FPS.
