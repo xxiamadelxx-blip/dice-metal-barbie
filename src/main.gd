@@ -11,6 +11,8 @@ const D12Script = preload("res://src/dice/d12_body.gd")
 const D4Script = preload("res://src/dice/d4_body.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
+# Launch display only. Never scale physically simulated dice or Jolt colliders.
+const IDLE_HERO_SCALE := 1.38
 
 var active_die: RigidBody3D
 var status_label: Label
@@ -166,8 +168,13 @@ func _make_idle_showcase() -> void:
         preview.freeze = true
         preview.collision_layer = 0
         preview.collision_mask = 0
-        preview.position = item["location"]
+        var source_location: Vector3 = item["location"]
+        # Launch composition was too sparse on a 720x1280 handset. Scale the
+        # four NON-ROLLING collectible previews only, and lift their centers
+        # with the same ratio to keep the visual bases near velvet.
+        preview.position = Vector3(source_location.x, source_location.y * IDLE_HERO_SCALE, source_location.z)
         preview.rotation_degrees = item["angle"]
+        preview.scale = Vector3.ONE * IDLE_HERO_SCALE
         Premium.decorate_die(preview, item["sides"])
 
 func _make_overlay() -> void:

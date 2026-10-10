@@ -37,6 +37,26 @@ func _run() -> void:
     var scene: Node3D = packed.instantiate()
     root.add_child(scene)
     await create_timer(1.5).timeout
+    # Hero previews are presentation objects, not mutated gameplay dice.
+    var showcase := scene.get_node_or_null("IdleDiceDisplay") as Node3D
+    if showcase == null or showcase.get_child_count() != 4:
+        push_error("Launch composition must include precisely four real previews")
+        quit(15)
+        return
+    for preview_sides in [20, 12, 6, 4]:
+        var showcase_die := showcase.get_node_or_null("PreviewD%d" % preview_sides) as RigidBody3D
+        if showcase_die == null or not showcase_die.freeze:
+            push_error("Showcase missing frozen D%d" % preview_sides)
+            quit(16)
+            return
+        if showcase_die.collision_layer != 0 or showcase_die.collision_mask != 0:
+            push_error("Showcase D%d must never participate in physics" % preview_sides)
+            quit(17)
+            return
+        if not is_equal_approx(showcase_die.scale.x, 1.38) or not is_equal_approx(showcase_die.scale.y, 1.38):
+            push_error("Showcase D%d lost its readable preview-only scale" % preview_sides)
+            quit(18)
+            return
     await _capture("native-01-launch")
     scene.call("_throw_physical_d6")
     await create_timer(0.7).timeout
@@ -155,7 +175,13 @@ func _run() -> void:
         previous_d4.visible = false
     closeup_camera.size = 3.8
     closeup_camera.position = Vector3(0, 18.0, 0)
+    # Make it explicit these frames are staged art previews. Previously the
+    # D4/3 result HUD remained visible while a non-rolled D20 was displayed.
+    scene.call("_select_die_type", 20)
+    var label := scene.get("status_label") as Label
     for target in [6, 9]:
+        if label != null:
+            label.text = "D20 · ДЕМО ГРАВИРОВКИ %d" % target
         var face_index: int = Ico.numbers().find(target)
         if face_index == -1:
             push_error("Staged 6/9 proof has no numeric face %d" % target)

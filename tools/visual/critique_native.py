@@ -40,8 +40,10 @@ def showcase_face_readability(path):
     image=Image.open(path).convert("RGB")
     if image.size != (720,1280):
         raise AssertionError("Normal-camera capture changed resolution")
-    rois={"D20":(154,205,295,325),"D12":(415,240,572,395),
-          "D6":(159,477,320,638),"D4":(457,581,583,711)}
+    # Exclusive non-overlapping regions allow the 1.38x collectible previews
+    # room while leaving rails and the bottom ControlDock out of the critic.
+    rois={"D20":(122,170,327,369),"D12":(386,214,616,430),
+          "D6":(114,443,345,659),"D4":(418,549,629,781)}
     felt=sorted(_luma(px) for px in image.crop((326,478,420,630)).getdata())
     reference=felt[len(felt)//2]
     data={"felt_median":round(reference,2),"dice":{}}
@@ -50,8 +52,10 @@ def showcase_face_readability(path):
         values=sorted(_luma(px) for px in pixels)
         p75=values[int(.75*(len(values)-1))]
         gold=sum(1 for r,g,b in pixels if r>95 and r>g*1.29 and g>b*1.18)
+        stone=sum(1 for r,g,b in pixels
+                  if (b-r)>9 and _luma((r,g,b))>62 and b>68)
         data["dice"][name]={"p75":round(p75,2),"against_felt":round(p75-reference,2),
-                            "bronze_pixels":gold}
+                            "bronze_pixels":gold,"stone_visible_pixels":stone}
     return data
 
 def analyze(path):
@@ -89,7 +93,10 @@ if __name__ == "__main__":
         assert metrics["gold_pulse_hud_overspill_pixels"] < 50, "Gold aura invades HUD safety region"
         assert metrics["crimson_pulse_hud_overspill_pixels"] < 50, "Crimson aura invades HUD safety region"
         assert metrics["d4_bronze_glyph_pixels"] >= 950, "D4 apex engraved numerals too thin to pass macro pixel smoke"
+        min_hero_stone_pixels={"D20":13000,"D12":19000,"D6":14000,"D4":9000}
         for name,entry in metrics["normal_camera"]["dice"].items():
+            assert entry["stone_visible_pixels"] >= min_hero_stone_pixels[name], (
+                "%s preview too small/hidden at 720x1280 overhead" % name)
             assert entry["against_felt"] >= 4.0, (
                 "%s faceted stone disappears into velvet at normal 14.2 camera" % name)
             assert entry["bronze_pixels"] >= 30, (
