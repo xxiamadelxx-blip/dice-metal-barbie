@@ -26,6 +26,8 @@ jobs:
         run: godot --headless --path . --script res://tests/smoke.gd
       - name: Physical scene integration smoke
         run: godot --headless --path . --script res://tests/physics_smoke.gd
+      - name: Natural D20-only non-colliding spatial critical aura
+        run: godot --headless --path . --script res://tests/critical_aura.gd
       - name: M3 D6 mathematical symmetry proof
         run: godot --headless --path . --script res://tests/cube_symmetry.gd
       - name: M3 real numbered D6 physics and result agreement

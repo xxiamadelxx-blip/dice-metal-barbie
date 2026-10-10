@@ -3,6 +3,7 @@ extends Node3D
 ## Not final UX, not yet approved as statistical fairness evidence.
 
 const Premium = preload("res://src/visual/premium_finish.gd")
+const CriticalAura = preload("res://src/visual/critical_aura.gd")
 const DieScript = preload("res://src/dice/d6_body.gd")
 const D20Script = preload("res://src/dice/d20_body.gd")
 const D8Script = preload("res://src/dice/d8_body.gd")
@@ -375,6 +376,10 @@ func _begin_throw(die: RigidBody3D, sides: int) -> void:
 
 func _on_die_completed(value: int) -> void:
     last_result = value
+    # Only the physically settled face signal can trigger a critical aura.
+    # This effect attaches in 3D space, never to the result HUD.
+    if is_instance_valid(active_die):
+        CriticalAura.spawn(active_die, active_sides, value)
     if active_sides == 20 and value == 20:
         status_label.text = "✦  20  ·  КРИТИЧЕСКИЙ УСПЕХ"
     elif active_sides == 20 and value == 1:
