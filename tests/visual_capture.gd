@@ -1,6 +1,8 @@
 extends SceneTree
 const CriticalAura = preload("res://src/visual/critical_aura.gd")
 const Ico = preload("res://src/core/icosahedron.gd")
+const RealD20 = preload("res://src/dice/d20_body.gd")
+const Premium = preload("res://src/visual/premium_finish.gd")
 const Octa = preload("res://src/core/octahedron.gd")
 const Dodeca = preload("res://src/core/dodecahedron.gd")
 const Tetra = preload("res://src/core/tetrahedron.gd")
@@ -137,5 +139,31 @@ func _run() -> void:
         var output: String = {8:"native-09-d8-detail",12:"native-10-d12-detail",
             4:"native-11-d4-apex-detail"}[sides]
         await _capture(output)
-    print("Native Godot visual capture complete: D6/D20/D8/D12/D4 physical throws + explicitly staged D20 pulses.")
+    # Staged art visibility proof only. The clone is NOT thrown and cannot
+    # emit a roll_completed event or influence game results. It isolates
+    # physical 6/9 underline legibility in the actual Godot renderer.
+    var staged := RealD20.new() as RigidBody3D
+    staged.name = "STAGED_UnderlineInspection_Only"
+    staged.freeze = true
+    staged.collision_layer = 0
+    staged.collision_mask = 0
+    scene.add_child(staged)
+    staged.position = Vector3(0, 1.1, 0)
+    Premium.decorate_die(staged, 20)
+    if die != null:
+        die.visible = false
+    closeup_camera.size = 3.8
+    closeup_camera.position = Vector3(0, 18.0, 0)
+    for target in [6, 9]:
+        var face_index: int = Ico.numbers().find(target)
+        if face_index == -1:
+            push_error("Staged 6/9 proof has no numeric face %d" % target)
+            quit(14)
+            return
+        var up_axis: Vector3 = Ico.face_normal(face_index)
+        staged.basis = Basis(Quaternion(up_axis, Vector3.UP))
+        await create_timer(0.35).timeout
+        await _capture("native-15-staged-d20-six-underbar" if target == 6 else
+                       "native-16-staged-d20-nine-underbar")
+    print("Native Godot QA complete: 5 physical dice and STAGED (not rolled) 6/9 engraving views.")
     quit(0)
