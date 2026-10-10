@@ -109,8 +109,8 @@ static func _gold_inset_for_glb() -> StandardMaterial3D:
     gold.clearcoat_enabled = true
     gold.clearcoat = 0.12
     gold.emission_enabled = true
-    gold.emission = Color(0.17, 0.088, 0.026)
-    gold.emission_energy_multiplier = 0.26
+    gold.emission = Color(0.21, 0.113, 0.033)
+    gold.emission_energy_multiplier = 0.36
     return gold
 
 static func _finish_glb_node(node: Node) -> void:

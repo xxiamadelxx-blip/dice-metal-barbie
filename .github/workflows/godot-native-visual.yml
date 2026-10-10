@@ -45,7 +45,7 @@ jobs:
             grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call' qa-evidence/native-godot.log
             exit 3
           fi
-          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png qa-evidence/native-09-d8-detail.png qa-evidence/native-10-d12-detail.png; do
+          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png qa-evidence/native-09-d8-detail.png qa-evidence/native-10-d12-detail.png qa-evidence/native-11-d4-apex-detail.png; do
             test -s "$file"
             test "$(stat -c%s "$file")" -ge 10000
           done
@@ -63,6 +63,10 @@ jobs:
           fi
           if cmp -s qa-evidence/native-09-d8-detail.png qa-evidence/native-10-d12-detail.png; then
             echo "FAIL: D8 and D12 detail frames identical despite distinct dice"
+            exit 6
+          fi
+          if cmp -s qa-evidence/native-11-d4-apex-detail.png qa-evidence/native-10-d12-detail.png; then
+            echo "FAIL: D4 apex scene does not differ from D12"
             exit 6
           fi
           ls -lh qa-evidence/native-*.png

@@ -322,7 +322,9 @@ def engraved_die(sides, font, maps):
         cutter=text_mesh(number,position-normal*.006,normal,
                          size,.042,font,'BooleanDigitCut_'+uid,as_cutter=True)
         cutters.append(cutter)
-        inset=text_mesh(number,position-normal*.016,normal,
+        # Near-flush bronze (top stays below the original stone plane):
+        # a 0.016-deep inlay disappeared on oblique D4 faces in real renders.
+        inset=text_mesh(number,position-normal*.0035,normal,
                         size,.0025,font,'Bronze_Engraved_%d'%number)
         inset.data.materials.append(gold)
         inserts.append(inset)

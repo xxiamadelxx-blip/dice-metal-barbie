@@ -80,7 +80,7 @@ func _run() -> void:
     # New authored Blender D8/D12 art MUST be inspected inside real Godot,
     # not only as standalone Blender camera renders. Real physical throws.
     await create_timer(1.0).timeout
-    for sides in [8,12]:
+    for sides in [8,12,4]:
         closeup_camera.size = 14.2
         closeup_camera.position = Vector3(0, 18.0, 1.5)
         scene.call("_select_die_type", sides)
@@ -99,7 +99,8 @@ func _run() -> void:
         closeup_camera.size = 3.8
         closeup_camera.position = Vector3(die.position.x, 18.0, die.position.z)
         await create_timer(0.4).timeout
-        var output := "native-09-d8-detail" if sides == 8 else "native-10-d12-detail"
+        var output := {8:"native-09-d8-detail",12:"native-10-d12-detail",
+            4:"native-11-d4-apex-detail"}[sides]
         await _capture(output)
-    print("Native Godot visual capture complete: real D6/D20/D8/D12 throws + explicitly staged D20 pulses.")
+    print("Native Godot visual capture complete: D6/D20/D8/D12/D4 physical throws + explicitly staged D20 pulses.")
     quit(0)
