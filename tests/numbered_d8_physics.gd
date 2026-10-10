@@ -26,6 +26,8 @@ func _run() -> void:
     _expect(collision.shape.points.size() == 6, "D8 hull needs six vertices")
     var visual: MeshInstance3D = die.get_node("ObsidianD8")
     _expect(visual.mesh.get_faces().size() == 24, "D8 must render exactly eight triangles")
+    _expect((die.get_node("ActualSculptedBevels") as MeshInstance3D).mesh.get_faces().size() == 144, "D8 must have real beveled geometry")
+    _expect((die.get_node("FaceInsetBronzeHairlines") as MeshInstance3D).mesh.get_faces().size() == 144, "D8 inlaid face lines must be physical mesh")
     var numbers := Octa.numbers()
     for face_id in range(8):
         var number: int = numbers[face_id]
