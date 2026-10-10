@@ -16,17 +16,34 @@ test "$(stat -c%s qa-evidence/android-avd/launch-initial-avd.png)" -gt 10000
 # Android immersive-mode tutorial can cover the full Godot view on a fresh
 # AVD. Its Got it button is at 594,390 on our forced 720x1280 emulated LCD.
 adb shell input tap 593 388
-sleep 10
-adb exec-out screencap -p > qa-evidence/android-avd/launch-after-immersive-dismiss.png
-python3 - <<'PY'
+# SwiftShader may require >10 s to compile the first 3D scene on Android 35.
+# Review genuine ADB screenshots every 5 s; reject Android pop-ups, black
+# screens and the Godot splash. Never start recording until the game draws.
+ready=0
+for attempt in $(seq 1 20); do
+  adb exec-out screencap -p > qa-evidence/android-avd/launch-after-immersive-dismiss.png
+  if python3 - <<'PY'
 from PIL import Image,ImageStat
 im=Image.open('qa-evidence/android-avd/launch-after-immersive-dismiss.png').convert('RGB')
-assert im.size==(720,1280),f'AVD displayed unexpected screen size: {im.size}'
-stats=ImageStat.Stat(im.crop((40,85,680,485)).convert('L'))
-print('AVD after fullscreen tutorial: top render mean/stddev',stats.mean[0],stats.stddev[0])
-assert 7 < stats.mean[0] < 150 and stats.stddev[0] > 6, (
-  'AVD display is blank or Android immersive-mode tutorial still covering the app')
+assert im.size==(720,1280), f'Unexpected Android display {im.size}'
+t=ImageStat.Stat(im.crop((40,85,680,485)).convert('L'))
+print('Real AVD game readiness, mean/stddev:',round(t.mean[0],2),round(t.stddev[0],2))
+assert 7 < t.mean[0] < 150 and t.stddev[0] > 6, (
+  'blank/Android system overlay/Godot splash - not playable game yet')
 PY
+  then
+    ready=1
+    break
+  fi
+  cp qa-evidence/android-avd/launch-after-immersive-dismiss.png     "qa-evidence/android-avd/not-ready-attempt-$attempt.png"
+  sleep 5
+done
+if test "$ready" != 1; then
+  adb logcat -d -v time > qa-evidence/android-avd/logcat-on-black-screen.txt || true
+  adb shell dumpsys activity activities > qa-evidence/android-avd/activities-on-black-screen.txt || true
+  echo "FAIL: Android AVD never rendered playable dice scene in 100 seconds"
+  exit 8
+fi
 adb logcat -c || true
 for spec in '4 85' '6 220' '8 355' '12 490' '20 625'; do
   read -r sides xpos <<< "$spec"
