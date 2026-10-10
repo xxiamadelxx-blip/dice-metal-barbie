@@ -1,13 +1,9 @@
 name: Android AVD dice screen recorder + 24fps frame critic
+# This is a deliberately experimental Android emulator diagnostic,
+# NOT a second PR gate. The real release pipeline is gauntlet-release-gate.yml.
+# The SwiftShader/AVD incompatibility must not multiply PR workflow runs.
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - "src/**"
-      - "export_presets.cfg"
-      - "tools/visual/run_android_avd_rolls.sh"
-      - "tools/visual/audit_android_avd_sequence.py"
-      - ".github/workflows/android-avd-24fps.yml"
 permissions:
   contents: read
 jobs:
