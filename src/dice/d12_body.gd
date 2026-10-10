@@ -12,6 +12,7 @@ var rolling := false
 var result := -1
 var failure := ""
 var elapsed := 0.0
+var edge_recovery_count := 0
 
 func _ready() -> void:
     name = "PhysicalD12"
@@ -79,6 +80,7 @@ func throw_from_top() -> void:
     failure = ""
     result = -1
     elapsed = 0.0
+    edge_recovery_count = 0
     sleeping = false
     var selection := DiceRng.pick(60) - 1
     if selection < 0:
@@ -109,7 +111,14 @@ func _physics_process(delta: float) -> void:
         var alignment: float = (pose * Dodeca.face_normal(i)).dot(Vector3.UP)
         best = maxf(best, alignment)
     if face < 0 or best < 0.91:
-        _abort("D12 остановился на ребре; результат не определён")
+        ## Stabilize only through real dynamics. No after-roll face snap.
+        if edge_recovery_count < 3 and elapsed < MAX_ROLL_SECONDS - 1.5:
+            edge_recovery_count += 1
+            sleeping = false
+            apply_central_impulse(Vector3(0.005, 0.008, 0.004))
+            apply_torque_impulse(Vector3(0.004, 0.003, -0.004))
+            return
+        _abort("D12 не смог устойчиво остановиться на грани")
         return
     rolling = false
     result = Dodeca.numbers()[face]
