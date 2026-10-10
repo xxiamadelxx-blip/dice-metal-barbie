@@ -271,8 +271,14 @@ def text_mesh(value,center,normal,size,depth,font,name,as_cutter=False):
         verts=[(x,y,z) for z in (-half_d,half_d)
                          for y in (y_center-half_h,y_center+half_h)
                          for x in (-half_w,half_w)]
-        faces=[(0,1,3,2),(4,6,7,5),(0,4,5,1),
-               (2,3,7,6),(0,2,6,4),(1,5,7,3)]
+        # Counterclockwise outward winding on ALL six cuboid sides.
+        # Previous top face was inverted and its gold surface disappeared
+        # under backface culling in the actual Cycles render.
+        faces=[(0,2,3,1),(4,5,7,6),(0,1,5,4),
+               (2,6,7,3),(0,4,6,2),(1,3,7,5)]
+        top_n=(Vector(verts[5])-Vector(verts[4])).cross(
+            Vector(verts[7])-Vector(verts[4]))
+        assert top_n.z>0.0, '6/9 orientation stripe top face must face outward'
         mesh=bpy.data.meshes.new(name+'_SixNineUnderbarMesh')
         mesh.from_pydata(verts,[],faces)
         mesh.update()
