@@ -16,6 +16,20 @@ def pulse_overspill(path):
                if r > 128 and (r > g * 1.30 and g > b * 1.15
                                 or r > g * 1.65 and r > b * 1.30))
 
+def d4_apex_bronze_pixels(path):
+    """Count actual engraved-gold pixels, outside HUD, on the die macro.
+
+    This is a smoke metric, not OCR or proof of user-legible typography.
+    The old skinny-serif D4 gave 733 pixels in this exact same 720p crop,
+    which is insufficient for premium engraving.
+    """
+    image = Image.open(path).convert("RGB")
+    if image.size != (720, 1280):
+        raise AssertionError("D4 capture dimensions changed")
+    rect = image.crop((70, 420, 600, 955))
+    return sum(1 for r,g,b in rect.getdata()
+               if r > 95 and r > g * 1.29 and g > b * 1.18)
+
 def analyze(path):
     im = Image.open(path).convert("RGB")
     w, h = im.size
@@ -33,12 +47,13 @@ def analyze(path):
             "clipped_fraction":round(clipped/len(pixels),4)}
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        sys.exit("usage: critique_native.py <D20-detail.png> <staged-gold.png> <staged-crimson.png>")
+    if len(sys.argv) != 5:
+        sys.exit("usage: critique_native.py <D20-detail.png> <staged-gold.png> <staged-crimson.png> <actual-D4-detail.png>")
     try:
         metrics = analyze(Path(sys.argv[1]))
         metrics["gold_pulse_hud_overspill_pixels"] = pulse_overspill(Path(sys.argv[2]))
         metrics["crimson_pulse_hud_overspill_pixels"] = pulse_overspill(Path(sys.argv[3]))
+        metrics["d4_bronze_glyph_pixels"] = d4_apex_bronze_pixels(Path(sys.argv[4]))
         Path("qa-evidence/native-visual-metrics.json").write_text(json.dumps(metrics,indent=2)+"\n")
         print("Native contrast critic:", json.dumps(metrics))
         # Absolute guardrails, intentionally conservative about random die
@@ -48,6 +63,7 @@ if __name__ == "__main__":
         assert metrics["clipped_fraction"] < .04, "Blown-out specular highlights"
         assert metrics["gold_pulse_hud_overspill_pixels"] < 50, "Gold aura invades HUD safety region"
         assert metrics["crimson_pulse_hud_overspill_pixels"] < 50, "Crimson aura invades HUD safety region"
+        assert metrics["d4_bronze_glyph_pixels"] >= 950, "D4 apex engraved numerals too thin to pass macro pixel smoke"
         print("PASS native smoke thresholds; ARTISTIC ACCEPTANCE STILL OPEN")
     except Exception as exc:
         print("FAIL native pixel smoke critic:", exc, file=sys.stderr)

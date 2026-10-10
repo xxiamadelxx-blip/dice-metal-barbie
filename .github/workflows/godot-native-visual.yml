@@ -6,6 +6,7 @@ on:
       - "src/**"
       - "tests/visual_capture.gd"
       - "tests/engraved_assets.gd"
+      - "tools/visual/**"
       - ".github/workflows/godot-native-visual.yml"
       - "project.godot"
 permissions:
@@ -71,7 +72,7 @@ jobs:
           fi
           ls -lh qa-evidence/native-*.png
       - name: Run autonomous native-frame pixel critic
-        run: python3 tools/visual/critique_native.py qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png
+        run: python3 tools/visual/critique_native.py qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png qa-evidence/native-11-d4-apex-detail.png
       - name: Publish native screenshot evidence regardless of failure
         if: always()
         uses: actions/upload-artifact@v4
