@@ -17,7 +17,9 @@ jobs:
       - name: Install reproducible offline modeling dependencies
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender fonts-dejavu-core
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy fonts-dejavu-core
+      - name: Verify Blender glTF Python dependencies
+        run: blender --background -noaudio --python-exit-code 2 --python-expr "import numpy; print('NumPy import OK:', numpy.__version__)"
       - name: Generate truly cut numeral meshes and glTF exports
         run: |
           mkdir -p build/premium-glb
