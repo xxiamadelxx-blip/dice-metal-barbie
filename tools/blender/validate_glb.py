@@ -16,6 +16,11 @@ def validate(root):
     for sides in (20,6,8,12,4):
         entry=manifest['dice'][f'D{sides}']
         values=entry['numbers']
+        assert entry.get('underbar_numbers')==[v for v in values if v in (6,9)], f'D{sides} 6/9 3D orientation bars missing'
+        if sides>4:
+            assert 6 in entry['underbar_numbers'], f'D{sides} must mark its numeral 6'
+        else:
+            assert entry['underbar_numbers']==[], 'D4 apex 1–4 need no 6/9 markers'
         assert len(values)==sides and sorted(values)==list(range(1,sides+1)),f'D{sides} bad numeric face map'
         if sides==20:
             # Opposite faces of a proper D20 should add to 21; same

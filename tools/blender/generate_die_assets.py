@@ -258,7 +258,36 @@ def text_mesh(value,center,normal,size,depth,font,name,as_cutter=False):
     o.location=center
     active(o)
     bpy.ops.object.convert(target='MESH')
-    return bpy.context.view_layer.objects.active
+    glyph=bpy.context.view_layer.objects.active
+    if int(value) in (6,9):
+        # A physical 6 upside down reads 9. Mark both with a short bar
+        # underneath, exactly as on real tabletop dice, so rotation cannot
+        # change the player's perceived value. Same mark is subtracted from
+        # the stone and filled with metal by the existing Boolean pipeline.
+        half_w=size*.21
+        y_center=-size*.43
+        half_h=size*.020
+        half_d=depth
+        verts=[(x,y,z) for z in (-half_d,half_d)
+                         for y in (y_center-half_h,y_center+half_h)
+                         for x in (-half_w,half_w)]
+        faces=[(0,1,3,2),(4,6,7,5),(0,4,5,1),
+               (2,3,7,6),(0,2,6,4),(1,5,7,3)]
+        mesh=bpy.data.meshes.new(name+'_SixNineUnderbarMesh')
+        mesh.from_pydata(verts,[],faces)
+        mesh.update()
+        bar=bpy.data.objects.new(name+'_SixNineUnderbar',mesh)
+        bpy.context.collection.objects.link(bar)
+        bar.rotation_mode='QUATERNION'
+        bar.rotation_quaternion=normal.to_track_quat('Z','Y')
+        bar.location=center
+        # Join only into original glyph, leaving the world/local coordinate
+        # transform of existing engraving, stone and physics unchanged.
+        active(glyph)
+        bar.select_set(True)
+        bpy.ops.object.join()
+        glyph=bpy.context.view_layer.objects.active
+    return glyph
 
 def bevel_shell(shell,sides):
     m=shell.modifiers.new('Three_segment_physically_beveled_edges','BEVEL')
@@ -431,6 +460,7 @@ def export_and_preview(sides,out,font,maps):
     scene.render.filepath=str(preview)
     bpy.ops.render.render(write_still=True)
     return {'faces':len(values),'numbers':values,'engraved_glyphs':12 if sides==4 else sides,
+            'underbar_numbers':[v for v in values if v in (6,9)],
             'triangles':len(shell.data.polygons),
             'glb':filepath.name,'preview':preview.name,'glb_bytes':filepath.stat().st_size}
 
