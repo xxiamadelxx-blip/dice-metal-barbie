@@ -80,11 +80,11 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
     stone.metallic = 0.10
     stone.roughness = 0.39
     stone.clearcoat_enabled = true
-    stone.clearcoat = 0.23
-    stone.clearcoat_roughness = 0.32
+    stone.clearcoat = 0.30
+    stone.clearcoat_roughness = 0.28
     stone.emission_enabled = true
-    stone.emission = Color(0.050, 0.061, 0.079)
-    stone.emission_energy_multiplier = 0.60
+    stone.emission = Color(0.065, 0.079, 0.099)
+    stone.emission_energy_multiplier = 0.68
     if source is StandardMaterial3D:
         var original := source as StandardMaterial3D
         stone.albedo_texture = original.albedo_texture

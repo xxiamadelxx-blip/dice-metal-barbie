@@ -188,10 +188,10 @@ def texture_set(out):
     # This MUST already be charcoal; a white grayscale swatch creates a pale
     # stone despite the default Principled shader previously being dark.
     # Values are linear in Blender's image pixels; exported PNG is sRGB.
-    luminance=np.clip(0.088+0.032*(grain-.5),0.065,0.11)
+    luminance=np.clip(0.138+0.041*(grain-.5),0.112,0.165)
     albedo=np.stack((luminance*.78,luminance*.88,luminance),axis=2)
     # glTF roughness is read from the G channel (linear Non-Color image).
-    roughness=np.clip(0.36+0.13*low+0.045*mid,0.25,0.46)
+    roughness=np.clip(0.33+0.11*low+0.035*mid,0.26,0.42)
     rough=np.stack((np.ones_like(roughness),roughness,np.zeros_like(roughness)),axis=2)
     # Smooth tangent-space micro relief with deliberately small slopes.
     height=0.69*low+0.23*mid+0.08*fine

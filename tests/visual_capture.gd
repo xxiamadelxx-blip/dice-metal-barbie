@@ -98,6 +98,10 @@ func _run() -> void:
             push_error("D%d visual QA requires a completed physical roll, got %d" % [sides, rolled_number])
             quit(11)
             return
+        # Native 14.2 orthographic camera after real Jolt roll; no staged pose.
+        var normal_name: String = {8:"native-12-d8-normal",12:"native-13-d12-normal",
+            4:"native-14-d4-normal"}[sides]
+        await _capture(normal_name)
         var imported := die.get_node_or_null("BlenderRecessedGLB") as Node3D
         if imported == null:
             push_error("D%d is showing old procedural fallback, not new Blender GLB" % sides)

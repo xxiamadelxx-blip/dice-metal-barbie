@@ -30,6 +30,30 @@ def d4_apex_bronze_pixels(path):
     return sum(1 for r,g,b in rect.getdata()
                if r > 95 and r > g * 1.29 and g > b * 1.18)
 
+def _luma(rgb):
+    r,g,b=rgb
+    return .2126*r+.7152*g+.0722*b
+
+def showcase_face_readability(path):
+    """Compare stable four-die hero planes with SAME-FRAME felt at 720x1280.
+    A launch composition smoke check, NOT OCR or independent art approval."""
+    image=Image.open(path).convert("RGB")
+    if image.size != (720,1280):
+        raise AssertionError("Normal-camera capture changed resolution")
+    rois={"D20":(154,205,295,325),"D12":(415,240,572,395),
+          "D6":(159,477,320,638),"D4":(457,581,583,711)}
+    felt=sorted(_luma(px) for px in image.crop((326,478,420,630)).getdata())
+    reference=felt[len(felt)//2]
+    data={"felt_median":round(reference,2),"dice":{}}
+    for name,box in rois.items():
+        pixels=list(image.crop(box).getdata())
+        values=sorted(_luma(px) for px in pixels)
+        p75=values[int(.75*(len(values)-1))]
+        gold=sum(1 for r,g,b in pixels if r>95 and r>g*1.29 and g>b*1.18)
+        data["dice"][name]={"p75":round(p75,2),"against_felt":round(p75-reference,2),
+                            "bronze_pixels":gold}
+    return data
+
 def analyze(path):
     im = Image.open(path).convert("RGB")
     w, h = im.size
@@ -47,13 +71,14 @@ def analyze(path):
             "clipped_fraction":round(clipped/len(pixels),4)}
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        sys.exit("usage: critique_native.py <D20-detail.png> <staged-gold.png> <staged-crimson.png> <actual-D4-detail.png>")
+    if len(sys.argv) != 6:
+        sys.exit("usage: critique_native.py <D20-detail.png> <staged-gold.png> <staged-crimson.png> <actual-D4-detail.png> <idle-normal.png>")
     try:
         metrics = analyze(Path(sys.argv[1]))
         metrics["gold_pulse_hud_overspill_pixels"] = pulse_overspill(Path(sys.argv[2]))
         metrics["crimson_pulse_hud_overspill_pixels"] = pulse_overspill(Path(sys.argv[3]))
         metrics["d4_bronze_glyph_pixels"] = d4_apex_bronze_pixels(Path(sys.argv[4]))
+        metrics["normal_camera"] = showcase_face_readability(Path(sys.argv[5]))
         Path("qa-evidence/native-visual-metrics.json").write_text(json.dumps(metrics,indent=2)+"\n")
         print("Native contrast critic:", json.dumps(metrics))
         # Absolute guardrails, intentionally conservative about random die
@@ -64,6 +89,11 @@ if __name__ == "__main__":
         assert metrics["gold_pulse_hud_overspill_pixels"] < 50, "Gold aura invades HUD safety region"
         assert metrics["crimson_pulse_hud_overspill_pixels"] < 50, "Crimson aura invades HUD safety region"
         assert metrics["d4_bronze_glyph_pixels"] >= 950, "D4 apex engraved numerals too thin to pass macro pixel smoke"
+        for name,entry in metrics["normal_camera"]["dice"].items():
+            assert entry["against_felt"] >= 4.0, (
+                "%s faceted stone disappears into velvet at normal 14.2 camera" % name)
+            assert entry["bronze_pixels"] >= 30, (
+                "%s engraving disappears at normal 14.2 camera" % name)
         print("PASS native smoke thresholds; ARTISTIC ACCEPTANCE STILL OPEN")
     except Exception as exc:
         print("FAIL native pixel smoke critic:", exc, file=sys.stderr)

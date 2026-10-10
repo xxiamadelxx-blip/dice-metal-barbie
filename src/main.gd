@@ -63,7 +63,7 @@ func _make_world() -> void:
 
     var light := DirectionalLight3D.new()
     light.rotation_degrees = Vector3(-63.0, 24.0, 0.0)
-    light.light_energy = 1.15
+    light.light_energy = 1.28
     light.shadow_enabled = true
     add_child(light)
 
@@ -74,7 +74,7 @@ func _make_world() -> void:
     fill.name = "SoftStudioBounce"
     fill.rotation_degrees = Vector3(-46.0, -133.0, 0.0)
     fill.light_color = Color(0.72, 0.83, 1.0)
-    fill.light_energy = 0.68
+    fill.light_energy = 0.76
     fill.shadow_enabled = false
     add_child(fill)
 
