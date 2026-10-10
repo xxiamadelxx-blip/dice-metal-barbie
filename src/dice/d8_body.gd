@@ -68,7 +68,7 @@ func _create_visual() -> void:
         label.name = "Face_%d" % number
         label.text = str(number)
         label.font_size = 50
-        label.pixel_size = 0.005
+        label.pixel_size = 0.0056
         label.outline_size = 6
         label.modulate = Color(0.95, 0.88, 0.74)
         label.outline_modulate = Color(0.06, 0.07, 0.10)
