@@ -1,5 +1,9 @@
 extends SceneTree
 const CriticalAura = preload("res://src/visual/critical_aura.gd")
+const Ico = preload("res://src/core/icosahedron.gd")
+const Octa = preload("res://src/core/octahedron.gd")
+const Dodeca = preload("res://src/core/dodecahedron.gd")
+const Tetra = preload("res://src/core/tetrahedron.gd")
 ## Cloud native visual fallback for inspecting the actual Godot render output.
 ## Runs under Xvfb/Mesa, not an Android APK. NEVER claim handset equivalence.
 
@@ -54,6 +58,13 @@ func _run() -> void:
         push_error("Cannot make a truthful native D20 detail capture")
         quit(6)
         return
+    var d20_face_value: int = Ico.top_value(closeup_die.global_transform.basis.orthonormalized(), 0.02)
+    var d20_hud_value: int = int(scene.get("last_result"))
+    if d20_face_value < 1 or d20_face_value != d20_hud_value:
+        push_error("Actual D20 Jolt upper face %d != HUD %d" % [d20_face_value, d20_hud_value])
+        quit(12)
+        return
+    print("PASS actual D20 upper physical face = HUD %d" % d20_face_value)
     closeup_camera.size = 3.8
     closeup_camera.position = Vector3(closeup_die.position.x, 18.0, closeup_die.position.z)
     await create_timer(0.5).timeout
@@ -103,6 +114,18 @@ func _run() -> void:
             4:"native-14-d4-normal"}[sides]
         await _capture(normal_name)
         print("NORMAL_VIEW Jolt D%d physically settled result = %d, camera size 14.2" % [sides, rolled_number])
+        var pose: Basis = die.global_transform.basis.orthonormalized()
+        var physical_face_value := -1
+        match sides:
+            4: physical_face_value = Tetra.top_value(pose)
+            8: physical_face_value = Octa.top_value(pose)
+            12: physical_face_value = Dodeca.top_value(pose)
+        if physical_face_value != rolled_number:
+            push_error("D%d actual top value %d differs from displayed %d" % [
+                sides, physical_face_value, rolled_number])
+            quit(13)
+            return
+        print("PASS physical D%d upper face/apex == HUD value %d" % [sides, rolled_number])
         var imported := die.get_node_or_null("BlenderRecessedGLB") as Node3D
         if imported == null:
             push_error("D%d is showing old procedural fallback, not new Blender GLB" % sides)
