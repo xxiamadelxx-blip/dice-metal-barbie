@@ -6,6 +6,7 @@ signal roll_completed(value: int)
 signal roll_failed(reason: String)
 
 const Ico = preload("res://src/core/icosahedron.gd")
+const Sculpt = preload("res://src/visual/sculpted_d20.gd")
 const DiceRng = preload("res://src/core/dice_rng.gd")
 const MAX_ROLL_SECONDS := 9.0
 
@@ -41,22 +42,26 @@ func _create_geometry_and_numerals() -> void:
     var vertices := Ico.vertices()
     var labels := Ico.numbers()
 
-    var surface := SurfaceTool.new()
-    surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-    for face_id in range(20):
-        var normal: Vector3 = Ico.face_normal(face_id)
-        for vertex_id in Ico.FACES[face_id]:
-            surface.set_normal(normal)
-            surface.add_vertex(vertices[vertex_id])
     var mesh_node := MeshInstance3D.new()
     mesh_node.name = "ObsidianD20"
-    mesh_node.mesh = surface.commit()
+    mesh_node.mesh = Sculpt.face_planes(vertices, Ico.FACES)
     var obsidian := StandardMaterial3D.new()
     obsidian.albedo_color = Color(0.026, 0.033, 0.052)
     obsidian.metallic = 0.26
     obsidian.roughness = 0.18
     mesh_node.material_override = obsidian
     add_child(mesh_node)
+
+    var shoulders := MeshInstance3D.new()
+    shoulders.name = "ActualSculptedBevels"
+    shoulders.mesh = Sculpt.chamfers(vertices, Ico.FACES)
+    shoulders.material_override = Sculpt.bevel_material()
+    add_child(shoulders)
+    var traces := MeshInstance3D.new()
+    traces.name = "FaceInsetBronzeHairlines"
+    traces.mesh = Sculpt.inlaid_tracery(vertices, Ico.FACES)
+    traces.material_override = Sculpt.gold_groove_material()
+    add_child(traces)
 
     for face_id in range(20):
         var normal: Vector3 = Ico.face_normal(face_id)
