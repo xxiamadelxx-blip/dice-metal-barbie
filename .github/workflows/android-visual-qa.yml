@@ -1,0 +1,89 @@
+name: Android cloud visual acceptance
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  qa-apk:
+    name: Export separate emulator QA APK (OpenGL)
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare exact Godot export environment
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          cp -r /root/.local/share/godot/export_templates/4.6.3.stable ~/.local/share/godot/export_templates/ || true
+          mkdir -p ~/.config/godot
+          [ ! -d /root/.config/godot ] || cp -rn /root/.config/godot/. ~/.config/godot/ || true
+          test -f /root/debug.keystore
+          mkdir -p build/android
+      - name: Change renderer ONLY for temporary emulator test
+        run: |
+          sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
+          sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
+          grep 'renderer/rendering_method' project.godot
+          # Godot GLES3 SceneShader exceeded SwiftShader's 256 fragment-vector limit
+          # (261 active vectors) in the previous real emulator logcat.
+          # Fewer compiled per-object OpenGL lights reduce required shader uniforms.
+          cat >> project.godot <<'EOF'
+          rendering/limits/opengl/max_lights_per_object=2
+          rendering/limits/opengl/max_renderable_lights=4
+          EOF
+          grep 'rendering/limits/opengl' project.godot
+      - name: Export ARM64 debug with OpenGL compatibility
+        run: |
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore
+          export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+          godot --headless --path . --editor --quit
+          godot --headless --path . --export-debug "Android Debug" build/android/dice-qa-opengl.apk
+          test -s build/android/dice-qa-opengl.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dnd-qa-opengl-apk
+          path: build/android/dice-qa-opengl.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  visual-qa:
+    name: Boot Pixel emulator and inspect OpenGL QA APK
+    needs: qa-apk
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download emulator-only APK from same workflow run
+        uses: actions/download-artifact@v4
+        with:
+          name: dnd-qa-opengl-apk
+          path: build/apk/
+      - name: Prepare KVM permission for Android virtualization
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm || true
+      - name: Boot emulator, install, tap, capture and check changed pixels
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          cores: 2
+          ram-size: 4096M
+          emulator-options: -no-window -gpu host -noaudio -no-boot-anim -camera-back none -no-snapshot
+          disable-animations: true
+          script: bash scripts/qa_android_emulator.sh build/apk/dice-qa-opengl.apk
+      - name: Upload screenshots, process status and Android logs even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dnd-android-visual-qa
+          path: qa-evidence/
+          if-no-files-found: warn
+          retention-days: 14
