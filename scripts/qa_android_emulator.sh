@@ -12,6 +12,8 @@ adb shell wm size 720x1280
 adb shell wm density 320
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 0
+# Suppress Android immersive-mode first-launch confirmation, not a game element.
+adb shell settings put secure immersive_mode_confirmations confirmed || true
 adb logcat -c
 
 capture() {
@@ -36,6 +38,11 @@ fi
 adb shell pm path "$package" > qa-evidence/package-path.txt
 adb shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 > qa-evidence/launch.txt 2>&1
 sleep 9
+capture 00-before-system-overlay-dismiss
+# Fresh Android emulator may still show a system full-screen tutorial;
+# tap its Got it button before evaluating the actual rendered app.
+adb shell input tap 590 380
+sleep 4
 capture 01-launch
 if ! adb shell pidof "$package" > qa-evidence/app-pid.txt; then
   echo "App terminated after launch" | tee qa-evidence/FAIL.txt
