@@ -17,6 +17,10 @@ void fragment() {
     float micro = sin(p.x * 91.0 + p.z * 65.0) *
                   sin(p.y * 86.0 - p.x * 39.0);
     float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 3.0);
+    // A wide photographic softbox reflection is reconstructed from the true
+    // rotating 3D normal, not the face number. Adjacent facets must read as
+    // different planes even with the dark velvet stage and mobile GPU.
+    float studio = pow(clamp(dot(normalize(NORMAL), normalize(vec3(-0.47, 0.78, 0.42))), 0.0, 1.0), 2.0);
     vec3 obsidian = vec3(0.043, 0.054, 0.073)
                     + needle * vec3(0.026, 0.028, 0.035)
                     + micro * vec3(0.006);
@@ -28,5 +32,6 @@ void fragment() {
     // studio reflection probe, metallic black would be a featureless void.
     EMISSION = vec3(0.075, 0.089, 0.108)
                + needle * vec3(0.018, 0.020, 0.024)
-               + rim * vec3(0.042, 0.048, 0.068);
+               + rim * vec3(0.042, 0.048, 0.068)
+               + studio * vec3(0.080, 0.074, 0.065);
 }
