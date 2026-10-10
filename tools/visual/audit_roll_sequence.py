@@ -45,6 +45,18 @@ def video_frames(path):
             raise AssertionError("FFmpeg failed to decode all frames: " + error[-1200:])
 
 
+def save_every_frame_sheet(root, sides, second, imgs):
+    """All 24 actual chronological screenshots for exactly one video second."""
+    sheet=Image.new("RGB",(6*120,4*235),(14,17,24))
+    pen=ImageDraw.Draw(sheet)
+    for position,(frame_id,thumb) in enumerate(imgs):
+        x=position%6*120
+        y=position//6*235
+        sheet.paste(thumb,(x,y+20))
+        pen.text((x+5,y+4),"F%04d %.2fs"%(frame_id,frame_id/24),
+                 fill=(230,222,195))
+    sheet.save(root/("ALL-24-frames-D%d-second-%02d.jpg"%(sides,second)),quality=88)
+
 def inspect_throw(root, sides):
     timeline = json.loads((root / ("timeline-D%d.json" % sides)).read_text())
     assert timeline["die"] == sides and timeline["status"] == "completed"
@@ -69,6 +81,7 @@ def inspect_throw(root, sides):
     brightness_range = [255.0, 0.0]
     anomalies = []
     preview = []
+    full_second_frames = []
     t_to_go_approx = 0.8
     with (root / ("every-frame-D%d.jsonl" % sides)).open("w") as out:
         for index, image in video_frames(video):
@@ -110,8 +123,16 @@ def inspect_throw(root, sides):
             }) + "\n")
             if index % 12 == 0:
                 preview.append((index, image.resize((180, 320))))
+            # Build exhaustive storyboard sheets. Unlike the quick-preview
+            # contact, this retains every screen, ordered 24 per second.
+            full_second_frames.append((index,image.resize((120,215))))
+            if len(full_second_frames)==24:
+                save_every_frame_sheet(root,sides,index//24,full_second_frames)
+                full_second_frames=[]
             previous = sample
             frames += 1
+    if full_second_frames:
+        save_every_frame_sheet(root,sides,(frames-1)//24,full_second_frames)
     assert frames >= 48, "D%d missing 2+ seconds at 24fps" % sides
     assert movement_frames >= 8, "D%d moved in too few decoded frames" % sides
     assert black_frames < frames * .65, "D%d captured a mostly black renderer" % sides
