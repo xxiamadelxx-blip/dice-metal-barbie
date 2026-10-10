@@ -1,4 +1,4 @@
-name: M2 Godot and Android debug
+name: Godot M3 validation and Android debug
 on:
   push:
     branches: [main]
@@ -28,6 +28,8 @@ jobs:
         run: godot --headless --path . --script res://tests/physics_smoke.gd
       - name: M3 D6 mathematical symmetry proof
         run: godot --headless --path . --script res://tests/cube_symmetry.gd
+      - name: M3 real numbered D6 physics and result agreement
+        run: godot --headless --path . --script res://tests/numbered_d6_physics.gd
 
   android-debug:
     name: Android ARM64 debug export
@@ -52,12 +54,12 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
-          godot --headless --path . --export-debug "Android Debug" build/android/dice-3d-m2-debug.apk
-          test -s build/android/dice-3d-m2-debug.apk
+          godot --headless --path . --export-debug "Android Debug" build/android/dice-3d-m3-debug.apk
+          test -s build/android/dice-3d-m3-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: m2-android-debug
-          path: build/android/dice-3d-m2-debug.apk
+          name: m3-android-debug
+          path: build/android/dice-3d-m3-debug.apk
           if-no-files-found: error
           retention-days: 14
 
