@@ -11,7 +11,7 @@ def validate(root):
     assert pbr.get('size')==256 and len(pbr.get('images',[]))==3, 'PBR texture source files missing'
     for filename in pbr['images']:
         png=(root/filename).read_bytes()
-        assert png[:8]==b'\\x89PNG\\r\\n\\x1a\\n' and len(png)>8000, 'Empty texture '+filename
+        assert png[:8]==bytes.fromhex("89504e470d0a1a0a") and len(png)>8000, 'Empty texture '+filename
     for sides in (20,6):
         entry=manifest['dice'][f'D{sides}']
         values=entry['numbers']
