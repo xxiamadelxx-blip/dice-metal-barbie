@@ -10,26 +10,60 @@ permissions:
   actions: read
 
 jobs:
+  qa-apk:
+    name: Export separate emulator QA APK (OpenGL)
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare exact Godot export environment
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          cp -r /root/.local/share/godot/export_templates/4.6.3.stable ~/.local/share/godot/export_templates/ || true
+          mkdir -p ~/.config/godot
+          [ ! -d /root/.config/godot ] || cp -rn /root/.config/godot/. ~/.config/godot/ || true
+          test -f /root/debug.keystore
+          mkdir -p build/android
+      - name: Change renderer ONLY for temporary emulator test
+        run: |
+          sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
+          sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
+          grep 'renderer/rendering_method' project.godot
+      - name: Export ARM64 debug with OpenGL compatibility
+        run: |
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore
+          export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+          godot --headless --path . --editor --quit
+          godot --headless --path . --export-debug "Android Debug" build/android/dice-qa-opengl.apk
+          test -s build/android/dice-qa-opengl.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dnd-qa-opengl-apk
+          path: build/android/dice-qa-opengl.apk
+          if-no-files-found: error
+          retention-days: 14
+
   visual-qa:
-    name: Boot Pixel emulator and capture real APK
+    name: Boot Pixel emulator and inspect OpenGL QA APK
+    needs: qa-apk
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - name: Download previously verified ARM64 APK from Actions
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p build/apk
-          gh run download 38054012551 -R ${{ github.repository }} --name m3-d4-android-debug --dir build/apk
-          ls -lh build/apk/
+      - name: Download emulator-only APK from same workflow run
+        uses: actions/download-artifact@v4
+        with:
+          name: dnd-qa-opengl-apk
+          path: build/apk/
       - name: Prepare KVM permission for Android virtualization
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           ls -l /dev/kvm || true
-      - name: Run Android virtual handset, install APK, capture QA
+      - name: Boot emulator, install, tap, capture and check changed pixels
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -40,7 +74,7 @@ jobs:
           ram-size: 4096M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           disable-animations: true
-          script: bash scripts/qa_android_emulator.sh build/apk/dice-3d-m3-d4-debug.apk
+          script: bash scripts/qa_android_emulator.sh build/apk/dice-qa-opengl.apk
       - name: Upload screenshots, process status and Android logs even on failure
         if: always()
         uses: actions/upload-artifact@v4
