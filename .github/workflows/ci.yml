@@ -32,6 +32,8 @@ jobs:
         run: godot --headless --path . --script res://tests/numbered_d6_physics.gd
       - name: M3 D20 geometry and 60 rotations
         run: godot --headless --path . --script res://tests/d20_geometry.gd
+      - name: M3 numbered physical D20 and face outcome
+        run: godot --headless --path . --script res://tests/numbered_d20_physics.gd
 
   android-debug:
     name: Android ARM64 debug export
@@ -56,12 +58,12 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
-          godot --headless --path . --export-debug "Android Debug" build/android/dice-3d-m3-debug.apk
-          test -s build/android/dice-3d-m3-debug.apk
+          godot --headless --path . --export-debug "Android Debug" build/android/dice-3d-m3-d20-debug.apk
+          test -s build/android/dice-3d-m3-d20-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: m3-android-debug
-          path: build/android/dice-3d-m3-debug.apk
+          name: m3-d20-android-debug
+          path: build/android/dice-3d-m3-d20-debug.apk
           if-no-files-found: error
           retention-days: 14
 
