@@ -1,11 +1,16 @@
 extends Node3D
-## M2 foundation: interactive rigid-body scene, NOT a completed dice roller.
+## M3 D6 testbed. A numeral is shown ONLY once real Jolt physics has settled.
+## Not final UX, not yet approved as statistical fairness evidence.
 
+const DieScript = preload("res://src/dice/d6_body.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
 
 var active_die: RigidBody3D
 var status_label: Label
+var throw_button: Button
+var copy_button: Button
+var last_result := -1
 
 func _ready() -> void:
     _make_world()
@@ -54,11 +59,11 @@ func _make_static_box(node_name: String, origin: Vector3, dimensions: Vector3, m
     var body := StaticBody3D.new()
     body.name = node_name
     body.position = origin
-    var shape := CollisionShape3D.new()
+    var shape_node := CollisionShape3D.new()
     var box := BoxShape3D.new()
     box.size = dimensions
-    shape.shape = box
-    body.add_child(shape)
+    shape_node.shape = box
+    body.add_child(shape_node)
     var mesh_node := MeshInstance3D.new()
     var mesh := BoxMesh.new()
     mesh.size = dimensions
@@ -75,63 +80,62 @@ func _make_overlay() -> void:
     canvas.add_child(root)
 
     var top := Label.new()
-    top.text = "D&D 3D Dice   ·   M2"
+    top.text = "D&D 3D Dice   ·   M3 D6 testbed"
     top.position = Vector2(20, 25)
     root.add_child(top)
 
     var panel := PanelContainer.new()
     panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    panel.offset_top = -190.0
+    panel.offset_top = -205.0
     root.add_child(panel)
     var column := VBoxContainer.new()
-    column.add_theme_constant_override("separation", 14)
+    column.add_theme_constant_override("separation", 10)
     panel.add_child(column)
     var heading := Label.new()
-    heading.text = "Физический стенд · D6"
+    heading.text = "Обсидиановый D6 · физический тест"
     column.add_child(heading)
-    var button := Button.new()
-    button.text = "Бросить D6"
-    button.custom_minimum_size = Vector2(0, 64)
-    button.pressed.connect(_throw_physical_d6)
-    column.add_child(button)
+    throw_button = Button.new()
+    throw_button.text = "Бросить D6"
+    throw_button.custom_minimum_size = Vector2(0, 54)
+    throw_button.pressed.connect(_throw_physical_d6)
+    column.add_child(throw_button)
     status_label = Label.new()
-    status_label.text = "Результат и цифры на гранях: этап M3."
+    status_label.text = "Выбери «Бросить D6»"
     column.add_child(status_label)
+    copy_button = Button.new()
+    copy_button.text = "Скопировать результат"
+    copy_button.disabled = true
+    copy_button.pressed.connect(_copy_result)
+    column.add_child(copy_button)
+
+func _copy_result() -> void:
+    if last_result != -1:
+        DisplayServer.clipboard_set(str(last_result))
+        status_label.text = "Скопировано: %d" % last_result
 
 func _throw_physical_d6() -> void:
+    if not throw_button or throw_button.disabled:
+        return
+    last_result = -1
+    copy_button.disabled = true
+    throw_button.disabled = true
     if is_instance_valid(active_die):
         active_die.queue_free()
-    var die := RigidBody3D.new()
+    var die = DieScript.new()
     die.name = "PhysicalD6"
-    die.mass = 0.04
-    die.continuous_cd = true
-    die.position = Vector3(randf_range(-1.3, 1.3), 2.4, -3.4)
-
-    var physics_material := PhysicsMaterial.new()
-    physics_material.friction = 0.65
-    physics_material.bounce = 0.22
-    die.physics_material_override = physics_material
-
-    var shape_node := CollisionShape3D.new()
-    var shape := BoxShape3D.new()
-    shape.size = Vector3(0.72, 0.72, 0.72)
-    shape_node.shape = shape
-    die.add_child(shape_node)
-
-    var mesh_node := MeshInstance3D.new()
-    var cube := BoxMesh.new()
-    cube.size = shape.size
-    mesh_node.mesh = cube
-    var obsidian := StandardMaterial3D.new()
-    obsidian.albedo_color = Color(0.032, 0.039, 0.054)
-    obsidian.metallic = 0.18
-    obsidian.roughness = 0.24
-    mesh_node.material_override = obsidian
-    die.add_child(mesh_node)
-
     add_child(die)
     active_die = die
-    die.apply_central_impulse(Vector3(randf_range(-0.02, 0.02), 0.024, randf_range(0.12, 0.18)))
-    die.apply_torque_impulse(Vector3(randf_range(-0.020, 0.020), randf_range(-0.020, 0.020), randf_range(-0.020, 0.020)))
-    status_label.text = "Физический бросок. Значение пока не вычисляется."
+    die.roll_completed.connect(_on_d6_completed)
+    die.roll_failed.connect(_on_d6_failed)
+    die.throw_from_top()
+    status_label.text = "Кубик летит…"
 
+func _on_d6_completed(value: int) -> void:
+    last_result = value
+    status_label.text = "D6 · результат: %d" % value
+    throw_button.disabled = false
+    copy_button.disabled = false
+
+func _on_d6_failed(message: String) -> void:
+    status_label.text = "Бросок не засчитан: %s" % message
+    throw_button.disabled = false
