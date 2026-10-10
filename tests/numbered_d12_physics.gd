@@ -62,6 +62,9 @@ func _run() -> void:
         if not stopped:
             break
         _expect(active.failure == "", "D12 physical failure: %s" % active.failure)
+        _expect(active.edge_recovery_count <= 3, "D12 recovery exceeded budget")
+        if active.failure != "":
+            break
         var face_value: int = Dodeca.top_value(active.global_transform.basis.orthonormalized())
         _expect(face_value >= 1 and face_value <= 12, "Out-of-bounds D12 number")
         _expect(active.result == face_value, "D12 output differs from upper face")
