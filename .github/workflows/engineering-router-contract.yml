@@ -6,6 +6,8 @@ on:
       - 'AGENTS.md'
       - 'config/engineering_routes.json'
       - 'scripts/engineering_router.py'
+      - 'scripts/engineering_checks.py'
+      - 'tests/test_engineering_checks.py'
       - 'tests/test_engineering_router.py'
       - 'docs/ENGINEERING_ROUTER.md'
       - 'docs/handoff/ACTIVE_ROUTING_HANDOFF.json'
@@ -36,9 +38,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Compile router and tests
-        run: python3 -m py_compile scripts/engineering_router.py tests/test_engineering_router.py
+        run: python3 -m py_compile scripts/engineering_router.py scripts/engineering_checks.py tests/test_engineering_router.py tests/test_engineering_checks.py
       - name: Exercise routing, resume, blocked recovery, atomic handoff
-        run: python3 -m unittest discover -s tests -p 'test_engineering_router.py' -v
+        run: python3 -m unittest discover -s tests -p 'test_engineering_*.py' -v
+      - name: Run source-only dependency and secret diagnostics
+        run: |
+          python3 scripts/engineering_checks.py architecture > "$RUNNER_TEMP/router-architecture.json" || true
+          python3 scripts/engineering_checks.py security > "$RUNNER_TEMP/router-security.json" || true
+          echo "Diagnostics capture as original raw evidence; these are not used to relabel product acceptance"
       - name: Validate registry and handoff
         run: python3 scripts/engineering_router.py validate
       - name: Exercise commands without external services
