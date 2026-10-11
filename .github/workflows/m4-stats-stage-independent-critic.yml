@@ -38,32 +38,35 @@ jobs:
           out.mkdir(exist_ok=True)
           source=Path('src/core/roll_statistics.gd').read_text()
           cases=Path('tests/m4_roll_statistics.gd').read_text()
-          prompt=('Review this specific Godot source as an adversarial independent QA critic. '
-                  'Output ONE complete small JSON object with exactly 5 string fields: '
-                  'source_quote, risk, proposed_test, source_verdict, android_runtime. '
-                  'Keep EACH field below 35 words. Quote contiguous exact source text of at least 18 characters. '
-                  'Identify one concrete bug hypothesis OR edge case and one tiny deterministic test to check it. '
-                  'Never claim you ran a test. source_verdict must be PASS, FAIL, or NOT_VERIFIED; '
-                  'android_runtime must be NOT_VERIFIED. Do not use markdown or code fences. '
-                  'No other words. Reroll history receipts are not independent physical trials.\n\n'
-                  'SOURCE:\n'+source+'\nTEST FIXTURES:\n'+cases)
+          prompt=('Review the following actual source code as an independent QA critic. '
+                  'Answer with EXACTLY THREE lines. No JSON, markdown, code fences, or copied test code. '
+                  'Every RISK and TEST must be one plain-English sentence, maximum 25 words. '
+                  'LINE 1: QUOTE: followed by exact 18+ character substring of SOURCE. '
+                  'LINE 2: RISK: concrete risk or plausible edge case using that SOURCE line. '
+                  'LINE 3: TEST: a deterministic test described in ordinary English (no code). '
+                  'No device validation is possible. Never invent a run result. '
+                  'Saved reroll receipts may repeat unchanged dice, and are not fair-physics proof.\n\n'
+                  'SOURCE:\n'+source+'\nTEST CASES (do not copy code):\n'+cases)
           (out/'exact-prompt.txt').write_text(prompt)
           print('Independent critic inputs ready: exact source + test fixtures')
           req=urllib.request.Request('http://127.0.0.1:11434/api/generate',
-            data=json.dumps({'model':'qwen2.5-coder:7b','prompt':prompt,'format':'json',
-              'stream':False,'options':{'temperature':0,'num_predict':1800}}).encode(),
+            data=json.dumps({'model':'qwen2.5-coder:7b','prompt':prompt,'stream':False,'options':{'temperature':0,'num_predict':320}}).encode(),
             headers={'Content-Type':'application/json'})
           with urllib.request.urlopen(req,timeout=420) as resp: raw=json.load(resp)
           (out/'unmodified-ollama-response.json').write_text(json.dumps(raw,ensure_ascii=False,indent=2))
           answer=raw.get('response','')
           (out/'original-critic-text.txt').write_text(answer)
           try:
-              data=json.loads(answer)
-              quote=data['source_quote']
-              assert isinstance(quote,str) and len(quote)>=18 and quote in source, 'Source quote not grounded'
-              assert len(str(data.get('risk','')))>=25 and len(str(data.get('proposed_test','')))>=25, 'No substantive risk or test'
-              assert data['source_verdict'] in ('PASS','FAIL','NOT_VERIFIED')
-              assert data['android_runtime']=='NOT_VERIFIED','Cannot fabricate Android pass'
+              lines=[x.strip() for x in answer.splitlines() if x.strip()]
+              assert len(lines)==3, 'Expected exactly three critic evidence lines'
+              assert lines[0].startswith('QUOTE: ') and lines[1].startswith('RISK: ') and lines[2].startswith('TEST: '), 'Missing structured lines'
+              quote=lines[0][7:].strip()
+              risk=lines[1][6:].strip()
+              proposed=lines[2][6:].strip()
+              assert len(quote)>=18 and quote in source, 'Critic quote not actually in source'
+              assert len(risk)>=25 and len(proposed)>=25, 'No material hypothesis and test'
+              assert len(risk.split())<=30 and len(proposed.split())<=30, 'Review not concise'
+              assert not any(x in proposed for x in ['{','}', 'var ', 'func ', 'append(']), 'Need prose test, not injected source'
               verdict='SOURCE_EVIDENCE_REVIEW_RECEIVED'
           except Exception as exc:
               verdict='NOT_VERIFIED_INVALID_OR_GENERIC_CRITIC'
