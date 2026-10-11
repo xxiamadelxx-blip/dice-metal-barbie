@@ -60,7 +60,10 @@ jobs:
               lines=[x.strip() for x in answer.splitlines() if x.strip()]
               assert len(lines)==3, 'Expected exactly three critic evidence lines'
               assert lines[0].startswith('QUOTE: ') and lines[1].startswith('RISK: ') and lines[2].startswith('TEST: '), 'Missing structured lines'
-              quote=lines[0][7:].strip()
+              # Qwen 7B emitted an *exact* source quote inside ordinary
+              # markdown backticks, without violating provenance. Strip only
+              # decorative delimiters; keep exact substring grounding strict.
+              quote=lines[0][7:].strip().strip('`').strip()
               risk=lines[1][6:].strip()
               proposed=lines[2][6:].strip()
               assert len(quote)>=18 and quote in source, 'Critic quote not actually in source'

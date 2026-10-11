@@ -32,7 +32,20 @@ func _run() -> void:
     var hostile: Array = entries.duplicate(true)
     hostile.append({"ok":true,"source":"synthetic","total":999,"groups":[{}]})
     hostile.append({"ok":true,"source":"actual_physical_faces_required","total":"??","groups":[{}]})
-    _check(int(Stats.summarize(hostile)["records"])==4,"Counted forged/nonnumeric source")
+    # Independent Qwen 7B #38152226265 identified int(float) truncation as
+    # a possible bug. This *adversarial* regression proves fractional input
+    # gets REJECTED by the explicit round-trip float equality guard; it is
+    # not rounded down into a fictitious signed physical result.
+    var fractional_positive: Dictionary = a.duplicate(true)
+    fractional_positive["total"]=12.99
+    var fractional_negative: Dictionary = b.duplicate(true)
+    fractional_negative["total"]=-12.99
+    hostile.append(fractional_positive)
+    hostile.append(fractional_negative)
+    _check(int(Stats.summarize(hostile)["records"])==4,
+        "Reject forged, nonnumeric, positive and negative fractional dice totals")
+    _check(int(Stats.summarize(hostile)["total_sum"])==65,
+        "Fractional totals were silently truncated into saved sums")
     _check(entries==original,"Read-only metrics mutated source history")
     print("M4_OFFLINE_RECEIPT_STATISTICS checks=%d failures=%d" % [checks,fails])
     quit(0 if fails==0 else 1)
