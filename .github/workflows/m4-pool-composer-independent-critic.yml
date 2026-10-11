@@ -1,4 +1,4 @@
-name: M4 independent local Qwen 7B source critique: physical composition
+name: 'M4 independent local Qwen 7B source critique: physical composition'
 on:
   push:
     branches:
