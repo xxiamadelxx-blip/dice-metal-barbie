@@ -38,19 +38,20 @@ jobs:
           out.mkdir(exist_ok=True)
           source=Path('src/core/roll_statistics.gd').read_text()
           cases=Path('tests/m4_roll_statistics.gd').read_text()
-          prompt=('You are an independent quality critic reviewing a READ-ONLY statistics helper for stored Godot physical dice receipts. '
-                  'No bluffing, generic summaries or fabricated tests. Show an exact literal SOURCE quote from the implementation, '
-                  'one concrete adversarial risk or correctness finding about counting signed totals/criticals/percentile rerolls, '
-                  'and ONE deterministic extra test that could prove/disprove that risk. '
-                  'Return only a JSON object with string keys: source_quote, risk, proposed_test, source_verdict, android_runtime. '
-                  'source_quote MUST be an exact, contiguous substring of SOURCE, minimum 18 characters. '
-                  'source_verdict = PASS or FAIL or NOT_VERIFIED, and android_runtime = NOT_VERIFIED, because you cannot see a device. '
-                  'Remember: rerolls appear in multiple history receipts; this is not a fair-dice chi-square study.\n\n'
-                  'SOURCE:\n'+source+'\n\nTEST-ONLY FIXTURES:\n'+cases)
+          prompt=('Review this specific Godot source as an adversarial independent QA critic. '
+                  'Output ONE complete small JSON object with exactly 5 string fields: '
+                  'source_quote, risk, proposed_test, source_verdict, android_runtime. '
+                  'Keep EACH field below 35 words. Quote contiguous exact source text of at least 18 characters. '
+                  'Identify one concrete bug hypothesis OR edge case and one tiny deterministic test to check it. '
+                  'Never claim you ran a test. source_verdict must be PASS, FAIL, or NOT_VERIFIED; '
+                  'android_runtime must be NOT_VERIFIED. Do not use markdown or code fences. '
+                  'No other words. Reroll history receipts are not independent physical trials.\n\n'
+                  'SOURCE:\n'+source+'\nTEST FIXTURES:\n'+cases)
           (out/'exact-prompt.txt').write_text(prompt)
+          print('Independent critic inputs ready: exact source + test fixtures')
           req=urllib.request.Request('http://127.0.0.1:11434/api/generate',
             data=json.dumps({'model':'qwen2.5-coder:7b','prompt':prompt,'format':'json',
-              'stream':False,'options':{'temperature':0,'num_predict':900}}).encode(),
+              'stream':False,'options':{'temperature':0,'num_predict':1800}}).encode(),
             headers={'Content-Type':'application/json'})
           with urllib.request.urlopen(req,timeout=420) as resp: raw=json.load(resp)
           (out/'unmodified-ollama-response.json').write_text(json.dumps(raw,ensure_ascii=False,indent=2))
