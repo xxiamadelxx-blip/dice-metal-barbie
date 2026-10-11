@@ -28,7 +28,7 @@ class LocalModelTests(unittest.TestCase):
                "GAUNTLET_AI_URL": "https://untrusted.example/chosen-elsewhere",
                "GAUNTLET_AI_TOKEN": "not-used-here",
                "GAUNTLET_BUILDER_MODEL": "qwen2.5-coder:1.5b",
-               "GAUNTLET_CRITIC_MODEL": "qwen2.5-coder:3b"}
+               "GAUNTLET_CRITIC_MODEL": "qwen2.5-coder:7b"}
         env.update(overrides)
         with patch.dict(os.environ, env, clear=True):
             return ChatActor()
@@ -61,7 +61,7 @@ class LocalModelTests(unittest.TestCase):
         self.assertEqual(result_builder["edits"][0]["content"], "return 6")
         self.assertEqual(result_critic["verdict"], "PASS")
         self.assertEqual([x["model"] for x in requests],
-                         ["qwen2.5-coder:1.5b", "qwen2.5-coder:3b"])
+                         ["qwen2.5-coder:1.5b", "qwen2.5-coder:7b"])
         self.assertEqual([x["format"] for x in requests], ["json", "json"])
         self.assertFalse(any("return 5" in str(x["messages"]) for x in requests[1:]))
 
