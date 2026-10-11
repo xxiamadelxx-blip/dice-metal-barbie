@@ -220,7 +220,7 @@ def report(intent: str, registry: dict[str, Any], state: dict[str, Any],
     mode = parse_mode(intent)
     chosen = route_for(intent, registry, state["active"], override)
     git = git_info(root)
-    recorded_sha = state["active"].get("last_verified_sha", "")
+    recorded_sha = state["active"].get("last_observed_sha") or state["active"].get("last_verified_sha", "")
     stale = bool(recorded_sha and git["sha"] != recorded_sha)
     warnings: list[str] = []
     if stale:
@@ -273,7 +273,8 @@ def checkpoint(root: Path, registry: dict[str, Any], args: argparse.Namespace) -
         "task": args.task, "route": args.route, "status": args.status,
         "owner": args.owner, "next_action": args.next_action,
         "blockers": list(args.blocker or []), "evidence": list(args.evidence or []),
-        "last_verified_sha": g["sha"] if g["sha"] != "NOT_VERIFIED" else "",
+        "last_observed_sha": g["sha"] if g["sha"] != "NOT_VERIFIED" else "",
+        "last_verified_sha": g["sha"] if args.status == "verified" and g["sha"] != "NOT_VERIFIED" else "",
         "branch": g["branch"], "updated_at": now(),
         "verification_note": args.verification_note or "NOT_VERIFIED until external evidence is reviewed",
     }
