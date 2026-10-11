@@ -1,0 +1,79 @@
+name: Gauntlet autonomous isolated builder-critic loop
+on:
+  workflow_dispatch:
+    inputs:
+      task_spec:
+        description: 'Committed task JSON: qa/gauntlet/tasks/<name>.json'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: gauntlet-autopilot-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  independent-agent-loop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Validate trusted task file and checkout identity
+        env:
+          TASK_SPEC: ${{ inputs.task_spec }}
+        run: |
+          set -euo pipefail
+          case "$TASK_SPEC" in
+            qa/gauntlet/tasks/*.json) ;;
+            *) echo "Refusing task spec outside approved directory"; exit 2 ;;
+          esac
+          test -f "$TASK_SPEC"
+          git diff --quiet
+          git diff --cached --quiet
+          python3 -m unittest discover -s ${{ github.event.repository.name == 'dm-ai-campaign-app' && 'scripts/tests' || 'tests' }} -p 'test_gauntlet_*.py' -v
+      - name: Start a unique isolated work branch, never edit main
+        run: git checkout -b "gauntlet/autofix-${{ github.run_id }}"
+      - name: Run real distinct builder and critic model calls with tests
+        id: autonomy
+        env:
+          TASK_SPEC: ${{ inputs.task_spec }}
+          GAUNTLET_AI_URL: ${{ vars.GAUNTLET_AI_URL }}
+          GAUNTLET_AI_TOKEN: ${{ secrets.GAUNTLET_AI_TOKEN }}
+          GAUNTLET_BUILDER_MODEL: ${{ vars.GAUNTLET_BUILDER_MODEL }}
+          GAUNTLET_CRITIC_MODEL: ${{ vars.GAUNTLET_CRITIC_MODEL }}
+        run: |
+          set -euo pipefail
+          python3 scripts/gauntlet_autopilot.py --spec "$TASK_SPEC" --root . --out "$RUNNER_TEMP/gauntlet-proof"
+      - name: Reverify exact final commit and acceptance record
+        if: steps.autonomy.outcome == 'success'
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python3 scripts/gauntlet_evidence.py "$RUNNER_TEMP/gauntlet-proof/gauntlet-record.json" --expected-sha "$(git rev-parse HEAD)" --repository "$REPOSITORY"
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Publish accepted results ONLY to fresh branch and create PR
+        if: steps.autonomy.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: gauntlet/autofix-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          git push origin "HEAD:refs/heads/$BRANCH"
+          gh pr create --base main --head "$BRANCH" --draft --title "Gauntlet automated candidate $BRANCH" --body "Isolated builder + independent critic contexts + exact-SHA regression evidence. Approval, device/visual product QA, and integration remain independent requirements. Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - name: Preserve evidence including failed/rejected attempts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gauntlet-independent-review-${{ github.run_id }}
+          path: ${{ runner.temp }}/gauntlet-proof/
+          retention-days: 14
+          if-no-files-found: warn
