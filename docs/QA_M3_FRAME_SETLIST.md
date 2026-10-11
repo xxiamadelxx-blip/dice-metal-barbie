@@ -1,7 +1,7 @@
 # M3 physical dice · continuous 24fps frame-by-frame visual checklist
 
 **Authority:** approved M0/M1 design, `docs/DESIGN.md`, `docs/VISUAL_ACCEPTANCE.md`, `docs/GAUNTLET_LOOP.md`.
-**Status:** eight-mode pipeline authored, **NOT VERIFIED until exact-head CI completes and original videos/sheets are inspected**.
+**Status:** eight native and eight Android captures PASS on [Gauntlet #38095490855](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38095490855). Original 24fps source/sheets reviewed for completeness, blackouts, wrong die/body and end-state; actual 24 unique render FPS and OnePlus device remain NOT VERIFIED. D100 engraving legibility remains **M5 FAIL**.
 No "AI screenshot" / generated frame is admissible as evidence. Target OnePlus Nord 3 is NOT VERIFIED.
 
 ## Record these 8 REAL Jolt throws separately
