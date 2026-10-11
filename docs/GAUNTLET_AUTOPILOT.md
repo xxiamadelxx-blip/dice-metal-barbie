@@ -17,9 +17,9 @@ This implementation is a bounded **execution system**, not just a checklist. It 
 **Canonical DEFAULT from 2026-10-11: no OpenRouter, Groq, credits, API keys or new accounts.** For Dice use `.github/workflows/gauntlet-autopilot.yml` with `scripts/gauntlet_setup_local.sh`. This workflow pulls two **different** local model weights on the temporary GitHub-hosted Ubuntu CPU runner:
 
 - BUILDER `qwen2.5-coder:1.5b` for a scoped small source edit;
-- CRITIC `qwen2.5-coder:3b` for a separate stateless review of the exact candidate SHA, diff and actual test log.
+- CRITIC `qwen2.5-coder:7b` for a separate stateless review of the exact candidate SHA, diff and actual test log. The reviewer MUST treat the approved task/acceptance as source of truth rather than assume any intentionally defective baseline is correct.
 
-Official Ollama model registry provides these quantized weights at ~986 MB and ~1.9 GB. The models run **inside GitHub's ephemeral Linux runner**, not on the owner's Android phone or a remote paid inference API. The server binds to `127.0.0.1:11434` only. `GAUNTLET_AI_BACKEND=ollama_local` forces a fixed localhost URL and sends **no** Authorization header. The two model IDs must differ. Invalid semantic critic findings receive at most one re-prompt, with both raw responses retained; unresolved or still-invalid reviews fail closed. Original test logs, review and gate verdict still pass through the existing `gauntlet_evidence.py` acceptance record. Critical / major findings carry between attempts.
+Official Ollama model registry provides these quantized weights at ~986 MB and ~4.7 GB. The models run **inside GitHub's ephemeral Linux runner**, not on the owner's Android phone or a remote paid inference API. The server binds to `127.0.0.1:11434` only. `GAUNTLET_AI_BACKEND=ollama_local` forces a fixed localhost URL and sends **no** Authorization header. The two model IDs must differ. Invalid semantic critic findings receive at most one re-prompt, with both raw responses retained; unresolved or still-invalid reviews fail closed. Original test logs, review and gate verdict still pass through the existing `gauntlet_evidence.py` acceptance record. Critical / major findings carry between attempts.
 
 For a standalone authorized Linux shell with Docker available:
 
@@ -27,7 +27,7 @@ For a standalone authorized Linux shell with Docker available:
 export PYTHONDONTWRITEBYTECODE=1
 export GAUNTLET_AI_BACKEND=ollama_local
 export GAUNTLET_BUILDER_MODEL=qwen2.5-coder:1.5b
-export GAUNTLET_CRITIC_MODEL=qwen2.5-coder:3b
+export GAUNTLET_CRITIC_MODEL=qwen2.5-coder:7b
 bash scripts/gauntlet_setup_local.sh
 ```
 
