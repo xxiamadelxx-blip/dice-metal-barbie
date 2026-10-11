@@ -1,11 +1,7 @@
-# Gauntlet integration for coding agents
+# Dice Roller: required engineering entry
 
-Apply to **all code/art/UX/test changes** in this repository.
-This supplement exists separately from AGENTS.md to prevent conflicts with active parallel branches.
+Read `AGENTS.md` first and use `docs/ENGINEERING_ROUTER.md` as the **single canonical operational contract** for code, Godot/Jolt, modeling, audio, Android, security, architecture and agent recovery. Do not create another competing routing policy.
 
-- Read `AGENTS.md` and the user's approved product decisions first.
-- Read `docs/GAUNTLET_LOOP.md`, `docs/GAUNTLET_ACCEPTANCE_V2.md`, and `docs/GAUNTLET_AUTOPILOT.md` before implementing any substantial feature.
-- For a scoped approved task, route build -> exact candidate SHA -> fixed tests -> fresh-context independent critic -> evidence-backed fixes -> rerun. Use `scripts/gauntlet_autopilot.py` and `.github/workflows/gauntlet-autopilot.yml` only when a truly authorized independent model endpoint is available.
-- Preserve active Dice PR work; never overwrite another branch, change approved top-down design, or bypass Blender/Jolt temporal/Android QA.
-- Missing reviewer/model/handset evidence => NOT_VERIFIED. Never treat self-review or a green contract regression as genuine independent critic approval.
-- Work in isolated branch and propose draft PR; no automatic merge/deploy to main.
+For **продолжай / завис / застрял / передача новому агенту**, load `docs/handoff/ACTIVE_ROUTING_HANDOFF.json`, inspect live GitHub HEAD/CI, and invoke `python3 scripts/engineering_router.py enter --intent "<literal request>"` if a terminal is available. If not, carry out the same read/dispatch/checkpoint from GitHub and disclose the unexecuted CLI.
+
+For independent critique read `docs/GAUNTLET_LOOP.md`, `docs/GAUNTLET_AUTOPILOT.md` and `docs/GAUNTLET_ACCEPTANCE_V2.md`. Preserve existing product architecture and offline Android invariants. Exit after a real evidence-backed checkpoint committed/pushed to the correct PR, never after merely saying "waiting" or "done".
