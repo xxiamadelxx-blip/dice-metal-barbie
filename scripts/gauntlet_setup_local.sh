@@ -9,7 +9,7 @@ if [ -n "${GAUNTLET_AI_TOKEN:-}" ]; then
   exit 2
 fi
 export GAUNTLET_BUILDER_MODEL="${GAUNTLET_BUILDER_MODEL:-qwen2.5-coder:1.5b}"
-export GAUNTLET_CRITIC_MODEL="${GAUNTLET_CRITIC_MODEL:-qwen2.5-coder:3b}"
+export GAUNTLET_CRITIC_MODEL="${GAUNTLET_CRITIC_MODEL:-qwen2.5-coder:7b}"
 if [ "$GAUNTLET_BUILDER_MODEL" = "$GAUNTLET_CRITIC_MODEL" ]; then
   echo "BLOCKED: independent model names must differ"
   exit 2
@@ -20,7 +20,7 @@ case "$GAUNTLET_BUILDER_MODEL" in
   *) echo "BLOCKED: unexpected builder model"; exit 2 ;;
 esac
 case "$GAUNTLET_CRITIC_MODEL" in
-  qwen2.5-coder:3b) ;;
+  qwen2.5-coder:7b) ;;
   *) echo "BLOCKED: unexpected critic model"; exit 2 ;;
 esac
 docker run -d --name dice-gauntlet-ollama --pull always \
