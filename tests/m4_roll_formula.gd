@@ -75,6 +75,18 @@ func _run() -> void:
         "Two genuinely observed D10 zero digits must produce percentile 100")
     check(pair["groups"][0]["percentile_source_d10_faces"] == [[10,10]],
         "Percentile outcome must preserve both independent actual D10 faces")
+    var digit_reroll := Formula.evaluate(Formula.parse("1d100"),
+        [[{"states":[[4,1],[8,1],[8,10]]}]])
+    check(digit_reroll.get("ok",false) and int(digit_reroll.get("total",0))==80,
+        "Selective pair reroll must compute genuine final percentile 80")
+    if digit_reroll.get("ok",false):
+        check(digit_reroll["groups"][0]["attempts"][0]==[41,81,80],
+            "Original and intermediate physical percentile values lost")
+        check(digit_reroll["groups"][0]["percentile_source_d10_attempts"][0]==
+            [[4,1],[8,1],[8,10]],"Source digit chronology dropped")
+    check(not Formula.evaluate(Formula.parse("1d100"),
+        [[{"states":[[2,2],[3,3]]}]]).get("ok",false),
+        "One D10 reroll cannot modify both source bodies")
     var pair_61 := Formula.evaluate(Formula.parse("1d100"),
         [[{"tens":6,"ones":1}]])
     check(pair_61.get("ok",false) and pair_61["total"] == 61,

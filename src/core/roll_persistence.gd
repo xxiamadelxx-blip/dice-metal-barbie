@@ -94,6 +94,10 @@ func append_physical_result(outcome: Dictionary) -> Dictionary:
             return _error("Нет последовательности реальных граней")
         var saved_traces: Array = group["attempts"]
         var sources: Variant = group.get("percentile_source_d10_faces")
+        var histories: Variant = group.get("percentile_source_d10_attempts",[])
+        if typeof(histories)!=TYPE_ARRAY or (
+                not histories.is_empty() and histories.size()!=saved_traces.size()):
+            return _error("Повреждена история физических процентных D10")
         if typeof(sources) != TYPE_ARRAY or sources.size() != saved_traces.size():
             return _error("Исходные грани процентного D100 не сохранены")
         var actual_group: Array = []
@@ -102,7 +106,12 @@ func append_physical_result(outcome: Dictionary) -> Dictionary:
             if typeof(pair) != TYPE_ARRAY:
                 return _error("Повреждённая трасса исходных D10")
             if pair.size() == 2:
-                actual_group.append({"tens":pair[0],"ones":pair[1]})
+                var states: Array = [pair]
+                if not histories.is_empty():
+                    if typeof(histories[source_index])!=TYPE_ARRAY:
+                        return _error("Повреждена трасса физического процентного D10")
+                    states = histories[source_index]
+                actual_group.append({"states":states})
             elif pair.is_empty():
                 actual_group.append(saved_traces[source_index])
             else:

@@ -160,7 +160,7 @@ func _abort(reason: String) -> void:
     _remove_active()
     pool_failed.emit(reason)
 
-func reroll_one(group_index: int, die_index: int) -> bool:
+func reroll_one(group_index: int, die_index: int, digit: String = "") -> bool:
     # A concrete face *already on the table* is the only source that can be
     # rerolled. No hidden number generator, no arbitrary total edits.
     if busy or not bool(last_result.get("ok",false)):
@@ -170,13 +170,10 @@ func reroll_one(group_index: int, die_index: int) -> bool:
     for i in range(_last_plan.size()):
         var source: Dictionary = _last_plan[i]
         if int(source["group"]) == group_index and int(source["index"]) == die_index:
-            # Two separate D10 comprise a percentile pair; implementing
-            # a partial digit reroll requires extra D100 trace semantics.
-            if not str(source["digit"]).is_empty():
-                last_physical_error = "Отдельный процентный D10 пока нельзя перебросить"
-                return false
-            slot = i
-            break
+            if str(source["digit"]) == digit and (
+                    digit.is_empty() or digit == "tens" or digit == "ones"):
+                slot = i
+                break
     if slot < 0 or slot >= _active.size():
         last_physical_error = "Не удалось найти выбранный физический кубик"
         return false
@@ -186,10 +183,11 @@ func reroll_one(group_index: int, die_index: int) -> bool:
     last_physical_error = ""
     _failed_message = ""
     busy = true
-    call_deferred("_execute_physical_reroll",slot,group_index,die_index)
+    call_deferred("_execute_physical_reroll",slot,group_index,die_index,digit)
     return true
 
-func _execute_physical_reroll(slot: int, group_index: int, die_index: int) -> void:
+func _execute_physical_reroll(slot: int, group_index: int, die_index: int,
+        digit: String) -> void:
     var target: RigidBody3D = _active[slot]
     # Kept original results are held in-place (frozen) during the requested
     # replay, but remain visually present with their true physical faces.
@@ -240,9 +238,28 @@ func _execute_physical_reroll(slot: int, group_index: int, die_index: int) -> vo
     var observed: Array = _last_observed.duplicate(true)
     var group_sources: Array = observed[group_index]
     var previous: Variant = group_sources[die_index]
-    var attempts: Array = previous.duplicate(true) if typeof(previous) == TYPE_ARRAY else [previous]
-    attempts.append(new_top)
-    group_sources[die_index] = attempts
+    var attempts: Array = []
+    if digit.is_empty():
+        attempts = previous.duplicate(true) if typeof(previous)==TYPE_ARRAY else [previous]
+        attempts.append(new_top)
+        group_sources[die_index] = attempts
+    else:
+        # Every state contains the two ACTUAL physical D10 upper faces.
+        # Only the selected source can change; partner body stays frozen.
+        if typeof(previous)!=TYPE_DICTIONARY:
+            _abort("Не удалось восстановить физическую пару D100")
+            return
+        var old_pair: Dictionary = previous
+        var states: Array = old_pair.get("states",[
+            [old_pair.get("tens"),old_pair.get("ones")]]).duplicate(true)
+        if states.is_empty() or typeof(states[-1])!=TYPE_ARRAY or states[-1].size()!=2:
+            _abort("Исходные грани D100 потеряны")
+            return
+        var next_digits: Array = states[-1].duplicate(true)
+        next_digits[0 if digit=="tens" else 1] = new_top
+        states.append(next_digits)
+        group_sources[die_index] = {"states":states}
+        attempts = states
     var final: Dictionary = Formula.evaluate(_spec,observed,_mode,_chosen_d20)
     if not bool(final.get("ok",false)):
         _abort(str(final.get("error","Неверная трасса физического переброса")))
@@ -258,6 +275,7 @@ func _execute_physical_reroll(slot: int, group_index: int, die_index: int) -> vo
     final["all_source_bodies_remain_visible"] = true
     final["rerolled_physical_group_index"] = group_index
     final["rerolled_physical_die_index"] = die_index
+    final["rerolled_percentile_digit"] = digit
     final["reroll_attempts_on_selected_die"] = attempts.size()
     _last_observed = observed.duplicate(true)
     last_result = final

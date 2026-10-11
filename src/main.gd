@@ -160,10 +160,11 @@ func _request_advanced_throw(expression: String, mode: String, d100_mode: String
     if OS.is_debug_build():
         print("DICE_M4_PHYSICAL_STARTED "+expression)
 
-func _request_m4_physical_reroll(group_index: int, die_index: int) -> void:
+func _request_m4_physical_reroll(group_index: int, die_index: int,
+        digit: String = "") -> void:
     if throw_button.disabled or not is_instance_valid(physical_pool):
         return
-    var accepted: bool = physical_pool.call("reroll_one",group_index,die_index)
+    var accepted: bool = physical_pool.call("reroll_one",group_index,die_index,digit)
     if not accepted:
         advanced_panel.call("show_message",str(physical_pool.get("last_physical_error")))
         return
@@ -180,7 +181,7 @@ func _request_m4_physical_reroll(group_index: int, die_index: int) -> void:
     advanced_panel.visible = false
     advanced_open_button.disabled = true
     if OS.is_debug_build():
-        print("DICE_M4_REAL_REROLL_STARTED group=%d die=%d" % [group_index,die_index])
+        print("DICE_M4_REAL_REROLL_STARTED group=%d die=%d digit=%s" % [group_index,die_index,digit])
 
 func _m4_physical_completed(result: Dictionary) -> void:
     if not bool(result.get("ok",false)):

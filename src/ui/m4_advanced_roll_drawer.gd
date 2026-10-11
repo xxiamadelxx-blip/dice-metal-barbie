@@ -6,7 +6,7 @@ signal preset_save_requested(title: String, expression: String, mode: String, d1
 signal preset_delete_requested(title: String)
 signal history_clear_requested
 signal history_open_requested
-signal physical_reroll_requested(group_index: int, die_index: int)
+signal physical_reroll_requested(group_index: int, die_index: int, digit: String)
 
 var formula_input: LineEdit
 var name_input: LineEdit
@@ -74,9 +74,8 @@ func _ready() -> void:
     roll_button.pressed.connect(_request_throw)
     content.add_child(roll_button)
 
-    # Reroll exactly ONE named source die, never change the other dice.
-    # Percentile paired D100 is intentionally excluded until its two
-    # physical D10 traces can be independently persisted across rerolls.
+    # Select ONE true source body. Paired D100 exposes separate tens/ones D10,
+    # each with a full offline chronology of both original physical faces.
     var reroll_row := HBoxContainer.new()
     reroll_row.add_theme_constant_override("separation",8)
     content.add_child(reroll_row)
@@ -170,7 +169,8 @@ func _request_physical_reroll() -> void:
         feedback.text = "Сначала выберите физический кубик."
         return
     var chosen: Dictionary = reroll_slots[idx]
-    physical_reroll_requested.emit(int(chosen["group"]),int(chosen["die"]))
+    physical_reroll_requested.emit(int(chosen["group"]),int(chosen["die"]),
+        str(chosen.get("digit","")))
 
 func set_real_roll_result(outcome: Dictionary) -> void:
     reroll_slots.clear()
@@ -183,17 +183,21 @@ func set_real_roll_result(outcome: Dictionary) -> void:
             var faces: Array = group.get("observed_faces",[])
             var percentiles: Array = group.get("percentile_source_d10_faces",[])
             for di in range(attempts.size()):
-                # A paired D100 cannot be partially rerolled without
-                # corrupting both preserved physical tens/ones sources.
                 var is_pair := false
-                if di < percentiles.size() and typeof(percentiles[di]) == TYPE_ARRAY:
-                    is_pair = (percentiles[di] as Array).size() == 2
+                if di < percentiles.size() and typeof(percentiles[di])==TYPE_ARRAY:
+                    is_pair = (percentiles[di] as Array).size()==2
                 if is_pair:
-                    continue
-                var face: int = int(faces[di]) if di < faces.size() else -1
-                reroll_slots.append({"group":gi,"die":di})
-                reroll_picker.add_item("D%d · №%d · выпало %d" %
-                    [int(group["sides"]),di+1,face])
+                    var pair: Array = percentiles[di]
+                    for digit_name in ["tens","ones"]:
+                        var nth: int = 0 if digit_name=="tens" else 1
+                        reroll_slots.append({"group":gi,"die":di,"digit":digit_name})
+                        reroll_picker.add_item("D100 №%d · %s D10 · грань %d" %
+                            [di+1,"десятки" if nth==0 else "единицы",int(pair[nth])])
+                else:
+                    var face: int = int(faces[di]) if di < faces.size() else -1
+                    reroll_slots.append({"group":gi,"die":di,"digit":""})
+                    reroll_picker.add_item("D%d · №%d · выпало %d" %
+                        [int(group["sides"]),di+1,face])
     if reroll_slots.is_empty():
         reroll_picker.add_item("Нет доступных кубиков для переброса")
     reroll_picker.disabled = reroll_slots.is_empty()

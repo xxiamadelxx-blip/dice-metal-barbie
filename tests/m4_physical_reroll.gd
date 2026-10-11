@@ -126,5 +126,54 @@ func _run() -> void:
         "Nonexistent die selection must not invent physical outcomes")
     _check(pool.get("last_result")==last_verified,
         "Invalid reroll changed last valid physical result")
+    # Two original physical D10 represent a paired percentile D100.
+    observed = {}
+    failed_message = ""
+    _check(pool.call("begin","1d100+1d6","normal","pair"),
+        "Cannot launch a real two-D10 percentile plus D6 pool")
+    _check(await _wait(pool),"Initial percentile Jolt pair did not stop")
+    if not bool(observed.get("ok",false)):
+        _check(false,"Initial physical paired D100 failed")
+    else:
+        var dice: Array = pool.get("_active")
+        _check(dice.size()==3,"A paired D100 plus D6 must have three Jolt bodies")
+        if dice.size()==3:
+            var tens: RigidBody3D = dice[0]
+            var ones: RigidBody3D = dice[1]
+            var d6: RigidBody3D = dice[2]
+            var original_pair: Array = observed["groups"][0]["percentile_source_d10_faces"][0]
+            var six: int = int(d6.get("result"))
+            for digit in ["tens","ones"]:
+                observed = {}
+                failed_message = ""
+                _check(pool.call("reroll_one",0,0,digit),
+                    "Physical percentile source was not selectable: "+digit)
+                _check(await _wait(pool),"Selected genuine percentile D10 stalled")
+                _check(failed_message.is_empty() and bool(observed.get("ok",false)),
+                    "Authentic percentile source reroll failed")
+                if not bool(observed.get("ok",false)):
+                    break
+                var states: Array = observed["groups"][0]["percentile_source_d10_attempts"][0]
+                _check(states.size()==(2 if digit=="tens" else 3),
+                    "D100 chronological source evidence was lost")
+                _check(int(states[0][0])==int(original_pair[0]) and
+                    int(states[0][1])==int(original_pair[1]),
+                    "Initial source faces no longer match true Jolt values")
+                var last: Array = states[-1]
+                _check(int(last[0])==int(tens.get("result")) and
+                    int(last[1])==int(ones.get("result")),
+                    "Recorded percentile source differs from physical upper faces")
+                _check(int(d6.get("result"))==six and d6.freeze,
+                    "Rerolled percentile source disturbed the other physical D6")
+                var value := ((int(last[0])%10)*10+int(last[1])%10)
+                if value==0:
+                    value=100
+                _check(observed["groups"][0]["observed_faces"][0]==value and
+                    observed["total"]==value+six,
+                    "Updated D100 result was not derived from two actual D10")
+                _check(observed.get("rerolled_percentile_digit","")==digit,
+                    "Audit metadata did not name the rerolled physical D10")
+            _check(not pool.call("reroll_one",0,0,"not-a-d10"),
+                "Invalid pair digit must not initiate a Jolt throw")
     print("M4 real selected-Jolt reroll: %d checks, %d failures" % [checks,failures])
     quit(0 if failures==0 else 1)

@@ -96,25 +96,38 @@ static func evaluate(spec: Dictionary, observed: Array, mode: String = "normal",
         var final_faces: Array[int] = []
         var traces: Array = []
         var percentile_sources: Array = []
+        var percentile_attempt_sources: Array = []
         for item in die_records:
             var attempts: Array = []
             var source_faces: Array = []
+            var digit_history: Array = []
             if typeof(item) == TYPE_DICTIONARY:
                 if sides != 100:
                     return _error("Процентные исходные D10 допустимы только для D100")
                 var raw_pair: Dictionary = item
-                var ten: Variant = raw_pair.get("tens")
-                var one: Variant = raw_pair.get("ones")
-                if typeof(ten) != TYPE_INT or typeof(one) != TYPE_INT:
-                    return _error("Грани процентных кубиков должны быть целыми")
-                if int(ten) < 1 or int(ten) > 10 or int(one) < 1 or int(one) > 10:
-                    return _error("Невозможная физическая грань процентного D10")
-                var mapped: int = Rules.percentile((int(ten) % 10) * 10, int(one) % 10)
-                attempts = [mapped]
-                source_faces = [int(ten),int(one)]
+                var states: Variant = raw_pair.get("states",
+                    [[raw_pair.get("tens"),raw_pair.get("ones")]])
+                if typeof(states)!=TYPE_ARRAY or states.is_empty() or states.size()>12:
+                    return _error("Недопустимая история процентных D10")
+                var prior: Array = []
+                for state in states:
+                    if typeof(state)!=TYPE_ARRAY or state.size()!=2:
+                        return _error("Нужны обе реальные грани процентных D10")
+                    var ten: Variant = state[0]
+                    var one: Variant = state[1]
+                    if typeof(ten)!=TYPE_INT or typeof(one)!=TYPE_INT or int(ten)<1 or int(ten)>10 or int(one)<1 or int(one)>10:
+                        return _error("Невозможная физическая грань процентного D10")
+                    if not prior.is_empty() and int(ten)!=int(prior[0]) and int(one)!=int(prior[1]):
+                        return _error("В одиночном перебросе изменились оба D10")
+                    var mapped: int = Rules.percentile((int(ten)%10)*10,int(one)%10)
+                    attempts.append(mapped)
+                    source_faces = [int(ten),int(one)]
+                    digit_history.append(source_faces.duplicate())
+                    prior = source_faces.duplicate()
             else:
-                attempts = item if typeof(item) == TYPE_ARRAY else [item]
+                attempts = item if typeof(item)==TYPE_ARRAY else [item]
             percentile_sources.append(source_faces)
+            percentile_attempt_sources.append(digit_history)
             if attempts.is_empty() or attempts.size() > 12:
                 return _error("Неверная последовательность перебросов")
             var sequence: Array[int] = []
@@ -138,6 +151,7 @@ static func evaluate(spec: Dictionary, observed: Array, mode: String = "normal",
             natural_crit = Rules.critical_d20(selected[0])
         detailed.append({"sides":sides,"sign":sign,"count":n,"attempts":traces,
             "percentile_source_d10_faces":percentile_sources,
+            "percentile_source_d10_attempts":percentile_attempt_sources,
             "observed_faces":final_faces,"kept_faces":selected,
             "subtotal":sign*partial,"selected_d20":i==d20_selected})
     return {"ok":true,"schema_version":1,"formula":spec["formula"],

@@ -100,5 +100,30 @@ func _run() -> void:
         "Error recovery must not overwrite original corrupted file")
     if FileAccess.file_exists(TEMP):
         DirAccess.remove_absolute(abs_path)
+    var digit_file := "user://m4_percentile_qa.json"
+    if FileAccess.file_exists(digit_file):
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(digit_file))
+    var pair_store := Store.new(digit_file)
+    _assert(pair_store.load_state().get("ok",false),
+        "Cannot initialize source-percentile offline history")
+    var chronological := Formula.evaluate(Formula.parse("1d100+1d6"),
+        [[{"states":[[4,1],[8,1],[8,10]]}],[3]])
+    _assert(chronological.get("ok",false) and chronological.get("total")==83,
+        "Chronological two-source physical percentile fixture is invalid")
+    _assert(pair_store.append_physical_result(chronological).get("ok",false),
+        "Percentile source attempt chronology was not persisted")
+    var altered := chronological.duplicate(true)
+    altered["groups"][0]["percentile_source_d10_attempts"][0][1][0] = 2
+    _assert(not pair_store.append_physical_result(altered).get("ok",false),
+        "Changed intermediate real D10 source evaded integrity validation")
+    var reloaded := Store.new(digit_file)
+    _assert(reloaded.load_state().get("ok",false),
+        "Chronological D100 source record did not reload")
+    var records: Array = reloaded.snapshot()["history"]
+    _assert(records.size()==1 and records[0]["groups"][0][
+        "percentile_source_d10_attempts"][0].size()==3,
+        "Offline history lost original or intermediate physical D10 pairs")
+    if FileAccess.file_exists(digit_file):
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(digit_file))
     print("M4 offline versioned persistence: %d checks, %d errors" % [checks,errors])
     quit(0 if errors == 0 else 1)
