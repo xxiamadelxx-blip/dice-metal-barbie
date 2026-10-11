@@ -122,12 +122,10 @@ if test "$ready" != 1; then
   echo "FAIL: Android AVD never rendered playable dice scene in 100 seconds"
   exit 8
 fi
-# Actual 720x1280 Godot layout: old five chips at y1115,
-# extended M3 D10/D100 chips at y990, D100-mode toggle x465/y990.
-# D100 default mode is two D10. First toggle to single (D100);
-# next toggle back to pair (D100_PAIR). Verify Godot signal key, never
-# infer selection from the tap alone.
-for spec in '4 85 1115 0' '6 220 1115 0' '8 355 1115 0' '12 490 1115 0' '20 625 1115 0' '10 285 990 0' '100 365 990 1' '100_PAIR 365 990 1'; do
+# Actual 720x1280 M5 7-chip bottom row (ordered D4,D6,D8,D10,D12,D20,D100).
+# D100 mode is INSIDE the dock. Read arranged control rectangle from live
+# Godot then touch centre with ADB: never fake a pressed signal.
+for spec in '4 65 1115 0' '6 163 1115 0' '8 261 1115 0' '12 457 1115 0' '20 555 1115 0' '10 359 1115 0' '100 653 1115 1' '100_PAIR 653 1115 1'; do
   read -r sides xpos ypos mode_toggle <<< "$spec"
   echo "AVD real D$sides: begin recording before Android UI taps"
   # Previous AVD capture incorrectly marked D8 PASS with 263 identical frames,
@@ -145,8 +143,22 @@ for spec in '4 85 1115 0' '6 220 1115 0' '8 355 1115 0' '12 490 1115 0' '20 625 
   adb shell input tap "$xpos" "$ypos"
   sleep 0.6
   if test "$mode_toggle" = 1; then
-    adb shell input tap 465 990
-    sleep 0.4
+    mode_rect=""
+    for mode_attempt in $(seq 1 20); do
+      sleep .65
+      adb logcat -d -v time -s godot:I '*:S' > "qa-evidence/android-avd/d100-mode-control-$sides.log" || true
+      mode_rect="$(sed -n 's/.*DICE_QA_D100_MODE_RECT x=\([0-9]*\) y=\([0-9]*\) w=\([0-9]*\) h=\([0-9]*\).*/\1 \2 \3 \4/p' "qa-evidence/android-avd/d100-mode-control-$sides.log" | tail -1)"
+      if test -n "$mode_rect"; then break; fi
+    done
+    if test -z "$mode_rect"; then
+      echo "FAIL: physical D100 mode has no arranged Android rectangle"; exit 35
+    fi
+    read -r mode_x mode_y mode_w mode_h <<< "$mode_rect"
+    if (( mode_x < 0 || mode_y < 1030 || mode_w < 90 || mode_h < 30 || mode_x + mode_w > 720 || mode_y + mode_h > 1280 )); then
+      echo "FAIL: D100 mode is not a real touchable dock button: $mode_rect"; exit 36
+    fi
+    adb shell input tap "$((mode_x + mode_w / 2))" "$((mode_y + mode_h / 2))"
+    sleep .65
   fi
   adb shell input tap 655 1215
   completed=0

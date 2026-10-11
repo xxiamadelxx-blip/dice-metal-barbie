@@ -76,6 +76,8 @@ jobs:
           godot --headless --path . --script res://tests/m4_full_history_browser.gd > m4-history-actual.log 2>&1 || { tail -100 m4-history-actual.log; exit 1; }
           grep -F 'M4_REAL_UI_ALL_HISTORY checks=' m4-history-actual.log
           grep -E 'DICE_M4_HISTORY_OPEN records=([2-9]|[1-9][0-9]+)' m4-history-actual.log
+      - name: M5 seven working dice inside one real mobile dock; genuine D100 mode selector
+        run: godot --headless --path . --script res://tests/m5_compact_dock.gd
       - name: Physical scene integration smoke
         run: godot --headless --path . --script res://tests/physics_smoke.gd
       - name: Natural D20-only non-colliding spatial critical aura

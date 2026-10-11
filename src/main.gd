@@ -486,8 +486,10 @@ func _make_overlay() -> void:
     chips.name = "DiceTypes"
     chips.add_theme_constant_override("separation", 8)
     column.add_child(chips)
-    var types := [4, 6, 8, 12, 20]
-    var icons := ["△", "□", "◇", "⬟", "⬡"]
+    # All seven real types share the approved minimal dock. No floating
+    # physics-testbed buttons over the 3D velvet playfield.
+    var types := [4, 6, 8, 10, 12, 20, 100]
+    var icons := ["△", "□", "◇", "⬡", "⬟", "⬢", "◈"]
     for i in range(types.size()):
         var sides: int = types[i]
         var chip := Button.new()
@@ -495,7 +497,7 @@ func _make_overlay() -> void:
         chip.text = "%s\nD%d" % [icons[i], sides]
         chip.custom_minimum_size = Vector2(0, 67)
         chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-        chip.add_theme_font_size_override("font_size", 16)
+        chip.add_theme_font_size_override("font_size", 15)
         chip.add_theme_color_override("font_color", Color(0.92, 0.91, 0.87))
         chip.add_theme_color_override("font_hover_color", Color.WHITE)
         chip.add_theme_stylebox_override("normal", _chip_style(sides == selected_die))
@@ -505,38 +507,6 @@ func _make_overlay() -> void:
         chip.pressed.connect(_select_die_type.bind(sides))
         die_buttons[sides] = chip
         chips.add_child(chip)
-
-    # Temporary M3 mechanical controls outside the original 5-button dock,
-    # preserving existing Android touch coordinates and the approved stage.
-    # Full visual composition and typography are deferred to M5.
-    var extended := HBoxContainer.new()
-    extended.name = "M3ExtraDiceControls"
-    extended.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    extended.offset_top = -323
-    extended.offset_bottom = -247
-    extended.offset_left = 245
-    extended.offset_right = -20
-    extended.add_theme_constant_override("separation", 8)
-    root.add_child(extended)
-    for extra_sides in [10, 100]:
-        var extra := Button.new()
-        extra.name = "SelectD%d" % extra_sides
-        extra.text = "D%d" % extra_sides
-        extra.custom_minimum_size = Vector2(76, 55)
-        extra.add_theme_font_size_override("font_size", 16)
-        extra.add_theme_stylebox_override("normal", _chip_style(false))
-        extra.add_theme_stylebox_override("pressed", _chip_style(true))
-        extra.pressed.connect(_select_die_type.bind(extra_sides))
-        die_buttons[extra_sides] = extra
-        extended.add_child(extra)
-    d100_mode_button = Button.new()
-    d100_mode_button.name = "D100Mode"
-    d100_mode_button.text = "2 × D10"
-    d100_mode_button.tooltip_text = "Переключить один D100 / два D10"
-    d100_mode_button.visible = false
-    d100_mode_button.custom_minimum_size = Vector2(105, 55)
-    d100_mode_button.pressed.connect(_toggle_d100_mode)
-    extended.add_child(d100_mode_button)
 
     var lower := HBoxContainer.new()
     lower.name = "ThrowAndResult"
@@ -565,6 +535,22 @@ func _make_overlay() -> void:
     copy_button.add_theme_stylebox_override("normal", _chip_style(false))
     copy_button.pressed.connect(_copy_result)
     result_stack.add_child(copy_button)
+
+    # D100's single-hundred-face / paired-two-D10 physical mode stays
+    # functional, inside this same dock (never an overlay over the tabletop).
+    d100_mode_button = Button.new()
+    d100_mode_button.name = "D100Mode"
+    d100_mode_button.text = "2 × D10"
+    d100_mode_button.tooltip_text = "Один D100 / два независимых физических D10"
+    d100_mode_button.custom_minimum_size = Vector2(145, 31)
+    d100_mode_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+    d100_mode_button.add_theme_font_size_override("font_size", 14)
+    d100_mode_button.add_theme_stylebox_override("normal", _chip_style(false))
+    d100_mode_button.add_theme_stylebox_override("hover", _chip_style(true))
+    d100_mode_button.add_theme_stylebox_override("pressed", _chip_style(true))
+    d100_mode_button.visible = false
+    d100_mode_button.pressed.connect(_toggle_d100_mode)
+    result_stack.add_child(d100_mode_button)
 
     var action_stack := VBoxContainer.new()
     action_stack.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -612,9 +598,23 @@ func _on_type_selected(index: int) -> void:
     throw_button.tooltip_text = "Бросить D%d" % selected_die
     if d100_mode_button != null:
         d100_mode_button.visible = selected_die == 100
+        if selected_die == 100 and OS.is_debug_build():
+            # Report ACTUAL arranged rectangle; AVD must still physically tap.
+            call_deferred("_qa_report_d100_mode_rect")
     for die_sides in die_buttons:
         var chip: Button = die_buttons[die_sides]
         chip.add_theme_stylebox_override("normal", _chip_style(die_sides == selected_die))
+
+func _qa_report_d100_mode_rect() -> void:
+    await get_tree().process_frame
+    if not OS.is_debug_build() or not is_instance_valid(d100_mode_button):
+        return
+    if not d100_mode_button.visible:
+        return
+    var bounds: Rect2 = d100_mode_button.get_global_rect()
+    print("DICE_QA_D100_MODE_RECT x=%d y=%d w=%d h=%d" % [
+        int(bounds.position.x), int(bounds.position.y),
+        int(bounds.size.x), int(bounds.size.y)])
 
 func _throw_selected_die() -> void:
     if is_instance_valid(physical_pool) and bool(physical_pool.get("busy")):

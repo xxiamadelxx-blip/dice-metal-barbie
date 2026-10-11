@@ -2,17 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 polished obsidian: inspect real Blender→Godot material mismatch, change only imported PBR stone, repeat exact-source Gauntlet",
-    "route": "creative-3d",
+    "task": "M5 single 7-chip minimal dock, D100 real-source on-dock switch with ADB pixel touch and preserved M4 mechanics",
+    "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect Gauntlet #38176763640 on exact new source revision; Blender/MeshLab/Inkscape manifest, actual Godot/Mesa launch and D20 macro PNG vs historical #38174391709, full 24fps/Jolt, Android AVD and ARM64. Independently compare imported PBR facet highlights/gold legibility rather than just green CI. If red check exact job/root cause and fix. If technically and visually improved, proceed to seven-chip compact M5 dock (remove floating D10/D100 without losing real selections), then impact audio/haptics. Do not use old M4-run green for this change or claim Nord 3 performance.",
+    "next_action": "Run exact-source full Gauntlet from new atomic M5 dock commit. Inspect 7 actual Godot buttons from native frames, compile/run tests/m5_compact_dock.gd, AVD real D4/D6/D8/D10/D12/D20/D100/D100_PAIR taps and dynamic on-dock D100 mode touch via debug RECT, source completion and full frame auditer. If RED use source original screenshots/logs to fix; never relax tests or fake physical results. PBR candidate native screenshot showed sharper white bevels, premium obsidian artistic signoff still OPEN. Resume M5 true Blender-to-Godot polished stone, contact audio/haptics after this.",
     "blockers": [
-      "M5 post-material-import native/Android artist review NOT_VERIFIED pending full Gauntlet #38176763640.",
-      "M5 baseline #38174391709 PASS all technical stages; original Blender output and Godot screenshot were opened; former uniform emission/rough clearcoat caused suspected matte grey presentation, now source correction + Godot material contract test.",
-      "M5 full Concept 3 approval and physical-contact sound/haptics remain OPEN; M6 hardware OnePlus Nord 3, release signing/upgrade NOT_VERIFIED.",
-      "Material Maker PTEX, Krita/GIMP authored export not proven; use currently verified Blender/MeshLab/Inkscape/ImageMagick/FFmpeg.",
-      "Local engineering_router.py enter CLI NOT_VERIFIED due no local checkout, manual GitHub canonical router reads performed."
+      "M5 unified seven-chip dock candidate NOT_VERIFIED until fresh Godot/Jolt/Android CI.",
+      "M5 PBR native screenshot sharper facet reflection but still grayish; artistic Concept 3 approval NOT_VERIFIED.",
+      "M5 physical-contact audio/haptics and real OnePlus Nord 3 phone QA remain OPEN.",
+      "Local engineering_router.py CLI NOT_VERIFIED: no checked-out repo/Godot binary in assistant runtime; GitHub connector used for preflight."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -70,13 +69,14 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38174391709",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38174391709/artifacts/11715486450",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38174391709/artifacts/11714694965",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38176763640"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38176763640",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38176798218"
     ],
-    "last_observed_sha": "2a1fe64042b64864a34a72ebe8c939c197df4103",
+    "last_observed_sha": "49252548dc8a0d75b07502ace1d07440c40a8fcd",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Verified full #38174391709 source (pre-pin 6b2a3f0) technical PASS; inspected raw Blender asset manifest and genuine native launch frames. Material correction commit 78adab3, actual GDScript material test commit 397b259, image A/B and gates documented in docs/M5_PBR_TRANSFER_GAUNTLET.md. New #38176763640 pending; do not declare M5 artistic PASS. Local CLI unavailable, GitHub router followed manually. Head before checkpoint 2a1fe64042b64864a34a72ebe8c939c197df4103."
+    "verification_note": "M5 PBR source already modified at exact branch HEAD. New seven-die dock atomic candidate + test/Android dynamic source-rect touch committed in one tree; NOT VERIFIED until complete exact-run Gauntlet. Physical source calculation not altered. Prior run #38176798218 still being evaluated at authoring. Current HEAD recorded before this new commit: 49252548dc8a0d75b07502ace1d07440c40a8fcd"
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
