@@ -146,9 +146,17 @@ func _choose_visible_row(displayed_index: int) -> void:
                 content += "  ·  физический переброс"
             if di < percentile.size() and typeof(percentile[di]) == TYPE_ARRAY:
                 var digits: Array = percentile[di]
-                if digits.size()==2:
+                if digits.size()==2 and typeof(digits[0]) == TYPE_INT:
                     content += "  ·  два реальных D10: %s/%s" % [
                         str(digits[0]),str(digits[1])]
+                elif not digits.is_empty():
+                    var full_source_trace: Array[String] = []
+                    for pair in digits:
+                        if typeof(pair) == TYPE_ARRAY and pair.size()==2:
+                            full_source_trace.append("%s/%s" % [
+                                str(pair[0]),str(pair[1])])
+                    if not full_source_trace.is_empty():
+                        content += "  ·  физические пары D10: " + " → ".join(full_source_trace)
             lines.append(content)
     lines.append("")
     lines.append("Источник: сохранённые фактические верхние грани Godot/Jolt")

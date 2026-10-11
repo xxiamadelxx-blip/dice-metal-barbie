@@ -170,11 +170,9 @@ func reroll_one(group_index: int, die_index: int) -> bool:
     for i in range(_last_plan.size()):
         var source: Dictionary = _last_plan[i]
         if int(source["group"]) == group_index and int(source["index"]) == die_index:
-            # Two separate D10 comprise a percentile pair; implementing
-            # a partial digit reroll requires extra D100 trace semantics.
-            if not str(source["digit"]).is_empty():
-                last_physical_error = "Отдельный процентный D10 пока нельзя перебросить"
-                return false
+            # A percentile D100 is ONE logical die built from TWO real
+            # D10 bodies. Always reroll BOTH simultaneously, never a
+            # standalone tens/ones digit that changes D&D percentile rules.
             slot = i
             break
     if slot < 0 or slot >= _active.size():
@@ -185,6 +183,26 @@ func reroll_one(group_index: int, die_index: int) -> bool:
         return false
     last_physical_error = ""
     _failed_message = ""
+    var selected: Dictionary = _last_plan[slot]
+    var digit := str(selected.get("digit",""))
+    if not digit.is_empty():
+        var slots: Array[int] = []
+        for i in range(_last_plan.size()):
+            var p: Dictionary = _last_plan[i]
+            if int(p["group"]) == group_index and int(p["index"]) == die_index:
+                slots.append(i)
+        if slots.size() != 2:
+            last_physical_error = "Ожидались два настоящих D10 для переброса D100"
+            return false
+        if str(_last_plan[slots[0]]["digit"]) != "tens" or str(_last_plan[slots[1]]["digit"]) != "ones":
+            last_physical_error = "Недействительный порядок физической пары D100"
+            return false
+        if not is_instance_valid(_active[slots[0]]) or not is_instance_valid(_active[slots[1]]):
+            last_physical_error = "Один из процентных физических D10 недоступен"
+            return false
+        busy = true
+        call_deferred("_execute_physical_percentile_reroll",slots[0],slots[1],group_index,die_index)
+        return true
     busy = true
     call_deferred("_execute_physical_reroll",slot,group_index,die_index)
     return true
@@ -202,6 +220,7 @@ func _execute_physical_reroll(slot: int, group_index: int, die_index: int) -> vo
         target.remove_child(old_aura)
         old_aura.queue_free()
     _values.erase(target.get_instance_id())
+    target.freeze = false
     var actual_sides: int = int(_last_plan[slot]["sides"])
     if actual_sides == 10:
         target.call("throw_from_top",0)
@@ -266,6 +285,94 @@ func _execute_physical_reroll(slot: int, group_index: int, die_index: int) -> vo
         print("DICE_M4_REAL_REROLL_COMPLETED D%d=%d attempts=%d" %
             [actual_sides,new_top,attempts.size()])
     pool_completed.emit(final)
+
+func _execute_physical_percentile_reroll(tens_slot: int, ones_slot: int,
+        group_index: int, die_index: int) -> void:
+    var tens_body: RigidBody3D = _active[tens_slot]
+    var ones_body: RigidBody3D = _active[ones_slot]
+    var rerolled_ids: Dictionary = {
+        tens_body.get_instance_id():true, ones_body.get_instance_id():true}
+    # Retain all other genuinely settled Jolt bodies and original values.
+    # Launch BOTH of the original D10 source bodies before a physics frame.
+    for body in _active:
+        body.freeze = not rerolled_ids.has(body.get_instance_id())
+    _values.erase(tens_body.get_instance_id())
+    _values.erase(ones_body.get_instance_id())
+    for slot in [tens_slot,ones_slot]:
+        var original: RigidBody3D = _active[slot]
+        original.freeze = false
+        original.call("throw_from_top",-1 if slot == tens_slot else 1)
+        var lane := _launch_position(slot)
+        original.position = Vector3(lane.x,original.position.y,lane.y)
+    var settled := false
+    for tick in range(MAX_PHYSICAL_STEPS):
+        await get_tree().physics_frame
+        if not _failed_message.is_empty():
+            _abort(_failed_message)
+            return
+        if _values.has(tens_body.get_instance_id()) and _values.has(ones_body.get_instance_id()):
+            if tens_body.sleeping and ones_body.sleeping:
+                settled = true
+                break
+    if not settled:
+        _abort("Один из настоящих D10 не остановился после процентного переброса")
+        return
+    var pair_values: Array[int] = []
+    for selected_slot in [tens_slot,ones_slot]:
+        var die: RigidBody3D = _active[selected_slot]
+        var top := _actual_top(die,10)
+        if top < 1 or top != int(_values.get(die.get_instance_id(),-1)) or (
+                top != int(die.get("result"))) or not die.sleeping:
+            _abort("Результат нового процентного D10 не совпал с верхней гранью")
+            return
+        pair_values.append(top)
+    # Every retained source must still present its ORIGINAL actual top.
+    for i in range(_active.size()):
+        if i == tens_slot or i == ones_slot:
+            continue
+        var kept: RigidBody3D = _active[i]
+        if not is_instance_valid(kept) or not kept.sleeping or (
+                _actual_top(kept,int(_last_plan[i]["sides"])) !=
+                int(_values.get(kept.get_instance_id(),-1))):
+            _abort("Посторонний кубик изменился при перебросе процентной пары")
+            return
+    var observed: Array = _last_observed.duplicate(true)
+    var original_group: Array = observed[group_index]
+    var old_value: Variant = original_group[die_index]
+    if typeof(old_value) != TYPE_DICTIONARY:
+        _abort("Утеряны исходные физические грани старого D100")
+        return
+    var previous: Dictionary = old_value
+    var history: Array = []
+    if previous.has("percentile_attempts"):
+        if typeof(previous["percentile_attempts"]) != TYPE_ARRAY:
+            _abort("Повреждена последовательность процентных исходов")
+            return
+        history = previous["percentile_attempts"].duplicate(true)
+    else:
+        history = [{"tens":previous.get("tens"),"ones":previous.get("ones")}]
+    history.append({"tens":pair_values[0],"ones":pair_values[1]})
+    if history.size() > 12:
+        _abort("Достигнут предел реальных физических перебросов одного D100")
+        return
+    original_group[die_index] = {"percentile_attempts":history}
+    var final: Dictionary = Formula.evaluate(_spec,observed,_mode,_chosen_d20)
+    if not bool(final.get("ok",false)):
+        _abort(str(final.get("error","Некорректная запись реальных пар D10")))
+        return
+    final["physical_bodies"] = _active.size()
+    final["all_source_bodies_remain_visible"] = true
+    final["rerolled_physical_group_index"] = group_index
+    final["rerolled_physical_die_index"] = die_index
+    final["reroll_attempts_on_selected_die"] = history.size()
+    _last_observed = observed.duplicate(true)
+    last_result = final
+    busy = false
+    if OS.is_debug_build():
+        print("DICE_M4_REAL_PERCENTILE_REROLL_COMPLETED D100=%d attempts=%d" % [
+            int(final["groups"][group_index]["kept_faces"][die_index]),history.size()])
+    pool_completed.emit(final)
+
 
 func _launch_position(slot: int) -> Vector2:
     # 3 columns * up to 3 rows. Adjacent convex bodies are separated at

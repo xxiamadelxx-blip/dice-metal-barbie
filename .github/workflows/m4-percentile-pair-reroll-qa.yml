@@ -1,0 +1,36 @@
+name: M4 Actual Paired D100 Physical Reroll QA
+on:
+  push:
+    branches: [qa/m4-paired-percentile-reroll]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-percentile-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import original production Jolt scene and Blender meshes
+        run: godot --headless --path . --editor --quit
+      - name: Compile physical source, formula, offline and UI scripts
+        run: |
+          godot --headless --path . --check-only --script res://src/core/roll_formula.gd
+          godot --headless --path . --check-only --script res://src/core/roll_persistence.gd
+          godot --headless --path . --check-only --script res://src/core/physical_roll_pool.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_advanced_roll_drawer.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_history_dialog.gd
+          godot --headless --path . --check-only --script res://tests/m4_percentile_pair_reroll_store.gd
+          godot --headless --path . --check-only --script res://tests/m4_percentile_pair_physics.gd
+      - name: Check full genuine percentile physical history and restart storage
+        run: godot --headless --path . --script res://tests/m4_percentile_pair_reroll_store.gd
+      - name: Actually reroll TWO original Godot Jolt D10 simultaneously twice
+        run: godot --headless --path . --script res://tests/m4_percentile_pair_physics.gd
+      - name: Retest original percentile and physical D20/D6 reroll without regression
+        run: |
+          godot --headless --path . --script res://tests/percentile_pair_mapping.gd
+          godot --headless --path . --script res://tests/m4_roll_formula.gd
+          godot --headless --path . --script res://tests/m4_roll_persistence.gd
+          godot --headless --path . --script res://tests/m4_physical_reroll.gd

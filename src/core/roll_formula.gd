@@ -103,15 +103,32 @@ static func evaluate(spec: Dictionary, observed: Array, mode: String = "normal",
                 if sides != 100:
                     return _error("Процентные исходные D10 допустимы только для D100")
                 var raw_pair: Dictionary = item
-                var ten: Variant = raw_pair.get("tens")
-                var one: Variant = raw_pair.get("ones")
-                if typeof(ten) != TYPE_INT or typeof(one) != TYPE_INT:
-                    return _error("Грани процентных кубиков должны быть целыми")
-                if int(ten) < 1 or int(ten) > 10 or int(one) < 1 or int(one) > 10:
-                    return _error("Невозможная физическая грань процентного D10")
-                var mapped: int = Rules.percentile((int(ten) % 10) * 10, int(one) % 10)
-                attempts = [mapped]
-                source_faces = [int(ten),int(one)]
+                var history: Array = []
+                if raw_pair.has("percentile_attempts"):
+                    if typeof(raw_pair["percentile_attempts"]) != TYPE_ARRAY:
+                        return _error("Трасса D100 должна содержать реальные пары D10")
+                    history = raw_pair["percentile_attempts"]
+                else:
+                    history = [raw_pair]
+                if history.is_empty() or history.size() > 12:
+                    return _error("Неверное количество физических перебросов пары D100")
+                var pair_attempts: Array = []
+                for attempt in history:
+                    if typeof(attempt) != TYPE_DICTIONARY:
+                        return _error("Каждый переброс D100 требует две исходные грани D10")
+                    var physical_pair: Dictionary = attempt
+                    var ten: Variant = physical_pair.get("tens")
+                    var one: Variant = physical_pair.get("ones")
+                    if typeof(ten) != TYPE_INT or typeof(one) != TYPE_INT:
+                        return _error("Грани процентных кубиков должны быть целыми")
+                    if int(ten) < 1 or int(ten) > 10 or int(one) < 1 or int(one) > 10:
+                        return _error("Невозможная физическая грань процентного D10")
+                    var mapped: int = Rules.percentile((int(ten) % 10) * 10, int(one) % 10)
+                    attempts.append(mapped)
+                    pair_attempts.append([int(ten),int(one)])
+                # Keep existing one-throw persisted format intact; only
+                # a REAL paired reroll needs the nested chronological pairs.
+                source_faces = pair_attempts[0] if pair_attempts.size() == 1 else pair_attempts
             else:
                 attempts = item if typeof(item) == TYPE_ARRAY else [item]
             percentile_sources.append(source_faces)

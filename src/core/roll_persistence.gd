@@ -101,12 +101,21 @@ func append_physical_result(outcome: Dictionary) -> Dictionary:
             var pair: Variant = sources[source_index]
             if typeof(pair) != TYPE_ARRAY:
                 return _error("Повреждённая трасса исходных D10")
-            if pair.size() == 2:
-                actual_group.append({"tens":pair[0],"ones":pair[1]})
-            elif pair.is_empty():
+            if pair.is_empty():
                 actual_group.append(saved_traces[source_index])
+            elif pair.size() == 2 and typeof(pair[0]) == TYPE_INT and typeof(pair[1]) == TYPE_INT:
+                # Legacy one-throw representation stays fully compatible.
+                actual_group.append({"tens":pair[0],"ones":pair[1]})
             else:
-                return _error("Повреждённая пара процентных граней")
+                var full_history: Array = []
+                for one_pair in pair:
+                    if typeof(one_pair) != TYPE_ARRAY or one_pair.size() != 2:
+                        return _error("Повреждённая трасса процентного переброса D100")
+                    full_history.append({"tens":one_pair[0],"ones":one_pair[1]})
+                if typeof(saved_traces[source_index]) != TYPE_ARRAY or (
+                        full_history.size() != (saved_traces[source_index] as Array).size()):
+                    return _error("Потерян исход одного из реальных процентных перебросов")
+                actual_group.append({"percentile_attempts":full_history})
         observed.append(actual_group)
     var verified: Dictionary = Formula.evaluate(spec, observed,
         str(outcome.get("d20_mode","normal")), selected_group)
