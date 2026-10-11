@@ -103,15 +103,26 @@ class ChatActor:
     """Two separate stateless HTTPS chat calls, not a shared chat transcript."""
 
     def __init__(self) -> None:
-        self.endpoint = os.getenv("GAUNTLET_AI_URL", "").strip()
-        self.token = os.getenv("GAUNTLET_AI_TOKEN", "").strip()
+        self.backend = os.getenv("GAUNTLET_AI_BACKEND", "openai").strip().lower()
         self.builder_model = os.getenv("GAUNTLET_BUILDER_MODEL", "").strip()
         self.critic_model = os.getenv("GAUNTLET_CRITIC_MODEL", "").strip()
-        if not (self.endpoint.startswith("https://") and self.token and
-                self.builder_model and self.critic_model):
-            raise RuntimeError("INDEPENDENCE NOT VERIFIED: HTTPS endpoint, token, builder and critic model IDs must be configured")
-        if len(self.endpoint) > 500:
-            raise ValueError("endpoint too long")
+        if not (self.builder_model and self.critic_model):
+            raise RuntimeError("INDEPENDENCE NOT VERIFIED: distinct builder and critic model IDs required")
+        if self.backend == "ollama_local":
+            # Localhost ONLY. Never let untrusted task files select an HTTP endpoint.
+            self.endpoint = "http://127.0.0.1:11434/api/chat"
+            self.token = ""
+            if self.builder_model == self.critic_model:
+                raise RuntimeError("INDEPENDENCE NOT VERIFIED: local builder and critic must be different models")
+        elif self.backend == "openai":
+            self.endpoint = os.getenv("GAUNTLET_AI_URL", "").strip()
+            self.token = os.getenv("GAUNTLET_AI_TOKEN", "").strip()
+            if not self.endpoint.startswith("https://") or not self.token:
+                raise RuntimeError("INDEPENDENCE NOT VERIFIED: HTTPS endpoint and token required for external models")
+            if len(self.endpoint) > 500:
+                raise ValueError("endpoint too long")
+        else:
+            raise RuntimeError("unsupported Gauntlet backend; use ollama_local or openai")
 
     def __call__(self, role: str, payload: dict[str, Any]) -> dict[str, Any]:
         if role not in ("builder", "critic"):
@@ -131,16 +142,29 @@ class ChatActor:
             "For a previously open major finding, repeat its ID with disposition resolved "
             "only after seeing concrete passing evidence; otherwise repeat it as open."
         )
-        body = json.dumps({"model": model, "messages": [
+        messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}
-        ], "temperature": 0, "max_tokens": 12000}, ensure_ascii=False).encode("utf-8")
+        ]
+        if self.backend == "ollama_local":
+            # Ollama's strict JSON format eliminates markdown fences/extra prose.
+            request_body = {"model": model, "messages": messages,
+                            "stream": False, "format": "json",
+                            "options": {"temperature": 0, "num_ctx": 4096,
+                                        "num_predict": 1800 if role == "builder" else 1100}}
+            headers = {"Content-Type": "application/json"}
+            timeout = 360
+        else:
+            request_body = {"model": model, "messages": messages,
+                            "temperature": 0, "max_tokens": 12000}
+            headers = {"Authorization": "Bearer " + self.token,
+                       "Content-Type": "application/json"}
+            timeout = 120
+        body = json.dumps(request_body, ensure_ascii=False).encode("utf-8")
         request = urllib.request.Request(
-            self.endpoint, data=body,
-            headers={"Authorization": "Bearer " + self.token,
-                     "Content-Type": "application/json"}, method="POST")
+            self.endpoint, data=body, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(request, timeout=120) as response:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
                 raw = response.read(250000).decode("utf-8")
         except urllib.error.HTTPError as exc:
             # Do NOT echo server response body, Authorization header or prompt.
@@ -150,7 +174,13 @@ class ChatActor:
         except (urllib.error.URLError, TimeoutError) as exc:
             raise RuntimeError(f"{role} provider unavailable: {type(exc).__name__}") from exc
         try:
-            reply = json.loads(raw)["choices"][0]["message"]["content"]
+            provider_data = json.loads(raw)
+            if self.backend == "ollama_local":
+                reply = provider_data["message"]["content"]
+            else:
+                reply = provider_data["choices"][0]["message"]["content"]
+            if not isinstance(reply, str):
+                raise TypeError("nontext model response")
             return json.loads(reply)
         except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
             raise RuntimeError(f"{role} returned invalid JSON; NOT VERIFIED") from exc
