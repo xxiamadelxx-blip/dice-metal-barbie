@@ -93,7 +93,7 @@ class AutoLoopTests(unittest.TestCase):
                 if self.critic_calls == 1:
                     return {"verdict": "FAIL", "findings": [
                         {"id": "stable-id", "severity": "major", "disposition": "resolved"}]}
-                self.assert_inputs_not_shared(payload)
+                self.assert_raw_not_builder_story(payload)
                 assert "format_correction" in payload
                 return {"verdict": "PASS", "findings": []}
 
@@ -116,6 +116,8 @@ class AutoLoopTests(unittest.TestCase):
                 return {"verdict": "FAIL", "findings": [
                     {"id": "made-up-issue", "severity": "major", "disposition": "resolved"}]}
         self.plan["max_iterations"] = 1
+        self.plan["test_command"] = ["python", "-c",
+            "import subprocess; s=subprocess.check_output(['python','sample.py']).decode(); assert s==bytes.fromhex('474f4f440a').decode()"]
         with self.assertRaisesRegex(RuntimeError, "after one retry"):
             execute(self.plan, self.root, self.out, AlwaysInvalid())
         self.assertTrue((self.out / "reviews/critic-1-retry.json").exists())
