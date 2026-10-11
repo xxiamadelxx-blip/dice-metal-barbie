@@ -48,6 +48,10 @@ func _ready() -> void:
     _make_idle_showcase()
     _make_overlay()
     _setup_m4_local_and_drawer()
+    # Real production scene/UI constructed. Android debug Gauntlet must wait
+    # for THIS fresh process after force-stop, not reuse its prior surface.
+    if OS.is_debug_build():
+        print("DICE_QA_MAIN_SCENE_READY")
 
 func _setup_m4_local_and_drawer() -> void:
     # Functional M4 bottom-sheet substitute; M5 will do final skin/navigation.

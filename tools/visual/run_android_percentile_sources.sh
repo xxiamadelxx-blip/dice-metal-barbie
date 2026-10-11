@@ -29,13 +29,23 @@ finish() {
   fi
 }
 trap finish EXIT
+# Clear the PREVIOUS session's Godot events BEFORE relaunch. A screenshot can
+# retain the old history popup after force-stop, so pixels alone are NOT proof.
+adb logcat -c || true
 adb shell am force-stop org.dicemetalbarbie.dnddice
 adb shell monkey -p org.dicemetalbarbie.dnddice 1
-# The new Android process can still show a splash or system overlay after 8s.
-# Prove actual rendered stage pixels BEFORE tapping formula/picker controls.
-# Same strict 720x1280 image gate as the successful baseline AVD test.
+# Wait for THIS new debug Godot main scene to finish creating its real HUD.
+# Every failed original frame and log remains available for independent QA.
 ready=0
 for attempt in $(seq 1 20); do
+  adb logcat -d -v time -s godot:I '*:S' > "$out/m4-pair-restart-godot.log" || true
+  # Only a fresh scene-ready marker emitted AFTER logcat -c qualifies.
+  if ! grep -Fq 'DICE_QA_MAIN_SCENE_READY' "$out/m4-pair-restart-godot.log"; then
+    adb exec-out screencap -p > "$out/m4-pair-before-drawer.png"
+    cp "$out/m4-pair-before-drawer.png" "$out/m4-pair-not-ready-$attempt.png"
+    sleep 5
+    continue
+  fi
   adb exec-out screencap -p > "$out/m4-pair-before-drawer.png"
   if python3 - "$out/m4-pair-before-drawer.png" <<'PY'
 import sys
@@ -55,7 +65,7 @@ PY
 done
 if test "$ready" != 1; then
   adb logcat -d -v time > "$out/m4-pair-restart-not-ready.log" || true
-  echo 'FAIL: Android restart never rendered a playable game stage'
+  echo 'FAIL: NEW Android Godot process or playable stage was not verified'
   exit 20
 fi
 adb logcat -c || true
@@ -64,8 +74,20 @@ adb shell screenrecord --size 720x1280 --bit-rate 4500000 \
 pid=$!
 sleep 1
 adb shell input tap 50 97
-sleep .8
+sleep 1
 adb exec-out screencap -p > "$out/m4-pair-formula-drawer.png"
+# Authentic Android UI must have visibly opened (not splash/stale overlay).
+python3 - "$out/m4-pair-before-drawer.png" "$out/m4-pair-formula-drawer.png" <<'PY'
+import sys
+from PIL import Image, ImageChops
+before=Image.open(sys.argv[1]).convert('RGB')
+after=Image.open(sys.argv[2]).convert('RGB')
+assert before.size==after.size==(720,1280), 'D100 pair drawer viewport mismatch'
+d=ImageChops.difference(before.crop((17,110,703,580)),after.crop((17,110,703,580))).convert('L')
+changed=sum(n for v,n in enumerate(d.histogram()) if v>16)
+print('M4 Android pair ACTUAL drawer opened, changed pixels:',changed)
+assert changed>8500, 'No visible player drawer after real Android tap'
+PY
 # From genuine prior Android screenshot: formula input x32..688 y154..198.
 adb shell input tap 250 175
 adb shell input keyevent KEYCODE_MOVE_END
