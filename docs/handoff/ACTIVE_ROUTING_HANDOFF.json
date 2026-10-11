@@ -2,15 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 hidden composition editor: grouped signed dice and modifier with unchanged Godot/Jolt source of truth",
+    "task": "M4 hidden pool editor: fix real mobile offscreen touch controls despite prior green Jolt CI; verify via original native video and Android tap",
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering agent via canonical router",
-    "next_action": "Read exact-SHA full Gauntlet source/compiler results: new GDScript composer, genuine 4-body mixed signed physical pool, newly extended actual 24fps UI capture, Android existing D100 tens/ones regression. Fix any original errors and rerun. Continue M4 UX only after gate passes.",
+    "next_action": "Review new exact-SHA native 24fps ORIGINAL modal PNG/frame capture and dedicated Godot geometry assertions, then implement original 720×1280 Android ADB tap-screen walkthrough from vetted staging script (only open event so far). After full Gauntlet all 9 gates pass, require actual Android finger interaction with add/remove/count/modifier and OK, not just popup-open.",
     "blockers": [
-      "New M4 composer/Godot player interaction and native 24fps capture candidate has NOT yet run same-source CI.",
-      "Independent Qwen model critique for new pool editor NOT_VERIFIED before new source CI.",
-      "OnePlus Nord3 physical APK install/upgrade/FPS, M5 art/sound/haptics and M6 release remain OPEN."
+      "Full #38158723281 was GREEN for functional Jolt, but independent pixel inspection of original M4 24fps video shows full-height ItemList hides physical pool edit buttons offscreen. New list bounds fix and real geometry assertions NOT_VERIFIED.",
+      "Preflight #38159813447 for separate Android pool composer script passed only source syntax + Godot; not real Android touch/popup validation.",
+      "Actual Nord 3 installation/FPS/haptics and M5 premium art acceptance remain OPEN."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -35,13 +35,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38155000883",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38155000883/artifacts/11708307037",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38156059963",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38156059709"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38156059709",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38158723281",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38158723281/artifacts/11709204179",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38159813447"
     ],
-    "last_observed_sha": "16164b16f398ea95a7a2b30b9ecc3a7caea6d307",
-    "last_verified_sha": "035adac823621b5feb35564f8d1d97120fac64e6",
+    "last_observed_sha": "604851114bfcc186fe1238e511c434f032a26c8b",
+    "last_verified_sha": "47284270934393a72635d329c92934a95215e95a",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Full #38156059963 successful on prior merge, original AVD 8 types and selected tens/ones + offline stats 11/11 30/30; new visual pool composer candidate guarded by Formula.parse and genuine Jolt tests NOT_VERIFIED."
+    "verification_note": "Real source native frame at 4.2s proves full-screen ItemList hid editor controls. Changed layout to fixed-height scrollable list; awaiting actual native screenshot and boundary test. Parent physical Jolt source already passed unified #38158723281."
   },
   "incidents": {}
 }

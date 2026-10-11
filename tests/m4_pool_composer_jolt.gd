@@ -57,6 +57,18 @@ func _run() -> void:
     _check(bool(source.call("load_formula","1d100+1d6")) and
         str(source.call("current_formula"))=="1d100+1d6",
         "Both approved physical D100 modes need untouched expression syntax")
+    # Qwen's independent concern about repeated groups is checked against
+    # D&D semantics: another 1d6 is ANOTHER actual physical source die.
+    _check(bool(source.call("load_formula","1d6")) and
+        bool(source.call("add_group",6)) and
+        str(source.call("current_formula"))=="1d6+1d6" and
+        int(source.call("physical_dice_count"))==2,
+        "Identical D6 group must add a distinct real physical source")
+    var duplicate_spec: Dictionary = Formula.parse("1d6+1d6")
+    var duplicate_oracle: Dictionary = Formula.evaluate(duplicate_spec,[[2],[5]])
+    _check(bool(duplicate_oracle.get("ok",false)) and
+        int(duplicate_oracle.get("total",0))==7,
+        "Pure arithmetic oracle must not coalesce two physical D6 groups")
 
     root.size=Vector2i(720,1280)
     var scene := load("res://src/main.tscn").instantiate() as Node3D
@@ -97,6 +109,33 @@ func _run() -> void:
             die_choice==null or modifier_plus==null or preview==null):
         quit(1)
         return
+    # Pixel review of original source Gauntlet #38158723281 uncovered a
+    # screen-filling expanding ItemList: tests emitted pressed signals even
+    # though the touch targets were physically OFF SCREEN on Android.
+    # Inspect real arranged Control geometry, not abstract presence alone.
+    await process_frame
+    await process_frame
+    _check(dialog.size.x<=720 and dialog.size.y<=1280,
+        "Actual modal exceeds mobile 720x1280 viewport")
+    var safe: Array[Control] = [
+        list,increase,change_sign,add,die_choice,modifier_plus,
+        dialog.find_child("DecreaseGroupCount",true,false) as Button,
+        dialog.find_child("RemovePhysicalGroup",true,false) as Button,
+        dialog.find_child("DecreasePoolModifier",true,false) as Button,
+        preview,dialog.get_ok_button()
+    ]
+    for target in safe:
+        if target==null:
+            _check(false,"Required actual touch target missing")
+            continue
+        var rect := target.get_global_rect()
+        _check(target.is_visible_in_tree() and rect.size.y>0 and
+            rect.position.y>=0.0 and rect.end.y<float(dialog.size.y)-2.0,
+            "Actual pool edit action offscreen / clipped: "+target.name+
+            " rect="+str(rect)+" window="+str(dialog.size))
+    _check(increase.get_global_rect().size.y>=40.0 and
+        add.get_global_rect().size.y>=40.0,
+        "Android pool increment and add must have 44dp practical touch targets")
     increase.pressed.emit()
     list.select(1)
     list.item_selected.emit(1)
@@ -126,10 +165,17 @@ func _run() -> void:
     var pool := scene.get("physical_pool") as Node3D
     _check(pool!=null and bool(pool.get("busy")) and not panel.visible,
         "Actual assembled pool must start real locked Jolt throw")
+    _check(trigger.disabled,
+        "During active Jolt physics the pool editor touch must be disabled")
+    trigger.pressed.emit()
+    _check(not dialog.visible,
+        "Signal sent to physically locked editor reopened modal during cast")
     if pool==null:
         quit(1)
         return
     _check(await _wait(pool),"Four real signed-group rigid bodies never settled")
+    _check(not trigger.disabled,
+        "After settled Jolt throw the pool edit touch must unlock")
     var result: Dictionary = pool.get("last_result")
     _check(bool(result.get("ok",false)) and
         str(result.get("formula",""))=="2d6-1d4+1d20-1",

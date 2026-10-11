@@ -11,6 +11,7 @@ signal physical_reroll_requested(group_index: int, die_index: int, digit: String
 
 var formula_input: LineEdit
 var pool_composer: ConfirmationDialog
+var pool_open_button: Button
 var name_input: LineEdit
 var modes: OptionButton
 var hundred_modes: OptionButton
@@ -58,13 +59,13 @@ func _ready() -> void:
     formula_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     formula_input.custom_minimum_size.y = 46
     formula_row.add_child(formula_input)
-    var edit_pool := Button.new()
-    edit_pool.name = "OpenPhysicalPoolComposer"
-    edit_pool.text = "НАБОР"
-    edit_pool.tooltip_text = "Добавить, убрать, изменить кубики и модификатор"
-    edit_pool.custom_minimum_size = Vector2(88,46)
-    edit_pool.pressed.connect(_open_pool_composer)
-    formula_row.add_child(edit_pool)
+    pool_open_button = Button.new()
+    pool_open_button.name = "OpenPhysicalPoolComposer"
+    pool_open_button.text = "НАБОР"
+    pool_open_button.tooltip_text = "Добавить, убрать, изменить кубики и модификатор"
+    pool_open_button.custom_minimum_size = Vector2(88,46)
+    pool_open_button.pressed.connect(_open_pool_composer)
+    formula_row.add_child(pool_open_button)
     pool_composer = PoolComposer.new()
     add_child(pool_composer)
     pool_composer.connect("formula_applied",_on_pool_formula_applied)
@@ -173,10 +174,19 @@ func _ready() -> void:
     content.add_child(feedback)
 
 func _open_pool_composer() -> void:
+    if pool_open_button.disabled:
+        return
     if not bool(pool_composer.call("open_formula",formula_input.text)):
         feedback.text = "Набор: "+str((pool_composer.get("builder") as RefCounted).get("error_text"))
+        return
+    # Emitted by the real Android debug app only after Godot's actual window
+    # opens. The AVD Gauntlet ALSO verifies changed source screenshot pixels.
+    if OS.is_debug_build() and pool_composer.visible:
+        print("DICE_M4_POOL_EDITOR_OPEN formula=" + formula_input.text)
 
 func _on_pool_formula_applied(expression: String) -> void:
+    if pool_open_button.disabled:
+        return
     formula_input.text = expression
     feedback.text = "Набор собран. Нажмите «БРОСИТЬ ФОРМУЛУ»."
 
@@ -273,6 +283,9 @@ func show_message(message: String) -> void:
 func set_roll_locked(locked: bool) -> void:
     roll_button.disabled = locked
     formula_input.editable = not locked
+    pool_open_button.disabled = locked
+    if locked and pool_composer.visible:
+        pool_composer.hide()
     if locked:
         reroll_button.disabled = true
         reroll_picker.disabled = true

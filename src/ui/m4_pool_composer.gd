@@ -41,8 +41,13 @@ func _ready() -> void:
     column.add_child(heading)
     group_list = ItemList.new()
     group_list.name = "EditablePhysicalGroups"
+    # A height-expanding ItemList consumed almost the ENTIRE 720x1280 phone
+    # viewport (original captured frame in unified #38158723281). The real
+    # count, sign, modifier, add/remove AND confirm buttons were BELOW it.
+    # Keep a bounded, scrollable item list so all actual controls stay
+    # touchable; ItemList scrolls internally for up to 12 source groups.
     group_list.custom_minimum_size.y = 190
-    group_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    group_list.size_flags_vertical = Control.SIZE_FILL
     group_list.item_selected.connect(_select_group)
     column.add_child(group_list)
     var add_row := HBoxContainer.new()

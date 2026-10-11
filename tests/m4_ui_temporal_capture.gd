@@ -73,6 +73,21 @@ func _run() -> void:
         push_error("Real group count stepper missing from pool composer")
         quit(62)
         return
+    # Video evidence must contain the actual usable controls INSIDE the
+    # popup; an all-height scrolling list once hid them beyond the screen.
+    for name in ["IncreaseGroupCount","AddPhysicalGroup",
+            "RemovePhysicalGroup","IncreasePoolModifier"]:
+        var visible_button := editor.find_child(name,true,false) as Button
+        if visible_button==null or not visible_button.is_visible_in_tree():
+            push_error("Visible screenshot lacks actual pool button "+name)
+            quit(64)
+            return
+        var bounds := visible_button.get_global_rect()
+        if bounds.position.y<0 or bounds.end.y>=float(editor.size.y)-2.0:
+            push_error("Real Android-sized M4 composer rendered button offscreen: "+
+                name+" "+str(bounds)+" modal "+str(editor.size))
+            quit(65)
+            return
     increment.pressed.emit()
     await create_timer(0.6).timeout
     decrement.pressed.emit()
