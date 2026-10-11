@@ -45,6 +45,12 @@ func _run() -> void:
             "expected_bodies":3,"expected_groups":2},
         {"formula":"1d20+2","mode":"advantage","hundred":"pair",
             "expected_bodies":2,"expected_groups":1},
+        {"formula":"3d6+1d20+2","mode":"normal","hundred":"pair",
+            "expected_bodies":4,"expected_groups":2},
+        {"formula":"2d8+1d12+1d4","mode":"normal","hundred":"pair",
+            "expected_bodies":4,"expected_groups":3},
+        {"formula":"2d6+1d20-3","mode":"normal","hundred":"pair",
+            "expected_bodies":3,"expected_groups":2},
     ]:
         completed = {}
         error = ""
@@ -89,6 +95,30 @@ func _run() -> void:
             "M4 total diverges from actual kept physical faces")
         _check(pool.get("last_physical_error") == "",
             "M4 physical integration recorded a Jolt failure")
+        var bodies: Array = pool.get("_active")
+        _check(bodies.size()==fixture["expected_bodies"],
+            "M4 dropped earlier real Jolt dice from the visible table")
+        _check(int(pool.get("dice_spawned")) == bodies.size(),
+            "M4 actual bodies count diverges from source evidence")
+        _check(int(pool.get("physics_completed")) == bodies.size(),
+            "M4 did not receive one actual Jolt completion per physical die")
+        _check(int(pool.get("peak_simultaneously_rolling")) >= 2,
+            "M4 did not physically roll 2+ rigid bodies in the SAME physics tick")
+        _check(bool(completed.get("all_source_bodies_remain_visible",false)),
+            "M4 wrongly claimed all source dice visible")
+        var distinct: Dictionary = {}
+        for body in bodies:
+            var rigid := body as RigidBody3D
+            _check(rigid != null and is_instance_valid(rigid) and rigid.get_parent()==pool,
+                "M4 source die was removed from the table before result")
+            if rigid != null:
+                _check(rigid.sleeping and not bool(rigid.get("rolling")),
+                    "M4 presented a numeric result before all Jolt bodies slept")
+                distinct[rigid.get_instance_id()] = true
+        _check(distinct.size()==bodies.size(),
+            "M4 attached the same rigid body twice instead of unique dice")
+        _check(int(completed.get("physical_bodies",-1))==bodies.size(),
+            "Physical body count missing in recorded composite receipt")
         print("M4_REAL_JOLT %s total=%d actual_bodies=%d" %
             [fixture["formula"],int(completed["total"]),bodies_count])
         await process_frame

@@ -1,7 +1,6 @@
 extends Node3D
-## M4 real physical mixed-pool controller. Rolls ONE successive Jolt die at
-## a time (two simultaneously for percentile D100). No fake outcomes.
-## Does not change the existing M3 one-die controller or camera.
+## M4: a real simultaneous multi-die tabletop throw with persistent final pile.
+## Actual Jolt sleeping upper faces determine EVERY value; no outcome injection.
 signal pool_completed(result: Dictionary)
 signal pool_failed(reason: String)
 
@@ -19,11 +18,17 @@ const Dodeca = preload("res://src/core/dodecahedron.gd")
 const Ico = preload("res://src/core/icosahedron.gd")
 const Kite = preload("res://src/core/trapezohedron.gd")
 const MAX_PHYSICAL_STEPS := 2400
+const MAX_VISIBLE_BODIES := 8
+const LAUNCH_COLUMNS := 3
+const LAUNCH_SPACING_X := 1.75
+const LAUNCH_SPACING_Z := 1.85
+
 var busy := false
 var last_result: Dictionary = {}
 var dice_spawned := 0
 var physics_completed := 0
 var last_physical_error := ""
+var peak_simultaneously_rolling := 0
 var _spec: Dictionary = {}
 var _mode := "normal"
 var _percentile_mode := "pair"
@@ -36,49 +41,74 @@ func begin(expression: String, mode: String = "normal",
         percentile_mode: String = "pair", selected_d20_group: int = -1) -> bool:
     if busy:
         return false
-    var spec := Formula.parse(expression)
+    var spec: Dictionary = Formula.parse(expression)
     if not bool(spec.get("ok",false)):
         pool_failed.emit(str(spec.get("error","Формула недействительна")))
         return false
     if not ["normal","advantage","disadvantage"].has(mode) or not ["pair","single"].has(percentile_mode):
         pool_failed.emit("Недопустимый режим составного броска")
         return false
-    # Render/physics safety: limit a complete pool to 8 single source dice
-    # plus the required two D20 or two D10 percentile bodies.
-    if int(spec["physical_dice"]) > 8:
-        pool_failed.emit("Слишком много кубиков для физического стола")
+    # Validate ALL physical bodies (not just logical D100=1 dice) before
+    # replacing the old valid physical pile.
+    var eligible: Array[int] = []
+    for i in range((spec["groups"] as Array).size()):
+        var g: Dictionary = spec["groups"][i]
+        if int(g["sides"]) == 20 and int(g["count"]) == 1:
+            eligible.append(i)
+    var chosen := selected_d20_group
+    if chosen == -1 and eligible.size() == 1:
+        chosen = eligible[0]
+    if selected_d20_group >= 0 and not eligible.has(selected_d20_group):
+        pool_failed.emit("Указана недопустимая группа D20")
+        return false
+    if mode != "normal" and (chosen < 0 or not eligible.has(chosen)):
+        pool_failed.emit("Для преимущества выберите единственный D20")
+        return false
+    var required := 0
+    for i in range((spec["groups"] as Array).size()):
+        var group: Dictionary = spec["groups"][i]
+        var amount: int = 2 if i == chosen and mode != "normal" else int(group["count"])
+        var source_dice := 2 if int(group["sides"]) == 100 and percentile_mode == "pair" else 1
+        required += amount * source_dice
+    if required > MAX_VISIBLE_BODIES:
+        pool_failed.emit("На столе одновременно доступно до %d физических кубиков" % MAX_VISIBLE_BODIES)
+        return false
+    if required == 0:
+        pool_failed.emit("Для броска необходим хотя бы один физический кубик")
         return false
     _spec = spec
     _mode = mode
     _percentile_mode = percentile_mode
-    _chosen_d20 = selected_d20_group
+    _chosen_d20 = chosen
+    _remove_active()
     _failed_message = ""
     last_physical_error = ""
     _values.clear()
     last_result = {}
     dice_spawned = 0
     physics_completed = 0
+    peak_simultaneously_rolling = 0
     busy = true
     call_deferred("_run")
     return true
 
 func _make_die(sides: int) -> RigidBody3D:
-    var result: RigidBody3D
+    var die: RigidBody3D
     match sides:
         4:
-            result = D4.new()
+            die = D4.new()
         6:
-            result = D6.new()
+            die = D6.new()
         8:
-            result = D8.new()
+            die = D8.new()
         12:
-            result = D12.new()
+            die = D12.new()
         20:
-            result = D20.new()
+            die = D20.new()
         10,100:
-            result = Trapezohedron.new()
-            result.set("sides", sides)
-    return result
+            die = Trapezohedron.new()
+            die.set("sides",sides)
+    return die
 
 func _actual_top(body: RigidBody3D, sides: int) -> int:
     var basis: Basis = body.global_transform.basis.orthonormalized()
@@ -90,7 +120,7 @@ func _actual_top(body: RigidBody3D, sides: int) -> int:
         8:
             return Octa.top_value(basis)
         10,100:
-            return Kite.top_value(sides, basis)
+            return Kite.top_value(sides,basis)
         12:
             return Dodeca.top_value(basis)
         20:
@@ -98,7 +128,7 @@ func _actual_top(body: RigidBody3D, sides: int) -> int:
     return -1
 
 func _on_die_completed(value: int, body: RigidBody3D) -> void:
-    if busy and is_instance_valid(body):
+    if busy and is_instance_valid(body) and not _values.has(body.get_instance_id()):
         _values[body.get_instance_id()] = value
         physics_completed += 1
 
@@ -107,6 +137,8 @@ func _on_die_failed(message: String, body: RigidBody3D) -> void:
         _failed_message = "Физический кубик %s: %s" % [body.name,message]
 
 func _remove_active() -> void:
+    # Godot queue_free() is deferred. Detach synchronously so old Jolt
+    # colliders never obstruct the next simultaneous physical cast.
     for body in _active:
         if is_instance_valid(body):
             if body.get_parent() == self:
@@ -122,11 +154,19 @@ func _abort(reason: String) -> void:
     _remove_active()
     pool_failed.emit(reason)
 
-func _start_body(sides: int, lane: int) -> RigidBody3D:
+func _launch_position(slot: int) -> Vector2:
+    # 3 columns * up to 3 rows. Adjacent convex bodies are separated at
+    # launch, remain within the exact table rails, and then interact in Jolt.
+    var col: int = slot % LAUNCH_COLUMNS
+    var row: int = int(slot / LAUNCH_COLUMNS)
+    return Vector2((float(col)-1.0)*LAUNCH_SPACING_X,
+        -3.5 + float(row)*LAUNCH_SPACING_Z)
+
+func _start_body(sides: int, slot: int) -> RigidBody3D:
     var body := _make_die(sides)
     if body == null:
+        _failed_message = "Неизвестная физическая геометрия D%d" % sides
         return null
-    # Must not reuse a name that Godot may still be queue_free-ing.
     dice_spawned += 1
     body.name = "M4_D%d_%d" % [sides,dice_spawned]
     add_child(body)
@@ -134,94 +174,104 @@ func _start_body(sides: int, lane: int) -> RigidBody3D:
     body.connect("roll_completed",Callable(self,"_on_die_completed").bind(body))
     body.connect("roll_failed",Callable(self,"_on_die_failed").bind(body))
     if sides == 10:
-        body.call("throw_from_top",lane)
+        body.call("throw_from_top",0)
     else:
         body.call("throw_from_top")
+    # All launches happen in the same frame, BEFORE any physics tick. The
+    # native throw_from_top supplied an authentic random rotation, impulse
+    # and torque; change only collision-safe initial throw POSITION, never
+    # the chosen orientation or eventual result.
+    var lane := _launch_position(slot)
+    body.position = Vector3(lane.x,body.position.y,lane.y)
     return body
 
-func _wait_for_source() -> bool:
+func _wait_for_all_real_faces() -> bool:
     for tick in range(MAX_PHYSICAL_STEPS):
         await get_tree().physics_frame
         if not _failed_message.is_empty():
             return false
-        var ready := true
+        var moving := 0
         for body in _active:
-            if not is_instance_valid(body) or not _values.has(body.get_instance_id()):
-                ready = false
-        if ready:
-            return true
-    _failed_message = "Физические кубики не остановились за лимит времени"
+            if is_instance_valid(body) and bool(body.get("rolling")):
+                moving += 1
+        peak_simultaneously_rolling = maxi(peak_simultaneously_rolling,moving)
+        if _values.size() == _active.size():
+            # Body may be woken by another COLLISION after it reported the
+            # first sleep. Only accept final state after every die settled.
+            var all_settled := true
+            for body in _active:
+                if not is_instance_valid(body) or not body.sleeping:
+                    all_settled = false
+                    break
+            if all_settled:
+                return true
+    _failed_message = "Не все физические кубики остановились за допустимое время"
     return false
 
-func _collect(sides: int, pair: bool) -> Variant:
-    _remove_active()
-    _values.clear()
-    if pair:
-        var tens := _start_body(10,-1)
-        var ones := _start_body(10,1)
-        if tens == null or ones == null:
-            _failed_message = "Невозможно создать пару физических D10"
-            return null
-    else:
-        if _start_body(sides,0) == null:
-            _failed_message = "Невозможно создать физический кубик D%d" % sides
-            return null
-    if not await _wait_for_source():
-        return null
-    var real_faces: Array[int] = []
-    for body in _active:
-        var actual_sides := 10 if pair else sides
-        var top := _actual_top(body,actual_sides)
-        var reported := int(_values.get(body.get_instance_id(),-1))
-        # Independently compare the physical upper face, signal result,
-        # body's own result and genuinely sleeping rigid body.
-        if top < 1 or top != reported or top != int(body.get("result")) or not body.sleeping:
-            _failed_message = "Несовпадение грани и результата физического D%d" % actual_sides
-            return null
-        real_faces.append(top)
-    if pair:
-        return {"tens":real_faces[0],"ones":real_faces[1]}
-    return real_faces[0]
-
 func _run() -> void:
-    # Do not overwrite any original M3 die. This controller is a separate
-    # child under the same physical rails and velvet floor.
     var groups: Array = _spec.get("groups",[])
+    var plan: Array[Dictionary] = []
     var observed: Array = []
-    var eligible: Array[int] = []
-    for i in range(groups.size()):
-        if int(groups[i]["sides"]) == 20 and int(groups[i]["count"]) == 1:
-            eligible.append(i)
-    var chosen := _chosen_d20
-    if chosen < 0 and eligible.size() == 1:
-        chosen = eligible[0]
-    if _mode != "normal" and not eligible.has(chosen):
-        _abort("Преимущество требует единственный выбранный D20")
-        return
     for i in range(groups.size()):
         var group: Dictionary = groups[i]
-        var sides := int(group["sides"])
-        var amount := int(group["count"])
-        if i == chosen and _mode != "normal":
-            amount = 2
-        var observations: Array = []
-        for index in range(amount):
-            var physical: Variant = await _collect(sides,
-                sides == 100 and _percentile_mode == "pair")
-            if physical == null:
-                _abort(_failed_message)
-                return
-            observations.append(physical)
-            # Every individual successful body is truly physically completed
-            # before proceeding; late signals cannot modify a later roll.
-            await get_tree().process_frame
-        observed.append(observations)
-    var final := Formula.evaluate(_spec,observed,_mode,chosen)
-    if not bool(final.get("ok",false)):
-        _abort(str(final.get("error","Ошибка подсчёта физических результатов")))
+        var n: int = 2 if i == _chosen_d20 and _mode != "normal" else int(group["count"])
+        var sides: int = int(group["sides"])
+        var sources: Array = []
+        for logical_index in range(n):
+            sources.append(null)
+            if sides == 100 and _percentile_mode == "pair":
+                plan.append({"group":i,"index":logical_index,"sides":10,"digit":"tens"})
+                plan.append({"group":i,"index":logical_index,"sides":10,"digit":"ones"})
+            else:
+                plan.append({"group":i,"index":logical_index,"sides":sides,"digit":""})
+        observed.append(sources)
+    if plan.is_empty() or plan.size() > MAX_VISIBLE_BODIES:
+        _abort("Некорректная физическая конфигурация броска")
         return
-    # Leave the final physical die(s) visible on the table. Actual
-    # chronological observations live in the structured completed result.
-    last_result = final
+    for slot in range(plan.size()):
+        if _start_body(int(plan[slot]["sides"]),slot) == null or not _failed_message.is_empty():
+            _abort(_failed_message)
+            return
+    # Every physical body is already in the scene at the start of the FIRST
+    # physics tick. Nothing is removed until a NEW roll or a real failure.
+    if OS.is_debug_build():
+        print("DICE_M4_SIMULTANEOUS_STARTED=%d" % _active.size())
+    if not await _wait_for_all_real_faces():
+        _abort(_failed_message)
+        return
+    if physics_completed != plan.size():
+        _abort("Не получен каждый сигнал завершения физического Jolt")
+        return
+    for slot in range(plan.size()):
+        var body: RigidBody3D = _active[slot]
+        var source: Dictionary = plan[slot]
+        var sides: int = int(source["sides"])
+        var top := _actual_top(body,sides)
+        var signal_face := int(_values.get(body.get_instance_id(),-1))
+        if top < 1 or top != signal_face or top != int(body.get("result")) or not body.sleeping:
+            _abort("Физический результат изменился после столкновения: D%d" % sides)
+            return
+        var gi: int = int(source["group"])
+        var di: int = int(source["index"])
+        var items: Array = observed[gi]
+        var digit: String = str(source["digit"])
+        if digit.is_empty():
+            items[di] = top
+        else:
+            var current: Dictionary = items[di] if typeof(items[di]) == TYPE_DICTIONARY else {}
+            current[digit] = top
+            items[di] = current
+    var result: Dictionary = Formula.evaluate(_spec,observed,_mode,_chosen_d20)
+    if not bool(result.get("ok",false)):
+        _abort(str(result.get("error","Невозможно вычислить реальные грани")))
+        return
+    result["physical_bodies"] = plan.size()
+    result["peak_simultaneously_rolling"] = peak_simultaneously_rolling
+    result["all_source_bodies_remain_visible"] = true
+    # Keep all REAL settled rigid bodies visible, with their original Jolt
+    # collision hulls, poses, and recorded result, until the next cast.
+    last_result = result
     busy = false
-    pool_completed.emit(final)
+    if OS.is_debug_build():
+        print("DICE_M4_SIMULTANEOUS_COMPLETED=%d" % _active.size())
+    pool_completed.emit(result)

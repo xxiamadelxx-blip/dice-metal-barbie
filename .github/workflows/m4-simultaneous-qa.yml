@@ -1,0 +1,48 @@
+name: M4 Simultaneous Real Jolt Gauntlet
+on:
+  push:
+    branches: [qa/m4-simultaneous]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-concurrent-pile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import authentic Godot 4.6.3/Jolt production scene
+        run: godot --headless --path . --editor --quit
+      - name: Verify simultaneous-pile source and tests compile
+        run: |
+          godot --headless --path . --check-only --script res://src/core/physical_roll_pool.gd
+          godot --headless --path . --check-only --script res://tests/m4_physical_pool.gd
+          godot --headless --path . --check-only --script res://src/main.gd
+      - name: Actually roll six diverse simultaneous persistent Jolt pools
+        run: godot --headless --path . --script res://tests/m4_physical_pool.gd
+      - name: Verify source-face formula maths and versioned offline history
+        run: |
+          godot --headless --path . --script res://tests/m4_roll_formula.gd
+          godot --headless --path . --script res://tests/m4_roll_persistence.gd
+          godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd
+      - name: Install screen recording and pillow
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ffmpeg xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 \
+            libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 \
+            libxkbcommon0 libwayland-cursor0 python3-pil
+      - name: Real 24fps frame capture of UI and genuine simultaneous dice
+        run: bash tools/visual/run_m4_ui_capture.sh
+      - name: Critique every chronological screen with 24-frame sheets
+        run: python3 tools/visual/audit_m4_ui_frames.py qa-evidence/m4-ui-24fps
+      - name: Preserve raw MP4, full frame series and trace even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-simultaneous-24fps-authentic-screenshots
+          path: qa-evidence/m4-ui-24fps/
+          if-no-files-found: warn
+          retention-days: 14
