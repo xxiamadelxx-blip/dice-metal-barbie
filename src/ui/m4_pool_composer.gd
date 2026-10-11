@@ -26,6 +26,11 @@ func _make_button(parent: HBoxContainer, node_name: String, caption: String,
 func _ready() -> void:
     name = "M4PhysicalPoolComposer"
     title = "НАБОР ФИЗИЧЕСКИХ КУБИКОВ"
+    # ConfirmationDialog wraps to its custom child minimum by default and
+    # silently grew beyond the Android 720x1280 viewport. Disable automatic
+    # child-size wrapping BEFORE adding our bounded VBox. Window.wrap_controls
+    # is supported by Godot 4.6; get_vbox() belongs to FileDialog only.
+    wrap_controls = false
     min_size = Vector2i(620,680)
     size = Vector2i(650,770)
     # Never let a pop-up extend below a 720x1280 mobile viewport. These are
@@ -37,10 +42,9 @@ func _ready() -> void:
     var column := VBoxContainer.new()
     column.custom_minimum_size = Vector2(580,585)
     column.add_theme_constant_override("separation",8)
-    # AcceptDialog owns its footer / OK / CANCEL controls. A direct Window
-    # child stretched the window past 1280px and sent APPLY/CANCEL offscreen.
-    # Place custom contents inside the dialog's actual built-in VBox instead.
-    get_vbox().add_child(column)
+    # With window-size wrapping disabled, the custom VBox no longer forces
+    # the built-in Accept/Cancel footer below the screen.
+    add_child(column)
     var heading := Label.new()
     heading.text = "Редактируйте состав до броска. Грани определяет только физика."
     heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
