@@ -1,4 +1,5 @@
 name: Local independent code critic (Ollama / no API key)
+# Upgrade critic to the stronger 7B coder; approved criteria override defective baseline.
 # Rerun after tightening semantic critic verdict and preserving invalid raw review.
 
 # A tiny, bounded live test. No external AI provider and no production edits.
@@ -24,7 +25,7 @@ jobs:
       PYTHONDONTWRITEBYTECODE: "1"
       GAUNTLET_AI_BACKEND: ollama_local
       GAUNTLET_BUILDER_MODEL: qwen2.5-coder:1.5b
-      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:3b
+      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:7b
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,7 +64,7 @@ jobs:
           r = json.loads((proof / "gauntlet-record.json").read_text())
           assert r["builder_id"] == "agent-builder:qwen2.5-coder:1.5b"
           step = r["iterations"][-1]
-          assert step["critic"]["reviewer_id"] == "isolated-critic:qwen2.5-coder:3b"
+          assert step["critic"]["reviewer_id"] == "isolated-critic:qwen2.5-coder:7b"
           assert step["critic"]["verdict"] == "PASS"
           assert step["checks"][0]["status"] == "PASS"
           assert step["critic"]["raw_artifact_review_ref"]
