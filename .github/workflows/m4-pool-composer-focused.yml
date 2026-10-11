@@ -1,0 +1,45 @@
+name: M4 focused truthful pool composer / Godot Jolt
+on:
+  push:
+    branches:
+      - agent/m4-pool-composer-focused-20261011
+permissions:
+  contents: read
+concurrency:
+  group: m4-composer-focus-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  genuine-app:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import actual Godot project and GDScript resources
+        run: godot --headless --path . --editor --quit
+      - name: Compile actual player composer and integration test
+        run: |
+          godot --headless --path . --check-only --script res://src/core/roll_pool_builder.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_pool_composer.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_advanced_roll_drawer.gd
+          godot --headless --path . --check-only --script res://tests/m4_pool_composer_jolt.gd
+      - name: Player buttons and signed four-body genuine Jolt with durable receipt
+        run: |
+          godot --headless --path . --script res://tests/m4_pool_composer_jolt.gd > pool-composer-real-jolt.log 2>&1 || { cat pool-composer-real-jolt.log; exit 1; }
+          grep -F 'M4_ACTUAL_POOL_COMPOSER_JOLT checks=' pool-composer-real-jolt.log
+          ! grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Invalid call' pool-composer-real-jolt.log
+      - name: Existing UI+history real physical regression
+        run: |
+          godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd > m4-original-ui-regression.log 2>&1 || { tail -110 m4-original-ui-regression.log; exit 1; }
+          grep -F 'M4_ANDROID_HUD_PHYSICAL_INTERACTION checks=' m4-original-ui-regression.log
+      - name: Save authentic logs even when tests fail
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m4-focused-actual-editor-jolt-original-logs
+          path: |
+            pool-composer-real-jolt.log
+            m4-original-ui-regression.log
+          if-no-files-found: warn
+          retention-days: 14
