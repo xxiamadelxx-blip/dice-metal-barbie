@@ -173,7 +173,7 @@ def route_for(intent: str, registry: dict[str, Any],
     for r in routes.values():
         matches = [t for t in r["triggers"] if t.lower() in query]
         if matches:
-            scores.append((len(matches), max(map(len, matches)), r["priority"], r["id"]))
+            scores.append((len(matches), r["priority"], max(map(len, matches)), r["id"]))
     if not scores:
         return routes[active["route"]] if mode == "continue" else routes["agent-operations"]
     return routes[max(scores)[-1]]
