@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 real D20 Cycles AO audit: fix falsely green uniform-black image output and enforce pixel-content acceptance",
+    "task": "M5 AI D20 basecolor image-to-real-GLB experiment and optional material adapter QA",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Run exact-head Blender Gauntlet again. First actual #38183549384 artifact 11718920962 found 1024 D20 AO PNG entirely BLACK (all 1,048,576 pixels value 0) even though operation finished and first validator falsely passed. Updated Blender image preclear WHITE use_clear=False + stronger nonuniform min/max/std/dark fraction checks; validate new raw file via Pillow and original Cycles logs before claiming AO. If still black, instrument bake image colorspace + target and fix; do not fabricate AO. UV 5x4 atlas verified on old actual Boolean mesh and new CI. New Godot 24fps/AArch64/Avoid merging until artifacts proven.",
+    "next_action": "Check latest exact-source Blender Gauntlet new synthetic A/B material adapter test. Real AI-generated image was applied locally to genuine D20 GLB: only glTF base-color source changed; geometry/accessors/number faces/bronze/normal/roughness conserved. Candidate GLB in user artifact, NOT pinned Godot or Android before real visual approval. Audit Dream Textures requires GPU and manual Linux installation; Meshy/Tripo optional paid APIs, not invoked. Existing Cycles AO image remains near-binary, needs real gradation fixes. Preserve M4 Jolt and 24fps, Qwen and Nord3 gates.",
     "blockers": [
-      "Real actual original Cycles AO png #38183549384 is SOLID BLACK (1024px every pixel 0); old signal cavity_pixels=1048576 bogus. Must reject and repair; no successful AO yet.",
-      "D20 separate UV atlas and 1024 base/normal/roughness were generated correctly at first pass; AO real output and Android visual approval remain OPEN.",
-      "Rest of project functionality from latest branch unverified exact full Gauntlet because new source commit reruns checks.",
-      "Nord 3 hardware FPS/signed M6 still OPEN."
+      "Real AI image-to-D20 GLB experiment succeeded mechanically, but NO original Godot/Android screenshot acceptance yet.",
+      "Dream Textures inference cannot be assumed available on CPU-only GitHub runner; paid Meshy/Tripo calls not used.",
+      "CI adapter fixture is synthetic; it does not prove neural generation or artistic quality.",
+      "Current D20 Cycles AO still nearly binary, visual art and Nord3 QA unverified."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -89,11 +89,11 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384/artifacts/11718920962"
     ],
-    "last_observed_sha": "fa78a9d25ad5a601ac78bd0df5ba1b9b7fc00cd4",
+    "last_observed_sha": "cf3558664defbb075ac00b3d22fec5649e130199",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Inspected uploaded actual Blender zip with PIL: d20_cycles_baked_ao.png RGB quantiles [0,0,0,0,0], unique count 1, PNG 13922B, invalid. Generator incorrectly accepted 1048576 dark pixels as cavities. Image explicitly initialized white before real Cycles AO bake, use_clear False, checker now requires nonuniform/std>.025 and no globally black result, with manifest and stdlib validator both fail closed. Root cause not yet proven; no fake success."
+    "verification_note": "Actual generated AI image and canonical GLB were combined offline with geometry and numbered source untouched. Original GLB sha256 788aad2e9188; AI candidate GLB sha256 47486f693b02. Optional adapter and synthetic regression committed; see docs/M5_AI_TEXTURE_AUDIT_2026.md. User-visible experimental GLB separate from main; no runtime changes."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
