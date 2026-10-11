@@ -77,14 +77,17 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
     # triangulated face normals are rendered by Android/Mesa Mobile.
     var stone := StandardMaterial3D.new()
     stone.albedo_color = Color(0.082, 0.10, 0.13)
-    stone.metallic = 0.10
-    stone.roughness = 0.39
+    # M5 PBR transfer. The prior broad glow flattened every volcanic-glass
+    # facet into the same opaque grey in the ORIGINAL native Godot capture
+    # (M5 tool-route Gauntlet #38174391709), despite genuinely bevelled
+    # Blender geometry. Restore incident-light contrast and a narrow second
+    # specular lobe. THIS is stone shading only, never a Jolt body change.
+    stone.metallic = 0.18
+    stone.roughness = 0.30
     stone.clearcoat_enabled = true
-    stone.clearcoat = 0.30
-    stone.clearcoat_roughness = 0.28
-    stone.emission_enabled = true
-    stone.emission = Color(0.065, 0.079, 0.099)
-    stone.emission_energy_multiplier = 0.68
+    stone.clearcoat = 0.60
+    stone.clearcoat_roughness = 0.16
+    stone.emission_enabled = false
     if source is StandardMaterial3D:
         var original := source as StandardMaterial3D
         stone.albedo_texture = original.albedo_texture
@@ -94,7 +97,10 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
             stone.albedo_color = Color(1.0, 1.0, 1.0)
         stone.roughness_texture = original.roughness_texture
         if stone.roughness_texture != null:
-            stone.roughness = 1.0
+            # Godot multiplies the scalar by the GLB's physical roughness
+            # texture. Keep its authored PBR variation instead of overwriting
+            # every face with a flat shader roughness: .78 * .26..42.
+            stone.roughness = 0.78
         stone.roughness_texture_channel = original.roughness_texture_channel
         stone.normal_enabled = original.normal_enabled
         stone.normal_texture = original.normal_texture
