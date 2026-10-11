@@ -116,16 +116,20 @@ func _run() -> void:
         Formula.parse("1d20+2"),[[3,18]],"advantage")
     _check(bool(advantage.get("ok",false)),
         "Deterministic history-display oracle for D20 advantage failed")
+    # The preceding positive search filtered by a different formula.
+    # Clear that filter before switching to explicit display-only oracles.
+    search.text = ""
+    search.text_changed.emit(search.text)
     dialog.call("set_history",[advantage])
     _check(detail.text.contains("Кубик 1: 3  ·  засчитано: (не выбран)") and
         detail.text.contains("Кубик 2: 18  ·  засчитано: 18"),
-        "History wrong: must mark actually kept advantage D20 die #2")
+        "History wrong: must mark actually kept advantage D20 die #2: "+detail.text)
     var disadvantage: Dictionary = Formula.evaluate(
         Formula.parse("1d20+2"),[[3,18]],"disadvantage")
     dialog.call("set_history",[disadvantage])
     _check(detail.text.contains("Кубик 1: 3  ·  засчитано: 3") and
         detail.text.contains("Кубик 2: 18  ·  засчитано: (не выбран)"),
-        "History wrong: must mark kept disadvantage D20 die #1")
+        "History wrong: must mark kept disadvantage D20 die #1: "+detail.text)
     # Screen-render load test: repeat a COPY of an actually tested source
     # record to reach 200 rows. This only stress-tests the UI; these are NOT
     # 200 claimed independent physical throws and are NEVER persisted.
