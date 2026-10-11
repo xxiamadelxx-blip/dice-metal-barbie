@@ -2,7 +2,9 @@ name: Gauntlet evidence contract regression (not independent artistic QA)
 on:
   pull_request:
     paths:
-      - 'scripts/gauntlet_evidence.py'\n      - 'scripts/gauntlet_autopilot.py'\n      - 'tests/test_gauntlet_autopilot.py'
+      - 'scripts/gauntlet_evidence.py'
+      - 'scripts/gauntlet_autopilot.py'
+      - 'tests/test_gauntlet_autopilot.py'
       - 'tests/test_gauntlet_evidence.py'
       - 'docs/GAUNTLET_ACCEPTANCE_V2.md'
       - '.github/workflows/gauntlet-contract.yml'
