@@ -1,0 +1,29 @@
+name: M4 Pure Formula Contract QA
+on:
+  push:
+    branches: [qa/m4-formula]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  formula-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import actual Godot project
+        run: godot --headless --path . --editor --quit
+      - name: Verify new source and test GDScript syntax
+        run: |
+          godot --headless --path . --check-only --script res://src/core/roll_formula.gd
+          godot --headless --path . --check-only --script res://tests/m4_roll_formula.gd
+      - name: Test signed formulas with recorded physical-face oracles
+        run: godot --headless --path . --script res://tests/m4_roll_formula.gd
+      - name: Test existing D100 percentile arithmetic unchanged
+        run: godot --headless --path . --script res://tests/percentile_pair_mapping.gd
+      - name: Existing deterministic mechanics regressions
+        run: godot --headless --path . --script res://tests/smoke.gd
