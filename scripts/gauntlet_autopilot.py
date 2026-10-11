@@ -142,6 +142,11 @@ class ChatActor:
         try:
             with urllib.request.urlopen(request, timeout=120) as response:
                 raw = response.read(250000).decode("utf-8")
+        except urllib.error.HTTPError as exc:
+            # Do NOT echo server response body, Authorization header or prompt.
+            # The numerical status is enough to tell credential, quota, routing,
+            # and rate-limit failures apart without logging sensitive material.
+            raise RuntimeError(f"{role} provider HTTP {exc.code}; NOT VERIFIED") from exc
         except (urllib.error.URLError, TimeoutError) as exc:
             raise RuntimeError(f"{role} provider unavailable: {type(exc).__name__}") from exc
         try:

@@ -1,4 +1,5 @@
 name: One-time OpenRouter Gauntlet independent critic smoke
+# Safe HTTP status diagnostics for the external models, without exposing tokens.
 
 # Trigger only when this workflow is introduced/edited on main.
 # Explicit workflow_dispatch allows a manual retry after diagnosing a blocker.
