@@ -14,8 +14,14 @@ func _ready() -> void:
     min_size = Vector2i(600,720)
     size = Vector2i(635,850)
     get_ok_button().text = "ЗАКРЫТЬ"
-    var root_col: VBoxContainer = get_vbox()
+    # AcceptDialog in Godot 4.6.3 does not expose get_vbox(); custom
+    # content is an actual Control child, not an undocumented API call.
+    var root_col := VBoxContainer.new()
+    root_col.name = "CompleteHistoryContent"
+    root_col.custom_minimum_size = Vector2(565,610)
+    root_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
     root_col.add_theme_constant_override("separation",10)
+    add_child(root_col)
     header = Label.new()
     header.name = "HistoryRollCount"
     header.text = "История ещё пуста"
