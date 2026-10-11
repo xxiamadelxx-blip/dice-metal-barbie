@@ -40,8 +40,8 @@ dismiss_launcher_anr() {
   local target
   target="$(python3 tools/visual/detect_android_launcher_anr.py "$screenshot")" || return 1
   if test -z "$target"; then return 0; fi
-  if adb logcat -d -v time -s ActivityManager:E WindowManager:I '*:S' |
-      grep -Fq "ANR in com.google.android.apps.nexuslauncher"; then
+  adb logcat -d -v time -s ActivityManager:E WindowManager:I '*:S' > qa-evidence/android-avd/launcher-anr-system-log.txt || true
+  if grep -Fq "ANR in com.google.android.apps.nexuslauncher" qa-evidence/android-avd/launcher-anr-system-log.txt; then
     local x y
     read -r x y <<< "$target"
     echo "Android SYSTEM Pixel Launcher ANR confirmed: dismiss Close app at ($x,$y)"
