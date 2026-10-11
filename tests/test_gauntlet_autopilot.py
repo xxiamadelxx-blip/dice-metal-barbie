@@ -79,6 +79,49 @@ class AutoLoopTests(unittest.TestCase):
         self.assertEqual(json.loads((self.out / "result.json").read_text())["status"],
                          "ACCEPTED_BY_SEPARATE_MODEL_CONTEXT")
 
+    def test_invalid_first_critic_response_gets_one_recorded_recheck(self):
+        class CriticFormatRecovery(Actor):
+            def __init__(self):
+                super().__init__()
+                self.critic_calls = 0
+
+            def __call__(self, role, payload):
+                self.roles.append(role)
+                if role == "builder":
+                    return {"edits": [{"path": "sample.py", "content": "print('GOOD')\n"}]}
+                self.critic_calls += 1
+                if self.critic_calls == 1:
+                    return {"verdict": "FAIL", "findings": [
+                        {"id": "stable-id", "severity": "major", "disposition": "resolved"}]}
+                self.assert_raw_not_builder_story(payload)
+                assert "format_correction" in payload
+                return {"verdict": "PASS", "findings": []}
+
+        self.plan["test_command"] = ["python", "-c",
+            "import subprocess; s=subprocess.check_output(['python','sample.py']).decode(); assert s==bytes.fromhex('474f4f440a').decode()"]
+        self.plan["max_iterations"] = 1
+        actor = CriticFormatRecovery()
+        record = execute(self.plan, self.root, self.out, actor)
+        self.assertEqual(actor.roles, ["builder", "critic", "critic"])
+        self.assertEqual(record["iterations"][0]["critic"]["verdict"], "PASS")
+        self.assertTrue((self.out / "reviews/critic-1.json").exists())
+        self.assertTrue((self.out / "reviews/critic-1-retry.json").exists())
+        self.assertEqual(json.loads((self.out / "reviews/critic-1.json").read_text())["verdict"], "FAIL")
+
+    def test_twice_invalid_independent_review_still_fails(self):
+        class AlwaysInvalid(Actor):
+            def __call__(self, role, payload):
+                if role == "builder":
+                    return {"edits": [{"path": "sample.py", "content": "print('GOOD')\n"}]}
+                return {"verdict": "FAIL", "findings": [
+                    {"id": "made-up-issue", "severity": "major", "disposition": "resolved"}]}
+        self.plan["max_iterations"] = 1
+        self.plan["test_command"] = ["python", "-c",
+            "import subprocess; s=subprocess.check_output(['python','sample.py']).decode(); assert s==bytes.fromhex('474f4f440a').decode()"]
+        with self.assertRaisesRegex(RuntimeError, "after one retry"):
+            execute(self.plan, self.root, self.out, AlwaysInvalid())
+        self.assertTrue((self.out / "reviews/critic-1-retry.json").exists())
+
     def test_refuse_protected_files(self):
         (self.root / "AGENTS.md").write_text("original")
         with self.assertRaises(ValueError):
