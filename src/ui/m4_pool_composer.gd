@@ -26,13 +26,18 @@ func _make_button(parent: HBoxContainer, node_name: String, caption: String,
 func _ready() -> void:
     name = "M4PhysicalPoolComposer"
     title = "НАБОР ФИЗИЧЕСКИХ КУБИКОВ"
-    min_size = Vector2i(620,680)
-    size = Vector2i(650,770)
+    # Original exact-source 720x1280 Mesa frames showed that an EXPAND_FILL
+    # ItemList consumed the entire screen and hid ALL real edit/apply buttons.
+    # Bound the pop-up and keep the die list at a finite scrollable height.
+    min_size = Vector2i(610,620)
+    max_size = Vector2i(680,750)
+    size = Vector2i(650,690)
     get_ok_button().text = "ПРИМЕНИТЬ ФОРМУЛУ"
     get_cancel_button().text = "ОТМЕНА"
     confirmed.connect(_accept_formula)
     var column := VBoxContainer.new()
-    column.custom_minimum_size = Vector2(580,585)
+    column.custom_minimum_size = Vector2(580,480)
+    column.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
     column.add_theme_constant_override("separation",8)
     add_child(column)
     var heading := Label.new()
@@ -41,8 +46,8 @@ func _ready() -> void:
     column.add_child(heading)
     group_list = ItemList.new()
     group_list.name = "EditablePhysicalGroups"
-    group_list.custom_minimum_size.y = 190
-    group_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    group_list.custom_minimum_size.y = 155
+    group_list.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
     group_list.item_selected.connect(_select_group)
     column.add_child(group_list)
     var add_row := HBoxContainer.new()
@@ -85,7 +90,7 @@ func open_formula(expression: String) -> bool:
         return false
     selected_group = 0
     _refresh()
-    popup_centered(Vector2i(650,770))
+    popup_centered(Vector2i(650,690))
     return true
 
 func _select_group(index: int) -> void:

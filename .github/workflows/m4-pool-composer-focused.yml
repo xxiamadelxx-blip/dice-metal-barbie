@@ -33,6 +33,25 @@ jobs:
         run: |
           godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd > m4-original-ui-regression.log 2>&1 || { tail -110 m4-original-ui-regression.log; exit 1; }
           grep -F 'M4_ANDROID_HUD_PHYSICAL_INTERACTION checks=' m4-original-ui-regression.log
+      - name: Install Xvfb Mesa FFmpeg and Pillow for REAL modal image
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ffmpeg xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 \
+            libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 \
+            libxkbcommon0 libwayland-cursor0 python3-pil
+      - name: Record real 720x1280 modal in same Jolt 24fps timeline
+        run: |
+          bash tools/visual/run_m4_ui_capture.sh
+          python3 tools/visual/audit_m4_ui_frames.py qa-evidence/m4-ui-24fps
+      - name: Retain uncut modal screenshots and 24fps sequential contact sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-focused-composer-actual-mesa-visual
+          path: qa-evidence/m4-ui-24fps/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Save authentic logs even when tests fail
         uses: actions/upload-artifact@v4
         if: always()

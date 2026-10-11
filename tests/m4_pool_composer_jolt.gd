@@ -83,6 +83,14 @@ func _run() -> void:
     trigger.pressed.emit()
     await process_frame
     _check(dialog.visible,"Click on НАБОР must open actual composer modal")
+    # A green click test is insufficient if the real 720x1280 GUI clips
+    # the action buttons. Validate modal Window geometry independently.
+    var popup_screen: Vector2i = dialog.size
+    _check(popup_screen.y <= 750 and popup_screen.y >= 620,
+        "Pool composer exceeded actual mobile viewport: "+str(popup_screen))
+    var actual_apply: Button=dialog.get_ok_button()
+    _check(actual_apply!=null and actual_apply.get_global_rect().end.y <= 800,
+        "Real APPLY button fell below the intended mobile dialog")
     var list := dialog.find_child("EditablePhysicalGroups",true,false) as ItemList
     var increase := dialog.find_child("IncreaseGroupCount",true,false) as Button
     var change_sign := dialog.find_child("FlipGroupSign",true,false) as Button
@@ -93,6 +101,11 @@ func _run() -> void:
     _check(list!=null and increase!=null and change_sign!=null and add!=null
         and die_choice!=null and modifier_plus!=null and preview!=null,
         "Actual buttons/selection/preview missing from GUI")
+    if add!=null and increase!=null and preview!=null:
+        _check(add.get_global_rect().end.y<750 and
+            increase.get_global_rect().end.y<750 and
+            preview.get_global_rect().end.y<750,
+            "Scroll list enlarged past real selectable editing controls")
     if list==null or increase==null or change_sign==null or add==null or (
             die_choice==null or modifier_plus==null or preview==null):
         quit(1)
