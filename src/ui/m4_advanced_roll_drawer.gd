@@ -9,6 +9,8 @@ signal history_open_requested
 signal physical_reroll_requested(group_index: int, die_index: int, digit: String)
 
 var formula_input: LineEdit
+var pool_edit_button: Button
+var pool_editor: ConfirmationDialog
 var name_input: LineEdit
 var modes: OptionButton
 var hundred_modes: OptionButton
@@ -44,12 +46,25 @@ func _ready() -> void:
     caption.text = "СОСТАВНОЙ БРОСОК"
     caption.add_theme_font_size_override("font_size",17)
     content.add_child(caption)
+    # Keep existing Android coordinates of the real formula/throw/reroll
+    # controls. The extra builder sits INSIDE the existing 46px formula row.
+    var formula_row := HBoxContainer.new()
+    formula_row.add_theme_constant_override("separation",6)
+    content.add_child(formula_row)
     formula_input = LineEdit.new()
     formula_input.name = "PhysicalFormulaInput"
     formula_input.placeholder_text = "Например: 2d6+1d20-3"
     formula_input.text = "2d6+1d20-3"
     formula_input.custom_minimum_size.y = 46
-    content.add_child(formula_input)
+    formula_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    formula_row.add_child(formula_input)
+    pool_edit_button = Button.new()
+    pool_edit_button.name = "EditPhysicalPool"
+    pool_edit_button.text = "НАБОР"
+    pool_edit_button.tooltip_text = "Добавить, убрать, изменить количество кубиков и модификатор"
+    pool_edit_button.custom_minimum_size = Vector2(84,46)
+    pool_edit_button.pressed.connect(_open_pool_editor)
+    formula_row.add_child(pool_edit_button)
     var modes_row := HBoxContainer.new()
     modes_row.add_theme_constant_override("separation",8)
     content.add_child(modes_row)
@@ -154,6 +169,31 @@ func _ready() -> void:
     feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     content.add_child(feedback)
 
+func _open_pool_editor() -> void:
+    if pool_edit_button.disabled:
+        return
+    if pool_editor == null:
+        pool_editor = preload("res://src/ui/m4_pool_editor_dialog.gd").new()
+        add_child(pool_editor)
+        pool_editor.confirmed.connect(_apply_edited_pool)
+    if not bool(pool_editor.call("load_expression",formula_input.text)):
+        feedback.text = "Проверьте формулу перед редактированием набора."
+        return
+    pool_editor.popup_centered_ratio(0.82)
+
+func _apply_edited_pool() -> void:
+    if pool_editor == null or pool_edit_button.disabled:
+        return
+    var composed: String = str(pool_editor.call("composed_expression"))
+    var parsed: Dictionary = preload("res://src/core/roll_formula.gd").parse(composed)
+    if not bool(parsed.get("ok",false)):
+        feedback.text = str(parsed.get("error","Не удалось изменить набор"))
+        return
+    formula_input.text = composed
+    feedback.text = "Набор обновлён: " + composed
+    if OS.is_debug_build():
+        print("DICE_M4_POOL_APPLIED formula=" + composed)
+
 func _selected_mode() -> String:
     match modes.selected:
         1: return "advantage"
@@ -247,6 +287,9 @@ func show_message(message: String) -> void:
 func set_roll_locked(locked: bool) -> void:
     roll_button.disabled = locked
     formula_input.editable = not locked
+    pool_edit_button.disabled = locked
+    if locked and is_instance_valid(pool_editor) and pool_editor.visible:
+        pool_editor.hide()
     if locked:
         reroll_button.disabled = true
         reroll_picker.disabled = true

@@ -1,0 +1,41 @@
+name: M4 staged real editable physical pool Godot QA
+on:
+  push:
+    branches:
+      - agent/m4-editable-physical-pool-20261011
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: m4-pool-staging-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  actual-jolt-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import actual Godot/Jolt production project
+        run: godot --headless --path . --editor --quit
+      - name: Real player editor, physics and offline receipt
+        run: |
+          set -eu
+          godot --headless --path . --script res://tests/m4_pool_editor_ui.gd > m4-pool-ui.log 2>&1 || { tail -150 m4-pool-ui.log; exit 1; }
+          grep -F 'M4_REAL_EDITABLE_POOL_UI checks=' m4-pool-ui.log
+          ! grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Invalid call' m4-pool-ui.log
+      - name: Existing advanced UI controls and physical formula regressions
+        run: |
+          set -eu
+          godot --headless --path . --script res://tests/m4_roll_formula.gd > m4-formulas.log 2>&1 || { tail -100 m4-formulas.log; exit 1; }
+          godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd > m4-old-ui.log 2>&1 || { tail -150 m4-old-ui.log; exit 1; }
+          grep -F 'M4_ANDROID_HUD_PHYSICAL_INTERACTION checks=' m4-old-ui.log
+          ! grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Invalid call' m4-old-ui.log
+      - name: Retain raw tested Godot/Jolt evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-real-physical-editable-pool-logs
+          path: m4-*.log
+          if-no-files-found: warn
