@@ -25,7 +25,7 @@ python scripts/gauntlet_evidence.py qa/gauntlet/<task>.json \
 Schema v1 top-level:
 - `schema_version` numeric 1, `repository`, `task`, `builder_id`, `approved_reference`, `baseline_sha`, `candidate_sha`.
 - `required_gates`: non-empty list of immutable acceptance gate names.
-- `iterations`: ordered objects starting `index: 1`, each with `candidate_sha`, `artifact_refs`, `checks` as `{gate,status,evidence_ref}`, and `critic` as `{mode,reviewer_id,isolated_run_ref,raw_artifact_review_ref,verdict,findings}`.
+- `iterations`: ordered objects starting `index: 1`, each with `candidate_sha`, `artifact_refs`, `checks` as `{gate,status,evidence_ref}`, and `critic` as `{mode,reviewer_id,reviewed_sha,isolated_run_ref,raw_artifact_review_ref,verdict,findings}`.
 - `findings` items: `{id,severity,disposition,evidence_ref}`; `resolved` must include `retest_ref`, `deferred` only for minor with `tracking_ref`. A failed previous pass requires a next iteration `change_ref`.
 
 The validator rejects missing gates, unproven PASS, unfinished critical findings, same builder/reviewer identity, nonindependent final critic, skipped fix evidence, and commit mismatch. Exit `0` proves **only structural completeness**; it does not fetch/validate URLs, run Godot, judge every pixel, or provide a genuine independent model/session. Original artifacts must be opened by a separate critic. Never insert fake artifacts merely to obtain green JSON.
@@ -40,3 +40,5 @@ The validator rejects missing gates, unproven PASS, unfinished critical findings
 ### Concurrency contract
 
 This file and `scripts/gauntlet_evidence.py` are isolated governance work. Do **not** mutate active PR #23 or its ongoing `gauntlet-release-gate.yml` automation. This document refers to features present in that PR as pending integration into main, not as merged functionality. Keep this separate PR in draft until current implementation is reconciled; compare current PR head before merge, preserve both lines of work and never force push. Existing CI may continue uninterrupted. The new contract self-test workflow only tests this validator and never claims to perform or replace the artistic/physical Gauntlet.
+
+**Cross-cycle integrity:** the independent reviewer attests `reviewed_sha` equal to that iteration's immutable `candidate_sha`. A prior blocker/major finding stays open across subsequent iterations until a later critic repeats its exact finding ID with `disposition=resolved` and a real `retest_ref`. The JSON validator enforces this lineage but never verifies the external files behind URLs.
