@@ -59,6 +59,7 @@ def evaluate(record: Any, *, expected_sha: str | None = None,
     if not isinstance(iterations, list) or not iterations:
         return errors + ["iterations must contain at least one recorded build/review cycle"]
     previous_failed = False
+    outstanding: dict[str, str] = {}
     last = None
     for index, step in enumerate(iterations, start=1):
         if not isinstance(step, dict):
@@ -109,6 +110,8 @@ def evaluate(record: Any, *, expected_sha: str | None = None,
         if critic.get("verdict") not in STATUSES:
             errors.append(f"{label}: invalid critic verdict")
         if mode == "independent":
+            if critic.get("reviewed_sha") != step.get("candidate_sha"):
+                errors.append(f"{label}: independent reviewer did not attest the exact candidate_sha")
             if not _text(critic.get("reviewer_id")) or critic["reviewer_id"] == record.get("builder_id"):
                 errors.append(f"{label}: reviewer identity must differ from builder")
             if not _url(critic.get("isolated_run_ref")):
@@ -132,14 +135,17 @@ def evaluate(record: Any, *, expected_sha: str | None = None,
                 errors.append(f"{label}: resolved finding needs retest_ref")
             if disposition == "deferred" and not _url(finding.get("tracking_ref")):
                 errors.append(f"{label}: deferred finding needs tracking_ref")
-            if finding.get("severity") in ("blocker", "major") and disposition != "resolved":
-                # A major blocker cannot be waived by a self-labelled PASS.
-                if index == len(iterations):
-                    errors.append(f"{label}: unresolved blocker/major finding {finding.get('id')}")
+            if finding.get("severity") in ("blocker", "major"):
+                if disposition == "resolved":
+                    outstanding.pop(finding.get("id"), None)
+                elif _text(finding.get("id")):
+                    outstanding[finding["id"]] = finding["severity"]
         any_failed = any(x.get("status") != "PASS" for x in checks if isinstance(x, dict))
         previous_failed = critic.get("verdict") != "PASS" or any_failed
     if not isinstance(last, dict):
         return errors + ["no valid final iteration"]
+    for finding_id in sorted(outstanding):
+        errors.append(f"unresolved blocker/major finding carried across iterations: {finding_id}")
     if last.get("candidate_sha") != record.get("candidate_sha"):
         errors.append("last iteration does not match candidate_sha")
     critic = last.get("critic") if isinstance(last.get("critic"), dict) else {}
