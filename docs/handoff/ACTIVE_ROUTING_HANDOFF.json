@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 user Alpha4 best-of tactile Jolt-driven felt plus refined natural D20 success/failure die-origin VFX",
+    "task": "M5 user rejected PS1 concrete-looking black table; fix fatal unnamed mesh + author actual black-green velvet fabric PBR and hold visual gate",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect full exact source Gauntlet after contact felt plus new gold vs crimson die-local sparks. Native Godot tests must capture native-17-jolt-contact-felt.png triggered by actual body_entered, native-18-recovered-felt.png after 0.35s, and require shader animation with unchanged Jolt collider; nat1/nat20 tests prove separate sprites and no collider. Inspect 24fps original Godot/Mesa AND AVD/ARM64. If red, inspect logs/screenshot and fix root issue. Next production audio/haptics and full original Alpha4-inspired menu visual critique; M6 on OnePlus still NOT VERIFIED.",
+    "next_action": "Exact-SHA Gauntlet: confirm resolved prior fatal Godot 'VelvetTable/MeshInstance3D not found' by explicitly naming StaticBoxVisual, initialize felt surface; tests/m5_real_felt_contact.gd verifies real Jolt D6 contact/0.45s recovery. Examine real native-01-launch and native-17/18 original screenshots at 720×1280; pixel critic velvet_nap must detect greener textile and nonflat fine pile, then verify all source body physics, 24fps and AVD/ARM64. If red root cause from original CI logs and fix. User explicitly considers last screenshot unacceptable PS1 concrete; no more artistic acceptance claims merely from CI.",
     "blockers": [
-      "New real Jolt signal into velvet visual plane and 250ms recovery not yet verified on exact-source native/Android; strict evidence added.",
-      "New real D20 1/20 spatial embers and sparks are CANDIDATES; visual staged screenshots do not confirm a naturally rolled face; actual result gating still depends on real Jolt.",
-      "Impact collision-derived audio, haptics, reduced-motion setting and final Concept 3 art QA still OPEN.",
-      "Physical OnePlus Nord 3 and signed M6 upgrade QA still OPEN."
+      "Previous run #38180542605 native and Jolt RED due to missing MeshInstance3D child name, resulting null surface and invalid position; targeted fix candidate not yet verified.",
+      "User rejects screenshot because tabletop appears grey cloud/concrete instead of velvet; fabric tile/anisotropic shader candidate must be visually scrutinized on actual Godot PNG.",
+      "New true contact pulse, nat20/nat1 sparks and visual material remain UNVERIFIED until exact-head new Gauntlet.",
+      "OnePlus Nord 3 hardware and M6 signing remain open."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -78,13 +78,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38177825891",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179419563",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009/artifacts/11716229926"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009/artifacts/11716229926",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605/artifacts/11717845412"
     ],
-    "last_observed_sha": "6ccee226470816cfc292ac6b5a6f244b40f66173",
+    "last_observed_sha": "b716a766fe7679bb2161926bdba321f3f46862d9",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Current branch inherited 6ccee22 M5 real contact visual-only felt candidate; expanded same-source proof to native 17/18 actual contact screenshots and separate GoldSpark/CrimsonEmber physical D20-only art, new unit tests. These are unverified until new exact SHA Gauntlet. Never claim direct impulse measurement; current amplitude derives from velocity and mass proxy."
+    "verification_note": "Previous Gauntlet actual native log 'Node not found: MeshInstance3D' / invalid null position and Jolt fallback D6 failure. Explicitly named all static visual boxes, no physical collider moved. Changed stale 256x256 large cloudy blue-grey noise to finer jade-black directional nap; shader true textile tiling with anisotropic normal; added original pixel critic. CANDIDATE NOT VERIFIED. Local CLI not available."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

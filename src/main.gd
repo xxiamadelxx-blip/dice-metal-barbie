@@ -375,7 +375,8 @@ func _make_world() -> void:
     _make_static_box("VelvetTable", Vector3(0, -0.24, 0), Vector3(TABLE_WIDTH, 0.4, TABLE_LENGTH), velvet)
     # Only this VISUAL box surface sits 12mm below an independently
     # tessellated felt skin. The true Jolt floor remains at y=-0.04.
-    var floor_visual := get_node("VelvetTable").get_node("MeshInstance3D") as MeshInstance3D
+    var floor_visual := get_node_or_null("VelvetTable/StaticBoxVisual") as MeshInstance3D
+    assert(floor_visual != null, "Physical table must have a separately named VISUAL box")
     floor_visual.position.y = -0.012
     velvet_impact = VelvetImpact.new()
     velvet_impact.name = "M5VelvetContactSurface"
@@ -427,6 +428,9 @@ func _make_static_box(node_name: String, origin: Vector3, dimensions: Vector3, m
     shape_node.shape = box
     body.add_child(shape_node)
     var mesh_node := MeshInstance3D.new()
+    # Godot auto-generated names change with sibling count. The M5 felt skin
+    # must address this exact visual mesh without touching StaticBody/Jolt.
+    mesh_node.name = "StaticBoxVisual"
     var mesh := BoxMesh.new()
     mesh.size = dimensions
     mesh_node.mesh = mesh

@@ -27,6 +27,9 @@ func _run() -> void:
     var collision := floor.get_node_or_null("CollisionShape3D") as CollisionShape3D
     var original_shape: Shape3D = collision.shape if collision != null else null
     _check(original_shape is BoxShape3D,"True unchanged Jolt floor collider required")
+    var painted_base := floor.get_node_or_null("StaticBoxVisual") as MeshInstance3D
+    _check(painted_base != null and is_equal_approx(painted_base.position.y,-0.012),
+        "Separately named visual box must not cover the actual textile shader skin")
     _check(int(skin.get("impact_count")) == 0 and not bool(skin.get("active")),
         "Idle launch screen must not animate felt")
     _check(skin.get_node_or_null("VisualOnlyTessellatedFelt") is MeshInstance3D,
@@ -51,8 +54,7 @@ func _run() -> void:
         _check(float(skin.get("last_contact_speed")) > 0.16,
             "Contact response not driven by observed physical velocity")
         _check(bool(skin.get("active")), "Real contact should start local felt response")
-        for i in range(30):
-            await process_frame
+        await create_timer(0.45).timeout
         _check(not bool(skin.get("active")),"Felt must recover promptly, never wobble forever")
     print("M5_REAL_FELT_CONTACT checks=%d failures=%d" % [checks,failures])
     scene.queue_free()

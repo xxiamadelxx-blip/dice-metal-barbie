@@ -30,6 +30,7 @@ func _ready() -> void:
     plane.size = Vector2(_surface_width, _surface_length)
     plane.subdivide_width = 64
     plane.subdivide_depth = 92
+    plane.material = null
     _skin.mesh = plane
     _skin.position.y = -0.039
     _skin.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

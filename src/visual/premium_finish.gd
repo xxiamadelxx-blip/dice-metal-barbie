@@ -11,8 +11,8 @@ static func velvet_material() -> StandardMaterial3D:
     material.albedo_texture = _velvet_texture()
     material.normal_enabled = true
     material.normal_texture = _velvet_normal_texture()
-    material.normal_scale = 0.42
-    material.roughness = 0.96
+    material.normal_scale = 0.62
+    material.roughness = 0.99
     material.metallic = 0.0
     return material
 
@@ -20,14 +20,18 @@ static func _velvet_texture() -> ImageTexture:
     var texture := Image.create(256, 256, false, Image.FORMAT_RGBA8)
     var noise := FastNoiseLite.new()
     noise.seed = 57321
-    noise.frequency = 0.075
+    # Previous large charcoal clouds were scaled over the entire ~10 m
+    # stage and read as stained PS1 concrete at 720x1280. Author the albedo
+    # as a DENSE charcoal-jade textile tile instead. A soft directional pile
+    # variation is visible even when no cube moves; never simulate concrete.
+    noise.frequency = 0.21
     for y in range(256):
         for x in range(256):
-            var grain: float = noise.get_noise_2d(float(x), float(y))
-            var thread: float = sin(float(x) * 0.92 + float(y) * 0.12) * 0.006
-            var fine: float = noise.get_noise_2d(float(x * 3 + 400), float(y * 3 - 700))
-            var value := clampf(0.062 + grain * 0.025 + fine * 0.018 + thread, 0.029, 0.11)
-            texture.set_pixel(x, y, Color(value * 0.83, value * 0.85, value, 1.0))
+            var fine: float = noise.get_noise_2d(float(x), float(y))
+            var stagger: float = noise.get_noise_2d(float(x * 4 + 31), float(y * 4 - 75))
+            var nap: float = sin(float(y) * 2.19 + sin(float(x) * 0.075) * 0.9)
+            var value: float = clampf(0.069 + fine * 0.010 + stagger * 0.009 + nap * 0.0035,0.049,0.091)
+            texture.set_pixel(x,y,Color(value * 0.75,value * 0.92,value * 0.74,1.0))
     texture.generate_mipmaps()
     return ImageTexture.create_from_image(texture)
 
@@ -37,13 +41,13 @@ static func _velvet_normal_texture() -> ImageTexture:
     var texture := Image.create(256, 256, false, Image.FORMAT_RGBA8)
     var noise := FastNoiseLite.new()
     noise.seed = 57491
-    noise.frequency = 0.11
+    noise.frequency = 0.34
     for y in range(256):
         for x in range(256):
             var nx: float = noise.get_noise_2d(float(x + 1), float(y)) - noise.get_noise_2d(float(x - 1), float(y))
             var ny: float = noise.get_noise_2d(float(x), float(y + 1)) - noise.get_noise_2d(float(x), float(y - 1))
-            var fiber: float = sin(float(x) * 1.7 + float(y) * 0.09) * 0.075
-            var n := Vector3(-nx * 0.8 - fiber, -ny * 0.8, 1.0).normalized()
+            var fiber: float = sin(float(y) * 2.1 + sin(float(x) * 0.15)) * 0.11
+            var n := Vector3(-nx * 0.35 - fiber * 0.60,-ny * 0.35 + fiber * 0.32,1.0).normalized()
             texture.set_pixel(x, y, Color(0.5 + n.x * 0.5, 0.5 + n.y * 0.5, 0.5 + n.z * 0.5, 1.0))
     texture.generate_mipmaps()
     return ImageTexture.create_from_image(texture)

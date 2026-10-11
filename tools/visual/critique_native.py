@@ -34,6 +34,22 @@ def _luma(rgb):
     r,g,b=rgb
     return .2126*r+.7152*g+.0722*b
 
+def velvet_nap_readability(path):
+    """Check black-green fabric is not the old blue concrete-grey.
+    These are rendered pixels, not a texture filename smoke test.
+    """
+    im=Image.open(path).convert("RGB")
+    # A die-free section of the actual tabletop, below the four static dice
+    # and above the lower Godot dock. Exclude all rails and labels.
+    crop=im.crop((315,800,405,920))
+    vals=list(crop.getdata())
+    n=len(vals)
+    means=[round(sum(px[c] for px in vals)/n,2) for c in range(3)]
+    lumas=sorted(_luma(p) for p in vals)
+    return {"rgb":means,"p10_luma":round(lumas[int(n*.1)],2),
+            "p90_luma":round(lumas[int(n*.9)],2),
+            "blue_minus_green":round(means[2]-means[1],2)}
+
 def showcase_face_readability(path):
     """Compare stable four-die hero planes with SAME-FRAME felt at 720x1280.
     A launch composition smoke check, NOT OCR or independent art approval."""
@@ -83,10 +99,15 @@ if __name__ == "__main__":
         metrics["crimson_pulse_hud_overspill_pixels"] = pulse_overspill(Path(sys.argv[3]))
         metrics["d4_bronze_glyph_pixels"] = d4_apex_bronze_pixels(Path(sys.argv[4]))
         metrics["normal_camera"] = showcase_face_readability(Path(sys.argv[5]))
+        metrics["velvet_nap"] = velvet_nap_readability(Path(sys.argv[5]))
         Path("qa-evidence/native-visual-metrics.json").write_text(json.dumps(metrics,indent=2)+"\n")
         print("Native contrast critic:", json.dumps(metrics))
         # Absolute guardrails, intentionally conservative about random die
         # orientation. Artists still review the original rendered image.
+        assert metrics["velvet_nap"]["blue_minus_green"] < -0.5, (
+            "Rendered felt is still blue-grey concrete, not black jade velvet")
+        assert metrics["velvet_nap"]["p90_luma"] - metrics["velvet_nap"]["p10_luma"] >= 1.8, (
+            "Rendered felt textile nap disappeared into a flat uniform plane")
         assert metrics["p75"] >= .12, "Face contrast too dark/flat"
         assert metrics["bronze_pixels"] >= 100, "Engraved bronze not readable"
         assert metrics["clipped_fraction"] < .04, "Blown-out specular highlights"
