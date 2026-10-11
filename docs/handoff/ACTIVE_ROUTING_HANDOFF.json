@@ -2,15 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 original Android AVD pool-editor pixel readiness after real player taps; preserve native physics and strict Gauntlet",
+    "task": "M4 strict AVD pixel gates and Qwen-discovered verify-persisted-formula-after-Apply test",
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering via canonical router (connected GitHub, no local repository shell)",
-    "next_action": "Inspect newly triggered combined PR #23 exact-SHA Gauntlet and uploaded original Android screenshots/frame JSONLs. Confirm D4 add/remove, D20 sign/restore, Cancel/reopen, quantity/modifier each had matching Godot telemetry AND >75 true original changed pixels. Check eight baseline physical Android rolls, 12 signed Jolt trials, full native 24fps, ARM64, and actual independent local Qwen 7B evidence. If AVD FAIL, use the newly logged measured changed-pixel counts to fix capture/render cause, not relax thresholds. Do not start M5 or merge.",
+    "next_action": "Inspect NEW exact-source unified PR #23 Gauntlet after Qwen-post-Apply-reopen regression commit. Native Blender/Godot/Jolt ARM64 + eight Android rolls + original 24fps screenshot checks must all PASS. Verify all original-pixel transitions including fresh Apply/reopen after the exact formula 3d6+1d20-2, and 7B critic original report. If AVD fails, read actual per-action pixel metrics and screenshots, do not weaken >75 gate. Check all Qwen findings against current source, disallow historical hallucinated claims. Do not merge or start M5 before M4 accepted.",
     "blockers": [
-      "Prior exact-source unified #38168476227 native+Jolt+ARM64 PASS; AVD full original-pixel frame audit FAIL at D4 add (screenshot captured before visible Android redraw).",
-      "Driver now waits for BOTH per-action log event and >75 original editor changed pixels; scripted and unit-test candidate committed; NEW exact-source Android/Gauntlet result NOT_VERIFIED.",
-      "OnePlus Nord 3 real handset screenshots/FPS and M5 premium artistic/audio/M6 release remain NOT_VERIFIED."
+      "Previous #38168476227 AVD failed stale D4-add/reopen screenshot (0 pixels despite genuine Godot logs). Strict event+frame polling implemented, pending integrated retest.",
+      "Independent LOCAL Qwen 7B current editorial critique artifact #11713294132: did not verify applied 3d6+1d20-2 is still shown on a newly opened dialog. Added exact event + original pixel + cancel isolation recheck; NEW full runtime results NOT_VERIFIED.",
+      "Historical broad Qwen artifact #11714202522 mixes outdated SHA and old AVD facts; review response alone is NOT runtime acceptance.",
+      "Physical OnePlus Nord 3 handset legibility/FPS and M5 aesthetic/audio/M6 release still NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -59,13 +60,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38168476227/artifacts/11714155595",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/16cfc76d591e88d0d8e47197823ed87f62bc0154",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/6152235b3d8fead79ac15c26a35d9a856c66472c",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/6300d13d2e2b29686a48de8045a64e59876c976a"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/6300d13d2e2b29686a48de8045a64e59876c976a",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38170535477",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38170535336/artifacts/11713294132",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38170535345/artifacts/11714202522"
     ],
-    "last_observed_sha": "6300d13d2e2b29686a48de8045a64e59876c976a",
+    "last_observed_sha": "e07bb37ec7388a3ab196c554342d23a76bd8c898",
     "last_verified_sha": "859eec6482388f91c99d5b95edb260e1224c5693",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Connected GitHub live HEAD inspected at 6300d13; latest preceding AVD red root pinpointed by job 114556546988. New GUI pixel synchronization, synthetic regression test and governance docs pushed, but NEW Godot/AVD/Android/independent Qwen result remains NOT_VERIFIED. Canonical router CLI NOT_VERIFIED: no local checkout/network in this runtime; GitHub-only equivalent inspection/checkpoint used. Recorded last_observed_sha is pre-checkpoint commit, reconcile new HEAD on enter."
+    "verification_note": "Resumed via connected GitHub router/manual reconciliation; local repo CLI NOT_VERIFIED (container cannot resolve github.com). Directly inspected raw Qwen 7B original artifact and original Android captures: first D4-add and post-Cancel reopen each 0 ROI pixels despite event, fixed with event+render polling. Extended AVD test based on separate Qwen critic: Apply -> reopen same exact persisted formula -> rendered pixels -> Cancel, with no second Apply/throw. NEW branch exact-SHA Gauntlet pending, do not assert PASS. Observed SHA pre-current checkpoint commit."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

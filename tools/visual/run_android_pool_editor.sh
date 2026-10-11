@@ -228,12 +228,50 @@ for attempt in $(seq 1 16); do
   sleep .65
   adb logcat -d -v time -s godot:I '*:S' > "$log" || true
   adb exec-out screencap -p > "$out/m4-pool-original-after-apply.png"
-  if grep -Fq 'DICE_M4_POOL_APPLIED formula=3d6+1d20-2' "$log"; then apply_ok=1; break; fi
+  if grep -Fq 'DICE_M4_POOL_APPLIED formula=3d6+1d20-2' "$log" &&
+     pool_pixels_changed m4-pool-original-modifier-changed.png m4-pool-original-after-apply.png; then
+    apply_ok=1; break
+  fi
 done
 if test "$apply_ok" != 1; then echo 'FAIL: actual Android Apply footer did not modify formula'; exit 57; fi
 # Applying must NOT launch Jolt. The next ACTUAL Throw click does.
 if grep -Fq 'DICE_M4_PHYSICAL_STARTED' "$log"; then
   echo 'FAIL: applying a pool unexpectedly triggered Jolt'; exit 58
+fi
+# Independent Qwen 7B source critique: applying alone doesn't prove that a
+# NEW modal reloads the edited formula. Reopen using the same real touchscreen
+# button, demand the EXACT newly persisted formula and distinct Android pixels.
+adb shell input tap 632 175
+applied_reopened=0
+for attempt in $(seq 1 20); do
+  sleep .65
+  adb logcat -d -v time -s godot:I '*:S' > "$log" || true
+  adb exec-out screencap -p > "$out/m4-pool-original-applied-reopened.png"
+  if grep -Fq 'DICE_M4_POOL_EDITOR_OPEN formula=3d6+1d20-2' "$log" &&
+     pool_pixels_changed m4-pool-original-after-apply.png m4-pool-original-applied-reopened.png; then
+    applied_reopened=1; break
+  fi
+done
+if test "$applied_reopened" != 1; then
+  echo 'FAIL: re-opened Android editor did not show newly applied pool'; exit 69
+fi
+# Close without modifying the draft and prove a second Apply did not happen.
+adb shell input tap 200 1000
+applied_cancel_visible=0
+for attempt in $(seq 1 20); do
+  sleep .65
+  adb exec-out screencap -p > "$out/m4-pool-original-after-applied-reopen-cancel.png"
+  if pool_pixels_changed m4-pool-original-applied-reopened.png m4-pool-original-after-applied-reopen-cancel.png; then
+    applied_cancel_visible=1; break
+  fi
+done
+if test "$applied_cancel_visible" != 1; then
+  echo 'FAIL: applied-formula recheck modal did not visibly dismiss'; exit 70
+fi
+adb logcat -d -v time -s godot:I '*:S' > "$log" || true
+if test "$(grep -Fc 'DICE_M4_POOL_APPLIED formula=3d6+1d20-2' "$log" || true)" != 1 ||
+   grep -Fq 'DICE_M4_PHYSICAL_STARTED' "$log"; then
+  echo 'FAIL: reopening/cancelling the applied formula changed pool or rolled'; exit 71
 fi
 adb shell input tap 355 285
 physical_ok=0

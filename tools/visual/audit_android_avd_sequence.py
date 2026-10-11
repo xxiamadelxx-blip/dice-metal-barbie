@@ -239,7 +239,10 @@ def inspect_physical_pool_editor_m4(root):
            "m4-pool-original-after-cancel.png",
            "m4-pool-original-reopened-after-cancel.png",
            "m4-pool-original-count-changed.png","m4-pool-original-modifier-changed.png",
-           "m4-pool-original-after-apply.png","m4-pool-original-physical-result.png",
+           "m4-pool-original-after-apply.png",
+           "m4-pool-original-applied-reopened.png",
+           "m4-pool-original-after-applied-reopen-cancel.png",
+           "m4-pool-original-physical-result.png",
            "m4-pool-original-saved-history.png"]
     for file in files:
         assert (root/file).stat().st_size>10000, "Missing original Android screen: "+file
@@ -247,6 +250,7 @@ def inspect_physical_pool_editor_m4(root):
             "DICE_M4_POOL_EDIT formula=3d6+1d20-3",
             "DICE_M4_POOL_EDIT formula=3d6+1d20-2",
             "DICE_M4_POOL_APPLIED formula=3d6+1d20-2",
+            "DICE_M4_POOL_EDITOR_OPEN formula=3d6+1d20-2",
             "DICE_M4_PHYSICAL_STARTED 3d6+1d20-2",
             "DICE_M4_SIMULTANEOUS_STARTED=4",
             "DICE_M4_SIMULTANEOUS_COMPLETED=4",
@@ -266,6 +270,7 @@ def inspect_physical_pool_editor_m4(root):
         "DICE_M4_POOL_EDIT formula=3d6+1d20-3",
         "DICE_M4_POOL_EDIT formula=3d6+1d20-2",
         "DICE_M4_POOL_APPLIED formula=3d6+1d20-2",
+        "DICE_M4_POOL_EDITOR_OPEN formula=3d6+1d20-2",
         "DICE_M4_PHYSICAL_STARTED 3d6+1d20-2"
     ]
     cursor=0
@@ -288,7 +293,10 @@ def inspect_physical_pool_editor_m4(root):
         (files[5],files[6],"actual cancel"),
         (files[6],files[7],"actual reopen"),
         (files[7],files[8],"D6 quantity"),
-        (files[8],files[9],"flat modifier")
+        (files[8],files[9],"flat modifier"),
+        (files[9],files[10],"real Apply visibly closes editor"),
+        (files[10],files[11],"applied formula modal reopened"),
+        (files[11],files[12],"post-Apply Cancel visibly closes editor")
     ]:
         actual_pixels=changed(earlier,later)
         assert actual_pixels>MIN_CHANGED_PIXELS, (
@@ -320,6 +328,8 @@ def inspect_physical_pool_editor_m4(root):
         "source_formula":"3d6+1d20-2","physical_bodies":4,
         "final_Jolt_total":int(totals[0]),"count_and_modifier_touch":True,
         "player_confirmed_formula_before_roll":True,
+        "reopen_applied_formula_real_android_tap":True,
+        "reopen_applied_formula_verified_by_log_and_rendered_pixels":True,
         "android_real_touch_add_remove_d4":True,
         "android_real_touch_signed_d20_twice":True,
         "android_real_cancel_and_reopen_preserved_original_formula":True,
