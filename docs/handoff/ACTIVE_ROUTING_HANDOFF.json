@@ -2,16 +2,17 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 real Blender/MeshLab/ImageMagick/Inkscape art-output route and Godot/Jolt/FFmpeg/Android Gauntlet",
+    "task": "M5 polished obsidian: inspect real Blender→Godot material mismatch, change only imported PBR stone, repeat exact-source Gauntlet",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect new exact-SHA PR #23 Gauntlet with real generated 5x GLB, 5x OBJ, PBR textures and Inkscape SVG-to-PNG export plus m5-route-manifest.json. Verify actual native Godot screenshots, full 24fps Jolt movies, Android AVD, ARM64, and independent Qwen source critique if present. Fix red tests at source without loosening checks. Then continue M5 user-approved Concept 3 premium obsidian, physical contact sound/haptics and compact seven-die dock. Keep Draft PR and M6 hardware/signing gates open.",
+    "next_action": "Inspect Gauntlet #38176763640 on exact new source revision; Blender/MeshLab/Inkscape manifest, actual Godot/Mesa launch and D20 macro PNG vs historical #38174391709, full 24fps/Jolt, Android AVD and ARM64. Independently compare imported PBR facet highlights/gold legibility rather than just green CI. If red check exact job/root cause and fix. If technically and visually improved, proceed to seven-chip compact M5 dock (remove floating D10/D100 without losing real selections), then impact audio/haptics. Do not use old M4-run green for this change or claim Nord 3 performance.",
     "blockers": [
-      "M4 cloud functional Gauntlet #38171350517 full SUCCESS. M5 premium visual/audio design NOT ACCEPTED.",
-      "New M5 Inkscape PNG and source-to-output SHA256 manifest committed, but exact new Gauntlet run result NOT_VERIFIED.",
-      "Material Maker PTEX export and Krita/GIMP authored export NOT VERIFIED. Use proven Blender/Python fallback.",
-      "Real OnePlus Nord 3 hardware FPS/readability and release signing/update NOT VERIFIED."
+      "M5 post-material-import native/Android artist review NOT_VERIFIED pending full Gauntlet #38176763640.",
+      "M5 baseline #38174391709 PASS all technical stages; original Blender output and Godot screenshot were opened; former uniform emission/rough clearcoat caused suspected matte grey presentation, now source correction + Godot material contract test.",
+      "M5 full Concept 3 approval and physical-contact sound/haptics remain OPEN; M6 hardware OnePlus Nord 3, release signing/upgrade NOT_VERIFIED.",
+      "Material Maker PTEX, Krita/GIMP authored export not proven; use currently verified Blender/MeshLab/Inkscape/ImageMagick/FFmpeg.",
+      "Local engineering_router.py enter CLI NOT_VERIFIED due no local checkout, manual GitHub canonical router reads performed."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -65,13 +66,17 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38170535336/artifacts/11713294132",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38170535345/artifacts/11714202522",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38171350517",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38171350517/artifacts/11714366831"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38171350517/artifacts/11714366831",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38174391709",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38174391709/artifacts/11715486450",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38174391709/artifacts/11714694965",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38176763640"
     ],
-    "last_observed_sha": "cac4e067d07d30c7f13dd43b6b3959727329f838",
-    "last_verified_sha": "936226c341fc8e3c284054dd4cd498510da7cc26",
+    "last_observed_sha": "2a1fe64042b64864a34a72ebe8c939c197df4103",
+    "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "The connected GitHub router and design/tool docs were read; local engineering_router.py enter remains NOT_VERIFIED (no local checked-out repository). Full M4 physical/Amdroid run 38171350517 passed. M5 Inkscape/render + manifest new CI is unverified until run finishes. Branch HEAD logged before this checkpoint commit."
+    "verification_note": "Verified full #38174391709 source (pre-pin 6b2a3f0) technical PASS; inspected raw Blender asset manifest and genuine native launch frames. Material correction commit 78adab3, actual GDScript material test commit 397b259, image A/B and gates documented in docs/M5_PBR_TRANSFER_GAUNTLET.md. New #38176763640 pending; do not declare M5 artistic PASS. Local CLI unavailable, GitHub router followed manually. Head before checkpoint 2a1fe64042b64864a34a72ebe8c939c197df4103."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
