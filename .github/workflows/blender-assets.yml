@@ -23,7 +23,7 @@ jobs:
         if: steps.art_source.outputs.run == 'true'
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy fonts-dejavu-core meshlab xvfb imagemagick inkscape ffmpeg
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy python3-pil fonts-dejavu-core meshlab xvfb imagemagick inkscape ffmpeg
       - name: Verify Blender glTF Python dependencies
         if: steps.art_source.outputs.run == 'true'
         run: blender --background -noaudio --python-exit-code 2 --python-expr "import numpy; print('NumPy import OK:', numpy.__version__)"
@@ -51,6 +51,10 @@ jobs:
         if: steps.art_source.outputs.run == 'true'
         run: |
           python3 tools/blender/validate_glb.py build/premium-glb
+      - name: M5 AI-texture material adapter geometry-safety regression (synthetic, no external GPU/API)
+        run: |
+          set -euo pipefail
+          python3 tools/materials/test_ai_d20_glb_experiment.py build/premium-glb/d20_boolean_engraved.glb
       - name: Inspect authored Boolean stone with Meshlab CLI and ImageMagick
         if: steps.art_source.outputs.run == 'true'
         run: |
