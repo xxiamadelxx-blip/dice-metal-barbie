@@ -2,14 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 editor: real Android player count/modifier/apply/touch→four-Jolt→history screen-source Gauntlet",
+    "task": "M4 physical pool editor: real Android count/modifier/apply/Jolt/history accepted; continue remaining editor touch cases and D20 source-selection UX",
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering agent via canonical router",
-    "next_action": "Inspect first exact-source full Android AVD Gauntlet including selected pool-quantity/modifier and Apply original PNG+video; fix wrong screen hitboxes from real evidence; retain D100 pair and all other physical gates.",
+    "next_action": "Independently test remaining REAL Android pool editor Add/Remove/Sign/Cancel touch paths and source-result invariants, rather than only programmatic pressed.emit; consider explicit eligible D20 group choice for advantage/crit under multiple D20 groups. Do not advance M5 until M4 requirements complete.",
     "blockers": [
-      "Prior full #38161281092 verifies Godot native modal bounds and Android old D100, NOT real AVD pool touch. New source real player test NOT_VERIFIED until Gauntlet.",
-      "Nord 3 on-device APK/FPS/upgrade and M5 premium aesthetics/audio/haptics NOT_VERIFIED."
+      "Remaining M4 mobile gesture coverage: editor Add/Remove/flip-sign/cancel and arbitrary pool D20 selection NOT VERIFIED; do not extrapolate from count/modifier to every button.",
+      "Independent local Qwen 7B ran (#38164275943) but critique paraphrased old Android source events rather than the new pool editor; meaningful NEW code review NOT VERIFIED despite workflow success.",
+      "OnePlus Nord 3 physical APK installation, production signing upgrade, on-device FPS/haptics and M5 visual/audio artistic approval NOT VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -42,13 +43,17 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38160464307/artifacts/11709991128",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38161079655",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38161281092",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38162081342"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38162081342",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164276191",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164276191/artifacts/11712245326",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164275943",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164275943/artifacts/11711522933"
     ],
-    "last_observed_sha": "537fd422f3ca953cc1b73ffaabbfec63e74c2dc2",
-    "last_verified_sha": "3aea5d316297b702503ea4030b338e9a8cda6102",
+    "last_observed_sha": "1d89b5eae7e1927c9ac09261f0bdd5ef8de4d3ab",
+    "last_verified_sha": "7ab524091748142b033bceafbdfe89c30e061f38",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Added original AVD editor taps and full-frame QA to PR; no Android execution yet. Existing full previous-source native bounds/Godot/Jolt and D100 PASS."
+    "verification_note": "Full combined exact-code #38164276191 SUCCESS 9/9 including genuine Android touchscreen editor, physical formula 2d6+1d20-3 → 3d6+1d20-2 via 2 taps/Apply, four Jolt bodies settle total 23, history 14 rows, 1156 pool-video frames and 7774 total Android frames, 0 black; original PNG/screens/log examined. Source tested 7ab5240, bot pinned same-run GLB-only commit. CLI enter not executed in chat; real router CI PASS. Qwen execution but substantive critique NOT_VERIFIED."
   },
   "incidents": {}
 }
