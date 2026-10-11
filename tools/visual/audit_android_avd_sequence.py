@@ -226,14 +226,85 @@ def inspect_pair_sources_m4(root):
         "hardware_oneplus_nord3_fps":"NOT_VERIFIED"}
 
 
+def inspect_physical_pool_editor_m4(root):
+    """Actual Android source touched/count+modifier/applied/rolled/history; inspect every frame."""
+    original=root/"dice-M4-POOL-source.mp4"
+    film=root/"roll-M4-POOL-24fps.mp4"
+    log=(root/"roll-M4-POOL-godot.log").read_text()
+    assert original.stat().st_size>30000 and film.stat().st_size>30000, "M4 pool source video missing"
+    files=["m4-pool-original-drawer.png","m4-pool-original-dialog.png",
+           "m4-pool-original-count-changed.png","m4-pool-original-modifier-changed.png",
+           "m4-pool-original-after-apply.png","m4-pool-original-physical-result.png",
+           "m4-pool-original-saved-history.png"]
+    for file in files:
+        assert (root/file).stat().st_size>10000, "Missing original Android screen: "+file
+    events=["DICE_M4_POOL_EDITOR_OPEN formula=2d6+1d20-3",
+            "DICE_M4_POOL_EDIT formula=3d6+1d20-3",
+            "DICE_M4_POOL_EDIT formula=3d6+1d20-2",
+            "DICE_M4_POOL_APPLIED formula=3d6+1d20-2",
+            "DICE_M4_PHYSICAL_STARTED 3d6+1d20-2",
+            "DICE_M4_SIMULTANEOUS_STARTED=4",
+            "DICE_M4_SIMULTANEOUS_COMPLETED=4",
+            "DICE_M4_HISTORY_OPEN records="]
+    positions=[]
+    for e in events:
+        assert e in log, "Real Android Godot event missing: "+e
+        positions.append(log.index(e))
+    assert positions==sorted(positions), "Player edit/throw/history events out of order"
+    assert "DICE_M4_PHYSICAL_FAILED" not in log, "Source physical cast failed"
+    totals=re.findall(r"DICE_M4_PHYSICAL_COMPLETED 3d6\+1d20-2=(-?[0-9]+)",log)
+    assert len(totals)==1 and 2<=int(totals[0])<=36, (
+        "Four Jolt faces must produce exactly one signed physical total")
+    def changed(a,b):
+        first=Image.open(root/a).convert("RGB")
+        second=Image.open(root/b).convert("RGB")
+        assert first.size==second.size==(720,1280)
+        diff=ImageChops.difference(first.crop((50,170,680,1130)),
+                                   second.crop((50,170,680,1130))).convert("L")
+        return sum(n for v,n in enumerate(diff.histogram()) if v>16)
+    assert changed(files[0],files[1])>15000, "No rendered modal, only telemetry"
+    assert changed(files[1],files[2])>75, "Count tap produced no new rendered pixels"
+    assert changed(files[2],files[3])>75, "Modifier tap produced no new rendered pixels"
+    last=None;frame_count=0;motion=0;duplicates=0;black=0;sheet=[]
+    with (root/"every-avd-frame-M4-POOL.jsonl").open("w") as output:
+        for idx,image in video_frames(film):
+            crop=image.crop((70,160,650,1050)).resize((96,144)).convert("L")
+            mean=ImageStat.Stat(crop).mean[0]
+            delta=0 if last is None else sum(ImageChops.difference(crop,last).histogram()[10:])
+            motion+=int(delta>36)
+            duplicates+=int(last is not None and delta==0)
+            black+=int(mean<8)
+            output.write(json.dumps({"frame":idx,"time_s":round(idx/24,4),
+                "source":"REAL_ANDROID_TOUCH_POOL_EDITOR_JOLT","luminance":round(mean,2),
+                "pixel_delta":delta,"black":mean<8})+"\n")
+            sheet.append((idx,image.resize((120,215))))
+            if len(sheet)==24:
+                save_every_frame_sheet(root,"M4-POOL",idx//24,sheet)
+                sheet=[]
+            last=crop;frame_count+=1
+    if sheet:
+        save_every_frame_sheet(root,"M4-POOL",(frame_count-1)//24,sheet)
+    assert frame_count>=120 and motion>=8 and black==0, (
+        "Android player editor video frozen, black or too short")
+    return {"capture_key":"M4_REAL_ANDROID_PLAYER_POOL_EDITOR",
+        "source_formula":"3d6+1d20-2","physical_bodies":4,
+        "final_Jolt_total":int(totals[0]),"count_and_modifier_touch":True,
+        "player_confirmed_formula_before_roll":True,
+        "real_local_history_opened":True,"source_frames_inspected":frame_count,
+        "nominal_24fps_sheets":math.ceil(frame_count/24),
+        "moving_frames":motion,"duplicates":duplicates,"black_frames":black,
+        "oneplus_nord3_hardware":"NOT_VERIFIED"}
+
 def main(root):
     all_dice=[inspect(root,s) for s in (4,6,8,12,20,10,100,"100_PAIR")]
     m4=inspect_advanced_m4(root)
     pair=inspect_pair_sources_m4(root)
+    editor=inspect_physical_pool_editor_m4(root)
     report={"provenance":"REAL_ANDROID_EMULATOR_X86_64_ADB_SCREENRECORD",
             "results":all_dice,"m4_real_clicked_physical_ui":m4,
             "m4_real_clicked_percentile_source_digits":pair,
-            "frames_examined":sum(x["frames_checked_sequentially"] for x in all_dice)+m4["frame_count_all_checked"]+pair["frames_checked_sequentially"],
+            "m4_real_player_pool_editor":editor,
+            "frames_examined":sum(x["frames_checked_sequentially"] for x in all_dice)+m4["frame_count_all_checked"]+pair["frames_checked_sequentially"]+editor["source_frames_inspected"],
             "status":"TEMPORAL_EVIDENCE_ONLY",
             "limitations":["24fps extracted screen frames can repeat if AVD GPU/source is slower",
                            "actual FPS and numerical face/HUD consistency unverified",

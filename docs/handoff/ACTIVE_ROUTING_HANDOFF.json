@@ -2,14 +2,14 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 real 720x1280 popup: prevent ConfirmationDialog Window.wrap_controls from expanding beyond phone and hiding Apply/Cancel",
+    "task": "M4 editor: real Android player count/modifier/apply/touch→four-Jolt→history screen-source Gauntlet",
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering agent via canonical router",
-    "next_action": "Review short focused Godot 4.6.3 compilation/real Jolt after wrap_controls=false; then full original native frame for visible OK button, then real Android finger editor QA.",
+    "next_action": "Inspect first exact-source full Android AVD Gauntlet including selected pool-quantity/modifier and Apply original PNG+video; fix wrong screen hitboxes from real evidence; retain D100 pair and all other physical gates.",
     "blockers": [
-      "#38161079655 failed GDScript compilation because get_vbox is FileDialog-only, NOT ConfirmationDialog; fixed using documented Window.wrap_controls=false, new run required.",
-      "Actual Android edited pool count/plus/minus/Apply taps NOT_VERIFIED until separate AVD source test; physical Nord3 remains OPEN."
+      "Prior full #38161281092 verifies Godot native modal bounds and Android old D100, NOT real AVD pool touch. New source real player test NOT_VERIFIED until Gauntlet.",
+      "Nord 3 on-device APK/FPS/upgrade and M5 premium aesthetics/audio/haptics NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -40,13 +40,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38159813447",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38160464307",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38160464307/artifacts/11709991128",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38161079655"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38161079655",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38161281092",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38162081342"
     ],
-    "last_observed_sha": "dbc65e34f68ce27dfd9eccf897102520304dd0ec",
-    "last_verified_sha": "47284270934393a72635d329c92934a95215e95a",
+    "last_observed_sha": "537fd422f3ca953cc1b73ffaabbfec63e74c2dc2",
+    "last_verified_sha": "3aea5d316297b702503ea4030b338e9a8cda6102",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Focused source compiler invalid get_vbox: confirmed and reverted. Source now uses documented Window.wrap_controls=false to preserve built-in ConfirmationDialog footer and explicit 690x1020 max size. Exact original UI QA pending."
+    "verification_note": "Added original AVD editor taps and full-frame QA to PR; no Android execution yet. Existing full previous-source native bounds/Godot/Jolt and D100 PASS."
   },
   "incidents": {}
 }
