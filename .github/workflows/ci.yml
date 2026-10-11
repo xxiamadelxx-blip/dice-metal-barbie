@@ -65,8 +65,11 @@ jobs:
         run: godot --headless --path . --script res://tests/m4_physical_reroll.gd
       - name: M4 click physical source picker, reroll and audit local history
         run: godot --headless --path . --script res://tests/m4_reroll_ui_integration.gd
-      - name: M4 browse/search ALL preserved physical history and inspect every source face
-        run: godot --headless --path . --script res://tests/m4_full_history_browser.gd
+      - name: M4 complete physical history plus verified real Android telemetry contract
+        run: |
+          godot --headless --path . --script res://tests/m4_full_history_browser.gd > m4-history-actual.log 2>&1 || { tail -100 m4-history-actual.log; exit 1; }
+          grep -F 'M4_REAL_UI_ALL_HISTORY checks=' m4-history-actual.log
+          grep -E 'DICE_M4_HISTORY_OPEN records=([2-9]|[1-9][0-9]+)' m4-history-actual.log
       - name: Physical scene integration smoke
         run: godot --headless --path . --script res://tests/physics_smoke.gd
       - name: Natural D20-only non-colliding spatial critical aura
