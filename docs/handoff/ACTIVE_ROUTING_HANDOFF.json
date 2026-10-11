@@ -2,18 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 single 7-chip minimal dock, D100 real-source on-dock switch with ADB pixel touch and preserved M4 mechanics",
+    "task": "M5 Alpha4 real live browser reference verification and candidate 7-dice dock red-gate diagnosis",
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "First inspect exact-source M5 seven-dice dock Gauntlet after Alpha4 reference documentation commits, fix any real Godot/AVD layout failure. Use newly audited older favorite Alpha 4 Obsidian Studio design as M5 UX/VFX reference: docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md. Its luxurious warm brass / dark jade style, backstage modal sheets, quick presets, results, natural 20/1 and minimal 1.5px tray impact are useful; DO NOT import prechosen/forced HTML dice outcomes into Jolt, do not add Supabase live. Then implement local physical-hit velvet response, actual settled-D20 VFX and sound/haptics with original 24fps screenshots. Real Alpha4 browser interaction was NOT VERIFIED (browser service out of wallet funds); do not misstate that screenshots/touches happened.",
+    "next_action": "1) FIRST examine most recent exact-head PR #23 full Gauntlet and fix any failed Godot m5_compact_dock.gd touch-layout test or AVD true D100 mode hit test; 2) use docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md current live-click addendum: verified D20 roll 17 and pool 2d6+1, CSS 0.14s 1.5px soft tray kick. Distinguish critical visual code from observed nat20/nat1; 3) implement restrained Jolt-contact-driven velvet reaction, nat20 gold/nat1 red effect originating at true stopped D20, maintain approved overhead camera and no forced preselected result. Re-run actual 24fps Godot/Android full-frame. M5 artistic and OnePlus Nord 3 NOT VERIFIED.",
     "blockers": [
-      "M5 unified seven-chip dock candidate NOT_VERIFIED until fresh Godot/Jolt/Android CI.",
-      "M5 PBR native screenshot sharper facet reflection but still grayish; artistic Concept 3 approval NOT_VERIFIED.",
-      "M5 physical-contact audio/haptics and real OnePlus Nord 3 phone QA remain OPEN.",
-      "Local engineering_router.py CLI NOT_VERIFIED: no checked-out repo/Godot binary in assistant runtime; GitHub connector used for preflight.",
-      "Alpha 4 live site HTML and linked source audited, but actual browser click/screenshot/video could not run: TinyFish wallet out of funds. Physical rendering/tactile animation observed in code, not verified live. Do not pretend visual acceptance.",
-      "Approved Concept 3 is still styling/camera authority; Alpha4 is strong inspiration but its preselected result guided to face conflicts with Jolt physical output."
+      "Latest authored M5 one-dock/real D100 Android hit test still requires full same-source Gauntlet PASS and screenshot inspection; older #38177825891 had Godot CI failure and AVD cancellation; never claim M5 accepted based on earlier M4 CI.",
+      "Alpha4 live mobile browser UI D20 roll result 17 and 2d6+1 editor ACTUALLY VERIFIED by Firecrawl interact; gold/red nat20/nat1 screenshots, real sound/haptics, full 24fps interactive capture NOT VERIFIED.",
+      "Approval remains on Godot Jolt true physical faces; older HTML preselects random outcome before animation, incompatible with honest physics.",
+      "OnePlus Nord 3 GPU/FPS, premium art and stable release signing remain M6 OPEN; local engineering_router.py CLI NOT_VERIFIED (no checkout)."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -75,13 +73,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38176798218",
       "https://adel-dice-roll.vercel.app/",
       "https://github.com/xxiamadelxx-blip/Dmmaster/tree/8692a682fe34ccc855a0550bf7747eff8846ed29",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/feat/m5-approved-minimal-premium-visual-pass-1/docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/feat/m5-approved-minimal-premium-visual-pass-1/docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/d9d6b8683a88d882e447728a1878cf424d8b28b8/docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38177825891"
     ],
-    "last_observed_sha": "2a8524b4aecb85aff58cc18e6720b94160436d07",
+    "last_observed_sha": "d9d6b8683a88d882e447728a1878cf424d8b28b8",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Alpha4 reference audit source HTTP200 and original Vercel served 16.65MB HTML, Dmmaster exact source revision 8692a68, readable CSS/crit plan/docs. UI screenshot/browser execution NOT VERIFIED due TinyFish insufficient wallet; zero fabricated images. This commit only adds design reference+handoff, no Godot code changes. Last observed SHA is pre-checkpoint source."
+    "verification_note": "Connected GitHub manual canonical entry; no local router CLI. Live Firecrawl HTTP200 plus Firecrawl interactive browser successfully clicked D20 real UI roll (17), d6 picker and count+modifier (2d6+1), inspected menu, presets and skins; nat20/nat1 not directly observed, only source/CSS present, no smartphone audio/haptics or 24fps source-frame proof. Older TinyFish wallet error does not invalidate subsequent successful Firecrawl live session. Exact live source audit updated at prior commit."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
