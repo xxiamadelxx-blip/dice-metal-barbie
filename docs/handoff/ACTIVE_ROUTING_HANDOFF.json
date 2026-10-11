@@ -2,14 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 Android real UI D100: remove ADB BACK that exited genuine Godot after entering formula; preserve full implementation",
-    "route": "reliability-persistence",
+    "task": "M4 Android chosen paired D100: verify real popup, select physical ones D10 instead of repeating tens",
+    "route": "interface-accessibility",
     "status": "in_progress",
-    "owner": "Dice engineering via canonical router",
-    "next_action": "Inspect next exact-source AVD user paired D100 formula and tens/ones reroll videos; confirm real Jolt log+visible bodies/history. If another Android failure, diagnose original capture before modifying logic; after pass, complete M4 stored receipt statistics and controls.",
+    "owner": "Dice engineering agent via canonical router",
+    "next_action": "On current PR commit run full Gauntlet: assert real Android popup pixels, source-selected digit=ones and actual source Jolt attempts=3, history and 24fps frame QA. If green, merge staged M4 receipt statistics from SHA 614e112 (omit staging-only CI workflows), rerun exact combined Gauntlet. Then progress approved M4 composition UX.",
     "blockers": [
-      "Gauntlet #38149288426 RED: separate Android pair D100 formula script typed correctly but KEYCODE_BACK went to launcher before tap; no authentic pair start. New no-BACK patch requires real AVD retest.",
-      "Real Nord 3 FPS/install/update and M5 art/audio acceptance NOT_VERIFIED."
+      "#38150379151 Android AVD selected FIRST (tens) again due wrong item Y coordinate 383 plus early popup timing. New y405, popup pixel gate and actual Godot selection event not yet verified.",
+      "M4 staged stats native Gauntlet #38150741182 passed but still separate from PR; local Qwen stage review in progress.",
+      "Real OnePlus Nord 3 FPS/install/upgrade and M5 arts/sound/haptics NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -20,13 +21,17 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38145338245",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38149288426",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38149288203",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38149288426/artifacts/11706123479"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38149288426/artifacts/11706123479",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38150379151",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38150379151/artifacts/11705564419",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38150741182",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/614e1122739b2efdccd91bb984611435f21e067a"
     ],
-    "last_observed_sha": "2d6845150c43a307926d86a77508cbb4032b1238",
+    "last_observed_sha": "1683dc46ebb01aa0a7d40b7eb56044771b8a2b66",
     "last_verified_sha": "d2e5ddc7509a52bd31cb7ddd61c3ca1ea9ce1c0f",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Evidence reviewed: fresh-process marker and actual drawer pixels PASS; input KEYCODE_BACK inadvertently navigates launcher on AVD. Removed it, retain verification. New build result NOT VERIFIED."
+    "verification_note": "Grounded original Android popup screenshot proves second source center y405; old tap y383 hit tens. New UI-selected debug event is tied to actual OptionButton selection. Same-source full Android and local critic review pending."
   },
   "incidents": {}
 }

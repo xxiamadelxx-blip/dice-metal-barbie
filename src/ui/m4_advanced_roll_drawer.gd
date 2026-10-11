@@ -85,6 +85,9 @@ func _ready() -> void:
     reroll_picker.custom_minimum_size.y = 44
     reroll_picker.add_item("Сначала бросьте формулу")
     reroll_picker.disabled = true
+    # Native player touch proves the chosen *source rigid body*, not a synthetic
+    # ADB tap. This debug-only marker is independently required by Android QA.
+    reroll_picker.item_selected.connect(_source_picker_changed_by_user)
     reroll_row.add_child(reroll_picker)
     reroll_button = Button.new()
     reroll_button.name = "RerollChosenPhysicalDie"
@@ -162,6 +165,14 @@ func _hundred_mode() -> String:
 
 func _request_throw() -> void:
     physical_roll_requested.emit(formula_input.text,_selected_mode(),_hundred_mode())
+
+func _source_picker_changed_by_user(index: int) -> void:
+    if index < 0 or index >= reroll_slots.size():
+        return
+    if OS.is_debug_build():
+        var chosen: Dictionary = reroll_slots[index]
+        print("DICE_M4_SOURCE_SELECTED group=%d die=%d digit=%s" % [
+            int(chosen["group"]),int(chosen["die"]),str(chosen.get("digit",""))])
 
 func _request_physical_reroll() -> void:
     var idx := reroll_picker.selected

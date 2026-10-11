@@ -112,7 +112,7 @@ changed=sum(n for v,n in enumerate(d.histogram()) if v>16)
 print('M4 pair Android actual editor still visible:',changed,'different pixels')
 assert changed>8500,'Real formula drawer vanished before launch; do not tap Launcher'
 PY
-app_pid="$(adb shell pidof org.dicemetalbarbie.dnddice | tr -d '\\r' || true)"
+app_pid="$(adb shell pidof org.dicemetalbarbie.dnddice | tr -d '\r' || true)"
 if test -z "$app_pid"; then
   echo 'FAIL: Godot Android process quit after original text input'
   exit 25
@@ -151,13 +151,43 @@ if test "$tens" != 1; then echo 'FAIL: Android did not reroll actual tens D10'; 
 adb exec-out screencap -p > "$out/m4-pair-after-tens.png"
 adb shell input tap 50 97
 sleep .8
-adb shell input tap 240 340
+# Grounded ORIGINAL AVD screenshot #38150379151: the dropdown opens as
+# a grey x45..550, y365..450 panel. The second item ("единицы") is centered
+# near x240,y405. The old y383 tap selected the FIRST "десятки" again!
+# Never send source reroll until the actual popup pixels AND selected Godot
+# signal prove this is the original SECOND real D10, not the first.
+adb shell input tap 535 340
+popup_ready=0
+for attempt in $(seq 1 10); do
+  sleep .7
+  adb exec-out screencap -p > "$out/m4-pair-ones-popup.png"
+  if python3 - "$out/m4-pair-ones-popup.png" <<'PY'
+import sys
+from PIL import Image,ImageStat
+im=Image.open(sys.argv[1]).convert('RGB')
+assert im.size==(720,1280)
+stat=ImageStat.Stat(im.crop((45,365,550,447)).convert('L'))
+print('Original Android paired-source picker popup mean/stddev:',
+      round(stat.mean[0],2),round(stat.stddev[0],2))
+assert stat.mean[0]>50 and stat.stddev[0]>20, 'Original grey Android picker not shown'
+PY
+  then
+    popup_ready=1
+    break
+  fi
+done
+if test "$popup_ready" != 1; then
+  echo 'FAIL: paired D100 source dropdown never became visible'
+  exit 26
+fi
+adb shell input tap 240 405
 sleep .7
-adb exec-out screencap -p > "$out/m4-pair-ones-popup.png"
-# Verify the second item truly selected via required Jolt digit=ones event.
-adb shell input tap 240 383
-sleep .5
 adb exec-out screencap -p > "$out/m4-pair-ones-selected.png"
+adb logcat -d -v time -s godot:I '*:S' > "$log" || true
+if ! grep -Fq 'DICE_M4_SOURCE_SELECTED group=0 die=0 digit=ones' "$log"; then
+  echo 'FAIL: real Android picker did NOT select physical ones D10'
+  exit 27
+fi
 adb shell input tap 624 340
 ones=0
 for i in $(seq 1 40); do
