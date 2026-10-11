@@ -23,6 +23,12 @@ jobs:
           godot --headless --path . --check-only --script res://tests/m4_roll_formula.gd
       - name: Test signed formulas with recorded physical-face oracles
         run: godot --headless --path . --script res://tests/m4_roll_formula.gd
+      - name: Compile pure offline history and preset store
+        run: |
+          godot --headless --path . --check-only --script res://src/core/roll_persistence.gd
+          godot --headless --path . --check-only --script res://tests/m4_roll_persistence.gd
+      - name: Actual local offline file-write reload and corruption protection
+        run: godot --headless --path . --script res://tests/m4_roll_persistence.gd
       - name: Test existing D100 percentile arithmetic unchanged
         run: godot --headless --path . --script res://tests/percentile_pair_mapping.gd
       - name: Existing deterministic mechanics regressions
