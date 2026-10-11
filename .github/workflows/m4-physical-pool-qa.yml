@@ -23,6 +23,13 @@ jobs:
           godot --headless --path . --check-only --script res://tests/m4_physical_pool.gd
       - name: Exercise genuine mixed physical bodies, percentile and D20 advantage
         run: godot --headless --path . --script res://tests/m4_physical_pool.gd
+      - name: Check new M4 real gameplay HUD and drawer scripts parse
+        run: |
+          godot --headless --path . --check-only --script res://src/main.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_advanced_roll_drawer.gd
+          godot --headless --path . --check-only --script res://tests/m4_advanced_ui_integration.gd
+      - name: Test real UI clicks and physical Jolt mixed results persisted offline
+        run: godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd
       - name: Formula parser regression
         run: godot --headless --path . --script res://tests/m4_roll_formula.gd
       - name: Percentile input authenticity regression

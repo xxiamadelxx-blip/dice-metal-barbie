@@ -11,6 +11,10 @@ const D12Script = preload("res://src/dice/d12_body.gd")
 const D4Script = preload("res://src/dice/d4_body.gd")
 const TrapezohedronDie = preload("res://src/dice/trapezohedron_body.gd")
 const DiceRules = preload("res://src/core/dice_rules.gd")
+const RollFormula = preload("res://src/core/roll_formula.gd")
+const RollStore = preload("res://src/core/roll_persistence.gd")
+const PhysicalPool = preload("res://src/core/physical_roll_pool.gd")
+const AdvancedDrawer = preload("res://src/ui/m4_advanced_roll_drawer.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
 # Launch display only. Never scale physically simulated dice or Jolt colliders.
@@ -31,11 +35,167 @@ var active_sides := 6
 var last_result := -1
 var die_buttons: Dictionary = {}
 var idle_display: Node3D
+var advanced_panel: PanelContainer
+var physical_pool: Node3D
+var roll_store: RefCounted
+var advanced_open_button: Button
+var last_advanced_formula := ""
 
 func _ready() -> void:
     _make_world()
     _make_idle_showcase()
     _make_overlay()
+    _setup_m4_local_and_drawer()
+
+func _setup_m4_local_and_drawer() -> void:
+    # Functional M4 bottom-sheet substitute; M5 will do final skin/navigation.
+    roll_store = RollStore.new()
+    var loaded: Dictionary = roll_store.call("load_state")
+    var overlay := get_node("GameHUD/OverlayRoot") as Control
+    advanced_open_button = Button.new()
+    advanced_open_button.name = "OpenAdvancedRules"
+    advanced_open_button.text = "≡"
+    advanced_open_button.tooltip_text = "Составные броски, история и пресеты"
+    advanced_open_button.position = Vector2(25, 73)
+    advanced_open_button.custom_minimum_size = Vector2(51, 48)
+    advanced_open_button.pressed.connect(_toggle_advanced_rules)
+    overlay.add_child(advanced_open_button)
+    advanced_panel = AdvancedDrawer.new()
+    overlay.add_child(advanced_panel)
+    advanced_panel.connect("physical_roll_requested",Callable(self,"_request_advanced_throw"))
+    advanced_panel.connect("preset_save_requested",Callable(self,"_save_m4_preset"))
+    advanced_panel.connect("preset_delete_requested",Callable(self,"_delete_m4_preset"))
+    advanced_panel.connect("history_clear_requested",Callable(self,"_confirm_m4_history_clear"))
+    advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+    if not bool(loaded.get("ok",false)):
+        advanced_panel.call("show_message","Локальный файл требует восстановления; запись заблокирована")
+
+func _toggle_advanced_rules() -> void:
+    if advanced_panel == null:
+        return
+    advanced_panel.visible = not advanced_panel.visible
+
+func _record_m4_result(result: Dictionary) -> void:
+    if roll_store == null or not bool(result.get("ok",false)):
+        return
+    var saved: Dictionary = roll_store.call("append_physical_result",result)
+    if advanced_panel != null:
+        advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+        if not bool(saved.get("ok",false)):
+            advanced_panel.call("show_message",str(saved.get("error","Не удалось сохранить историю")))
+
+func _clear_pool_for_basic_throw() -> void:
+    if is_instance_valid(physical_pool):
+        if bool(physical_pool.get("busy")):
+            return
+        if physical_pool.get_parent() == self:
+            remove_child(physical_pool)
+        physical_pool.queue_free()
+        physical_pool = null
+
+func _request_advanced_throw(expression: String, mode: String, d100_mode: String) -> void:
+    if throw_button.disabled:
+        return
+    if is_instance_valid(physical_pool) and bool(physical_pool.get("busy")):
+        return
+    _clear_pool_for_basic_throw()
+    if is_instance_valid(active_die):
+        if active_die.get_parent() == self:
+            remove_child(active_die)
+        active_die.queue_free()
+        active_die = null
+    if is_instance_valid(active_percentile):
+        if active_percentile.get_parent() == self:
+            remove_child(active_percentile)
+        active_percentile.queue_free()
+        active_percentile = null
+    if is_instance_valid(idle_display):
+        if idle_display.get_parent() == self:
+            remove_child(idle_display)
+        idle_display.queue_free()
+        idle_display = null
+    physical_pool = PhysicalPool.new()
+    physical_pool.name = "M4PhysicalDicePool"
+    add_child(physical_pool)
+    physical_pool.connect("pool_completed",Callable(self,"_m4_physical_completed"))
+    physical_pool.connect("pool_failed",Callable(self,"_m4_physical_failed"))
+    var accepted: bool = physical_pool.call("begin",expression,mode,d100_mode)
+    if not accepted:
+        return
+    last_result = -1
+    last_advanced_formula = expression
+    status_label.text = "СОСТАВНОЙ БРОСОК…"
+    throw_button.disabled = true
+    selected_chooser.disabled = true
+    copy_button.visible = false
+    copy_button.disabled = true
+    advanced_panel.call("set_roll_locked",true)
+    advanced_panel.call("show_message","Jolt: выполняются реальные физические броски")
+
+func _m4_physical_completed(result: Dictionary) -> void:
+    if not bool(result.get("ok",false)):
+        _m4_physical_failed("Итоговый расчёт недействителен")
+        return
+    last_result = int(result.get("total",0))
+    active_sides = 0
+    last_advanced_formula = str(result.get("formula",""))
+    status_label.text = "%s = %d" % [last_advanced_formula,last_result]
+    copy_button.visible = true
+    copy_button.disabled = false
+    throw_button.disabled = false
+    selected_chooser.disabled = false
+    advanced_panel.call("set_roll_locked",false)
+    advanced_panel.call("show_message","Итог по настоящим физическим граням: %d" % last_result)
+    _record_m4_result(result)
+    if OS.is_debug_build():
+        print("DICE_M4_PHYSICAL_COMPLETED %s=%d" % [last_advanced_formula,last_result])
+
+func _m4_physical_failed(message: String) -> void:
+    status_label.text = "Составной бросок не засчитан"
+    throw_button.disabled = false
+    selected_chooser.disabled = false
+    copy_button.visible = false
+    copy_button.disabled = true
+    if advanced_panel != null:
+        advanced_panel.call("set_roll_locked",false)
+        advanced_panel.call("show_message",message)
+    if OS.is_debug_build():
+        print("DICE_M4_PHYSICAL_FAILED "+message)
+
+func _save_m4_preset(title: String, formula: String, mode: String,
+        d100_mode: String) -> void:
+    var saved: Dictionary = roll_store.call("upsert_preset",title,formula,mode,d100_mode)
+    advanced_panel.call("show_message","Пресет сохранён" if bool(saved.get("ok",false))
+        else str(saved.get("error","Не удалось сохранить")))
+    advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+
+func _delete_m4_preset(title: String) -> void:
+    var ask := ConfirmationDialog.new()
+    ask.title = "Удалить пресет?"
+    ask.dialog_text = "Удалить «%s» из памяти устройства?" % title
+    add_child(ask)
+    ask.confirmed.connect(func():
+        var deleted: Dictionary = roll_store.call("delete_preset",title,true)
+        advanced_panel.call("show_message","Пресет удалён" if bool(deleted.get("ok",false))
+            else str(deleted.get("error","Не удалось удалить")))
+        advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+        ask.queue_free())
+    ask.canceled.connect(func(): ask.queue_free())
+    ask.popup_centered()
+
+func _confirm_m4_history_clear() -> void:
+    var ask := ConfirmationDialog.new()
+    ask.title = "Очистить историю?"
+    ask.dialog_text = "Все сохранённые броски будут удалены с устройства."
+    add_child(ask)
+    ask.confirmed.connect(func():
+        var cleared: Dictionary = roll_store.call("clear_history",true)
+        advanced_panel.call("show_message","История очищена" if bool(cleared.get("ok",false))
+            else str(cleared.get("error","Не удалось очистить")))
+        advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+        ask.queue_free())
+    ask.canceled.connect(func(): ask.queue_free())
+    ask.popup_centered()
 
 func _make_world() -> void:
     var camera := Camera3D.new()
@@ -364,7 +524,10 @@ func _select_die_type(sides: int) -> void:
 func _copy_result() -> void:
     if last_result != -1:
         DisplayServer.clipboard_set(str(last_result))
-        status_label.text = "Скопировано: D%d = %d" % [active_sides, last_result]
+        if active_sides == 0:
+            status_label.text = "Скопировано: %s = %d" % [last_advanced_formula,last_result]
+        else:
+            status_label.text = "Скопировано: D%d = %d" % [active_sides,last_result]
 
 func _on_type_selected(index: int) -> void:
     selected_die = selected_chooser.get_item_id(index)
@@ -376,6 +539,8 @@ func _on_type_selected(index: int) -> void:
         chip.add_theme_stylebox_override("normal", _chip_style(die_sides == selected_die))
 
 func _throw_selected_die() -> void:
+    if is_instance_valid(physical_pool) and bool(physical_pool.get("busy")):
+        return
     match selected_die:
         4:
             _throw_physical_d4()
@@ -423,6 +588,7 @@ func _throw_physical_d100() -> void:
 func _throw_percentile_d100() -> void:
     if not throw_button or throw_button.disabled:
         return
+    _clear_pool_for_basic_throw()
     active_sides = 100
     last_result = -1
     percentile_tens = -1
@@ -482,6 +648,10 @@ func _on_percentile_finished(value: int, is_tens: bool) -> void:
     copy_button.disabled = false
     throw_button.disabled = false
     selected_chooser.disabled = false
+    var percentile_spec: Dictionary = RollFormula.parse("1d100")
+    var observed: Dictionary = RollFormula.evaluate(percentile_spec,
+        [[{"tens":percentile_tens,"ones":percentile_ones}]])
+    _record_m4_result(observed)
     if OS.is_debug_build():
         print("DICE_QA_COMPLETED D100_PAIR=%d" % last_result)
 
@@ -489,6 +659,7 @@ func _begin_throw(die: RigidBody3D, sides: int) -> void:
     if not throw_button or throw_button.disabled:
         die.queue_free()
         return
+    _clear_pool_for_basic_throw()
     active_sides = sides
     last_result = -1
     if is_instance_valid(idle_display):
@@ -540,6 +711,9 @@ func _on_die_completed(value: int) -> void:
     selected_chooser.disabled = false
     copy_button.disabled = false
     copy_button.visible = true
+    var single_spec: Dictionary = RollFormula.parse("1d%d" % active_sides)
+    var recorded: Dictionary = RollFormula.evaluate(single_spec,[[value]])
+    _record_m4_result(recorded)
 
 func _on_die_failed(message: String) -> void:
     if OS.is_debug_build():
