@@ -51,6 +51,10 @@ func _run() -> void:
             "expected_bodies":4,"expected_groups":3},
         {"formula":"2d6+1d20-3","mode":"normal","hundred":"pair",
             "expected_bodies":3,"expected_groups":2},
+        {"formula":"8d6","mode":"normal","hundred":"pair",
+            "expected_bodies":8,"expected_groups":1},
+        {"formula":"2d100+1d4","mode":"normal","hundred":"pair",
+            "expected_bodies":5,"expected_groups":2},
     ]:
         completed = {}
         error = ""

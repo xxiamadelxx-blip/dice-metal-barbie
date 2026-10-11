@@ -72,6 +72,19 @@ func _run() -> void:
         push_error("M4 visible total not derived from actual Jolt face")
         quit(36)
         return
+    # The 24fps evidence must demonstrate two real settled Jolt meshes,
+    # not a single surviving die with fabricated arithmetic.
+    var physically_visible: Array = pool.get("_active")
+    if physically_visible.size() != 2 or int(pool.get("peak_simultaneously_rolling")) < 2:
+        push_error("M4 live window did NOT roll/retain two physical bodies together")
+        quit(41)
+        return
+    for source_body in physically_visible:
+        var rigid := source_body as RigidBody3D
+        if rigid == null or rigid.get_parent() != pool or not rigid.sleeping:
+            push_error("M4 live window lost a genuine settled Jolt body")
+            quit(42)
+            return
     var elapsed := float(Time.get_ticks_usec()-physical_start)/1000000.0
     var frames_drawn := Engine.get_frames_drawn()-count_start
     await create_timer(1.3).timeout
@@ -84,6 +97,8 @@ func _run() -> void:
     var summary := {"provenance":"REAL_LINUX_MESA_GODOT_JOLT_HUD_NOT_ANDROID",
         "physical_formula":result["formula"],"real_Jolt_result":result["total"],
         "real_physical_groups":result["groups"].size(),
+        "real_visible_retained_Jolt_bodies":physically_visible.size(),
+        "peak_simultaneously_rolling":int(pool.get("peak_simultaneously_rolling")),
         "seconds_real_body_rolls":elapsed,
         "frames_drawn_during_real_physics":frames_drawn,
         "status":"completed"}
