@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw, ImageStat
 from audit_roll_sequence import video_frames, save_every_frame_sheet
+from check_pool_editor_pixels import changed_pixels, MIN_CHANGED_PIXELS
 
 def inspect(root, sides):
     key = str(sides)
@@ -277,12 +278,7 @@ def inspect_physical_pool_editor_m4(root):
     assert len(totals)==1 and 2<=int(totals[0])<=36, (
         "Four Jolt faces must produce exactly one signed physical total")
     def changed(a,b):
-        first=Image.open(root/a).convert("RGB")
-        second=Image.open(root/b).convert("RGB")
-        assert first.size==second.size==(720,1280)
-        diff=ImageChops.difference(first.crop((50,170,680,1130)),
-                                   second.crop((50,170,680,1130))).convert("L")
-        return sum(n for v,n in enumerate(diff.histogram()) if v>16)
+        return changed_pixels(root/a, root/b)
     assert changed(files[0],files[1])>15000, "No rendered modal, only telemetry"
     for earlier,later,label in [
         (files[1],files[2],"D4 add"),
@@ -294,8 +290,11 @@ def inspect_physical_pool_editor_m4(root):
         (files[7],files[8],"D6 quantity"),
         (files[8],files[9],"flat modifier")
     ]:
-        assert changed(earlier,later)>75, (
-            "Actual Android editor touch lacked distinct visible pixels: "+label)
+        actual_pixels=changed(earlier,later)
+        assert actual_pixels>MIN_CHANGED_PIXELS, (
+            "Actual Android editor touch lacked distinct visible pixels: "
+            +label+"; changed="+str(actual_pixels)+", required >"
+            +str(MIN_CHANGED_PIXELS)+"; frames="+earlier+" -> "+later)
     last=None;frame_count=0;motion=0;duplicates=0;black=0;sheet=[]
     with (root/"every-avd-frame-M4-POOL.jsonl").open("w") as output:
         for idx,image in video_frames(film):
