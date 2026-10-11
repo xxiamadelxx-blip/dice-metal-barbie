@@ -1,0 +1,32 @@
+name: M4 isolated actual modal bounds + physical Godot preflight
+on:
+  push:
+    branches: [agent/m4-modal-screen-bounds-smoke-20261011]
+permissions:
+  contents: read
+jobs:
+  godot-real-player-rects:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import actual Godot 4.6.3 project
+        run: godot --headless --path . --editor --quit
+      - name: Compile original composition and actual physical integration
+        run: godot --headless --path . --check-only --script res://tests/m4_pool_composer_jolt.gd
+      - name: Real popup touch bounds + signed 4-physical-body Jolt receipt
+        run: |
+          set -eu
+          godot --headless --path . --script res://tests/m4_pool_composer_jolt.gd > composer-real.log 2>&1 || { tail -150 composer-real.log; exit 1; }
+          grep -F 'M4_ACTUAL_POOL_COMPOSER_JOLT checks=' composer-real.log
+          ! grep -Ei 'SCRIPT ERROR|Parse Error|Compile Error|Invalid call|failures=[1-9]' composer-real.log
+      - name: Preserve original Godot transcript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-screen-bounds-real-jolt-godot
+          path: composer-real.log
+          if-no-files-found: warn
+          retention-days: 14
