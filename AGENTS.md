@@ -1,5 +1,3 @@
-> **Gauntlet agents:** For source-pinned independent builder/critic loops, load `docs/GAUNTLET_ACCEPTANCE_V2.md` and `docs/GAUNTLET_AUTOPILOT.md` in addition to `docs/GAUNTLET_LOOP.md`. No independent reviewer provider means `NOT_VERIFIED`; keep existing physics/art/Android gates.
-
 # AGENTS — D&D 3D Dice
 
 Read `docs/CONTEXT.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, and `docs/GAUNTLET_LOOP.md` before significant changes.
