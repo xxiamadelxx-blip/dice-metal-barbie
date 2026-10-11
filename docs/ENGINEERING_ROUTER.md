@@ -56,6 +56,9 @@ python3 scripts/engineering_router.py enter --intent "передача ново�
 python3 scripts/engineering_router.py enter --intent "добавь звуки столкновения костей"
 python3 scripts/engineering_router.py enter --intent "анализ архитектуры" --route architecture
 python3 scripts/engineering_router.py handoff
+python3 scripts/engineering_router.py incident --route code \
+  --fingerprint "same command + same input + same hypothesis" --outcome failed \
+  --classification "test-timeout" --evidence "artifact://REAL-CI-LOG"
 python3 scripts/engineering_router.py checkpoint \
   --task "M4 physical percentile reroll" --route reliability-persistence \
   --status in_progress --owner "current Dice agent" \
@@ -148,3 +151,9 @@ python3 -m unittest discover -s tests -p 'test_engineering_checks.py' -v
 - **Performance** consumes *actual* input telemetry JSON such as `{"device_kind":"phone","device_model":"OnePlus Nord 3","target_fps":60,"frame_ms":[12.3,15.2,...]}` with 30+ real frame durations. A Mesa or emulator result **never** becomes phone PASS; source telemetry itself must still be authenticated by the agent. Never invent measurements to pass this test.
 
 These are specialized **static/signal checks**, not a substitute for a separately authorized Gauntlet critic, Godot full-frame capture or Android user-device validation. No audio effects or actual phone profiling is claimed completed by creating these scripts. The canonical router picks domain(s); the agent executes the relevant checks with real input and attaches outputs to the feature PR.
+
+## Enforced anti-stall ledger
+
+`engineering_router.py incident` records an exact `route + input/approach fingerprint`, real evidence link and failure classification under `docs/handoff/ACTIVE_ROUTING_HANDOFF.json:incidents`. **Two unchanged failures** set active status to `blocked`, add a `DO NOT RETRY` blocker and refuse a third identical attempt. A true new hypothesis is a **new fingerprint** with real supporting source evidence; it must not be an arbitrary renamed key for the same failure. A resolved issue can be recorded with `--outcome resolved`, and a subsequent checkpoint retains the incident ledger. The user does not need to repeatedly type «завис» just to restart the same failing command.
+
+This is a trackable local gate. For cross-agent persistence, the agent **must commit/push** the handoff file. The GitHub connector can provide an equivalent update when a terminal is unavailable; never claim an automatic background monitor if no scheduled or live process exists.
