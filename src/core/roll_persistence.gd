@@ -95,6 +95,10 @@ func append_physical_result(outcome: Dictionary) -> Dictionary:
         var saved_traces: Array = group["attempts"]
         var sources: Variant = group.get("percentile_source_d10_faces")
         var histories: Variant = group.get("percentile_source_d10_attempts",[])
+        var action_modes: Variant = group.get("percentile_reroll_modes",[])
+        if typeof(action_modes) != TYPE_ARRAY or (
+                not action_modes.is_empty() and action_modes.size() != saved_traces.size()):
+            return _error("Повреждён журнал действий реальных процентных перебросов")
         if typeof(histories)!=TYPE_ARRAY or (
                 not histories.is_empty() and histories.size()!=saved_traces.size()):
             return _error("Повреждена история физических процентных D10")
@@ -111,7 +115,14 @@ func append_physical_result(outcome: Dictionary) -> Dictionary:
                     if typeof(histories[source_index])!=TYPE_ARRAY:
                         return _error("Повреждена трасса физического процентного D10")
                     states = histories[source_index]
-                actual_group.append({"states":states})
+                var source_data := {"states":states}
+                if not action_modes.is_empty():
+                    if typeof(action_modes[source_index]) != TYPE_ARRAY:
+                        return _error("Некорректные режимы процентного D100")
+                    var kinds: Array = action_modes[source_index]
+                    if not kinds.is_empty():
+                        source_data["kinds"] = kinds
+                actual_group.append(source_data)
             elif pair.is_empty():
                 actual_group.append(saved_traces[source_index])
             else:

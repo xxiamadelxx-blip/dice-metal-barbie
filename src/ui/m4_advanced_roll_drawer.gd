@@ -188,6 +188,9 @@ func set_real_roll_result(outcome: Dictionary) -> void:
                     is_pair = (percentiles[di] as Array).size()==2
                 if is_pair:
                     var pair: Array = percentiles[di]
+                    reroll_slots.append({"group":gi,"die":di,"digit":"pair"})
+                    reroll_picker.add_item("D100 №%d · ОБА физических D10 · итог %d" % [
+                        di+1,int(faces[di]) if di<faces.size() else -1])
                     for digit_name in ["tens","ones"]:
                         var nth: int = 0 if digit_name=="tens" else 1
                         reroll_slots.append({"group":gi,"die":di,"digit":digit_name})

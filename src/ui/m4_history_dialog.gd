@@ -119,6 +119,8 @@ func _choose_visible_row(displayed_index: int) -> void:
         var attempts: Array = group.get("attempts",[])
         var chosen: Array = group.get("kept_faces",[])
         var percentile: Array = group.get("percentile_source_d10_faces",[])
+        var raw_histories: Array = group.get("percentile_source_d10_attempts",[])
+        var reroll_modes: Array = group.get("percentile_reroll_modes",[])
         # Advantage/disadvantage keeps only ONE of the two real D20 bodies.
         # The kept face belongs to the ACTUAL winning source die, not the
         # first entry of the array by accident. On a tie, keep the first.
@@ -130,16 +132,16 @@ func _choose_visible_row(displayed_index: int) -> void:
             var source_faces: Array = source if typeof(source) == TYPE_ARRAY else [source]
             var ordered: Array[String] = []
             for physical_face in source_faces:
-                ordered.append(str(physical_face))
+                ordered.append(str(int(physical_face)))
             var original_text := " → ".join(ordered)
             var selected_text := "(не выбран)"
             if is_advantage:
                 if not kept_source_marked and not source_faces.is_empty() and (
                         int(source_faces[-1]) == int(chosen[0])):
-                    selected_text = str(chosen[0])
+                    selected_text = str(int(chosen[0]))
                     kept_source_marked = true
             elif di < chosen.size():
-                selected_text = str(chosen[di])
+                selected_text = str(int(chosen[di]))
             var content := "  Кубик %d: %s  ·  засчитано: %s" % [
                 di+1,original_text,selected_text]
             if source_faces.size()>1:
@@ -147,8 +149,20 @@ func _choose_visible_row(displayed_index: int) -> void:
             if di < percentile.size() and typeof(percentile[di]) == TYPE_ARRAY:
                 var digits: Array = percentile[di]
                 if digits.size()==2:
-                    content += "  ·  два реальных D10: %s/%s" % [
-                        str(digits[0]),str(digits[1])]
+                    content += "  ·  итоговая физическая пара D10: %d/%d" % [
+                        int(digits[0]),int(digits[1])]
+                if di<raw_histories.size() and typeof(raw_histories[di])==TYPE_ARRAY:
+                    var pairs: Array = raw_histories[di]
+                    if pairs.size()>1:
+                        var sequence: Array[String] = []
+                        for recorded in pairs:
+                            if typeof(recorded)==TYPE_ARRAY and recorded.size()==2:
+                                sequence.append("%d/%d" % [int(recorded[0]),int(recorded[1])])
+                        content += "  ·  реальные пары D10: " + " → ".join(sequence)
+                        if di<reroll_modes.size() and typeof(reroll_modes[di])==TYPE_ARRAY:
+                            var modes: Array = reroll_modes[di]
+                            if not modes.is_empty():
+                                content += "  ·  действия: " + ", ".join(modes)
             lines.append(content)
     lines.append("")
     lines.append("Источник: сохранённые фактические верхние грани Godot/Jolt")

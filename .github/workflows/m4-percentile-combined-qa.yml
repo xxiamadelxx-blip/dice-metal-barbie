@@ -1,0 +1,39 @@
+name: M4 Combined D100 Whole Pair + Individual Source QA
+on:
+  push:
+    branches: [qa/m4-d100-full-and-single]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  authentic-jolt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import real Blender assets and Godot/Jolt 4.6.3 production scene
+        run: godot --headless --path . --editor --quit
+      - name: Check BOTH-D10 source code compiles against latest single-digit API
+        run: |
+          godot --headless --path . --check-only --script res://src/core/roll_formula.gd
+          godot --headless --path . --check-only --script res://src/core/roll_persistence.gd
+          godot --headless --path . --check-only --script res://src/core/physical_roll_pool.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_advanced_roll_drawer.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_history_dialog.gd
+          godot --headless --path . --check-only --script res://tests/m4_combined_percentile_store.gd
+          godot --headless --path . --check-only --script res://tests/m4_combined_percentile_physics.gd
+          godot --headless --path . --check-only --script res://tests/m4_combined_percentile_ui.gd
+      - name: Reject forged source digits and prove legacy offline persistence
+        run: godot --headless --path . --script res://tests/m4_combined_percentile_store.gd
+      - name: Actually throw BOTH original percentile D10 together then target second 2d100 pair
+        run: godot --headless --path . --script res://tests/m4_combined_percentile_physics.gd
+      - name: Actually tap production M4 paired-D100 option and browse resulting history
+        run: godot --headless --path . --script res://tests/m4_combined_percentile_ui.gd
+      - name: Preserve existing single-D10 and D20 reroll regressions
+        run: |
+          godot --headless --path . --script res://tests/m4_physical_reroll.gd
+          godot --headless --path . --script res://tests/m4_roll_formula.gd
+          godot --headless --path . --script res://tests/m4_roll_persistence.gd
+          godot --headless --path . --script res://tests/percentile_pair_mapping.gd
