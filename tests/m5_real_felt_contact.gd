@@ -54,8 +54,24 @@ func _run() -> void:
         _check(float(skin.get("last_contact_speed")) > 0.16,
             "Contact response not driven by observed physical velocity")
         _check(bool(skin.get("active")), "Real contact should start local felt response")
-        await create_timer(0.45).timeout
-        _check(not bool(skin.get("active")),"Felt must recover promptly, never wobble forever")
+        # Repeated REAL D6 floor bounces must retrigger felt. Only judge
+        # recovery once the authoritative Jolt roll actually settles.
+        var die := scene.get_node_or_null("PhysicalD6") as RigidBody3D
+        var settled := false
+        if die != null:
+            for tick in range(800):
+                await physics_frame
+                if not bool(die.get("rolling")):
+                    settled = int(scene.get("last_result")) >= 1
+                    break
+        _check(settled,"Real physical D6 must settle before recovery gate")
+        if settled:
+            var last_contact := int(skin.get("impact_count"))
+            await create_timer(0.38).timeout
+            _check(int(skin.get("impact_count")) == last_contact,
+                "No new Jolt floor collision after D6 physically settled")
+            _check(not bool(skin.get("active")),
+                "Felt must recover promptly after last actual Jolt contact")
     print("M5_REAL_FELT_CONTACT checks=%d failures=%d" % [checks,failures])
     scene.queue_free()
     quit(0 if failures == 0 else 1)

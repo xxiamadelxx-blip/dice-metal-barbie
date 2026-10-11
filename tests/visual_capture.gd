@@ -78,15 +78,38 @@ func _run() -> void:
         quit(20)
         return
     await _capture("native-17-jolt-contact-felt")
-    await create_timer(0.35).timeout
-    if bool(felt.get("active")):
-        push_error("Visual-only felt did not recover after physical impact")
+    await create_timer(0.10).timeout
+    await _capture("native-02-moving")
+    # Legitimate D6 throws bounce MORE THAN ONCE. Last Gauntlet failed
+    # incorrectly after 350ms: a real second impact reactivated the felt.
+    # Wait for the genuine physical roll_completed/settled state first.
+    var rolling_die := scene.get_node_or_null("PhysicalD6") as RigidBody3D
+    if rolling_die == null:
+        push_error("Real D6 missing after reported floor collision")
         quit(21)
+        return
+    var settled := false
+    for tick in range(800):
+        await process_frame
+        if not bool(rolling_die.get("rolling")):
+            settled = int(scene.get("last_result")) >= 1
+            break
+    if not settled:
+        push_error("Physical D6 never finished before visual recovery QA")
+        quit(22)
+        return
+    var impacts_before_recovery := int(felt.get("impact_count"))
+    await create_timer(0.36).timeout
+    if bool(felt.get("active")):
+        push_error("Felt stayed displaced 0.36s after settled last Jolt impact")
+        quit(23)
+        return
+    if int(felt.get("impact_count")) != impacts_before_recovery:
+        push_error("New floor contact after Jolt D6 settled: scene did not quiesce")
+        quit(24)
         return
     await _capture("native-18-recovered-felt")
     await create_timer(0.15).timeout
-    await _capture("native-02-moving")
-    await create_timer(5.0).timeout
     await _capture("native-03-after")
     # The user-approved concept emphasizes sculptural polyhedra. The old
     # screenshot suite showed D6 only, which looks square from 90° overhead.

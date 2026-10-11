@@ -64,6 +64,19 @@ static func gold_material() -> StandardMaterial3D:
     metal.roughness = 0.23
     return metal
 
+static func ebony_rail_material() -> StandardMaterial3D:
+    # Warm polished ebony surround, not a PS1 concrete border. Black resin
+    # lacquer returns small real Godot studio highlights on every bevelled
+    # rail face. Physics/collision boxes are wholly separate.
+    var ebony := StandardMaterial3D.new()
+    ebony.albedo_color = Color(0.023,0.028,0.027)
+    ebony.metallic = 0.11
+    ebony.roughness = 0.35
+    ebony.clearcoat_enabled = true
+    ebony.clearcoat = 0.57
+    ebony.clearcoat_roughness = 0.20
+    return ebony
+
 static func blackened_metal() -> StandardMaterial3D:
     var metal := StandardMaterial3D.new()
     metal.albedo_color = Color(0.095, 0.10, 0.115)
@@ -80,17 +93,20 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
     # shader, this PBR response avoids zebra/moiré artifacts when GLB
     # triangulated face normals are rendered by Android/Mesa Mobile.
     var stone := StandardMaterial3D.new()
-    stone.albedo_color = Color(0.082, 0.10, 0.13)
+    # Obsidian is near-black volcanic GLASS, not graphite-blue clay. Its
+    # recognizable facets come from reflected studio lights, not diffuse
+    # grey paint or a self-illuminated outline.
+    stone.albedo_color = Color(0.042,0.050,0.057)
     # M5 PBR transfer. The prior broad glow flattened every volcanic-glass
     # facet into the same opaque grey in the ORIGINAL native Godot capture
     # (M5 tool-route Gauntlet #38174391709), despite genuinely bevelled
     # Blender geometry. Restore incident-light contrast and a narrow second
     # specular lobe. THIS is stone shading only, never a Jolt body change.
-    stone.metallic = 0.18
-    stone.roughness = 0.30
+    stone.metallic = 0.06
+    stone.roughness = 0.23
     stone.clearcoat_enabled = true
-    stone.clearcoat = 0.60
-    stone.clearcoat_roughness = 0.16
+    stone.clearcoat = 0.86
+    stone.clearcoat_roughness = 0.095
     stone.emission_enabled = false
     if source is StandardMaterial3D:
         var original := source as StandardMaterial3D
@@ -98,13 +114,15 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
         if stone.albedo_texture != null:
             # Dark tint is already baked into the albedo map. Multiplying by
             # another graphite color would make the imported D20 near black.
-            stone.albedo_color = Color(1.0, 1.0, 1.0)
+            # Keep native engraved map detail, but lower its previous bright
+            # graphite diffuse face value. Reflectivity remains via clearcoat.
+            stone.albedo_color = Color(0.78,0.81,0.83)
         stone.roughness_texture = original.roughness_texture
         if stone.roughness_texture != null:
             # Godot multiplies the scalar by the GLB's physical roughness
             # texture. Keep its authored PBR variation instead of overwriting
             # every face with a flat shader roughness: .78 * .26..42.
-            stone.roughness = 0.78
+            stone.roughness = 0.69
         stone.roughness_texture_channel = original.roughness_texture_channel
         stone.normal_enabled = original.normal_enabled
         stone.normal_texture = original.normal_texture

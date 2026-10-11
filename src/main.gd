@@ -5,6 +5,7 @@ extends Node3D
 const Premium = preload("res://src/visual/premium_finish.gd")
 const CriticalAura = preload("res://src/visual/critical_aura.gd")
 const VelvetImpact = preload("res://src/visual/velvet_impact.gd")
+const BeveledBox = preload("res://src/visual/beveled_box.gd")
 const DieScript = preload("res://src/dice/d6_body.gd")
 const D20Script = preload("res://src/dice/d20_body.gd")
 const D8Script = preload("res://src/dice/d8_body.gd")
@@ -339,7 +340,7 @@ func _make_world() -> void:
     env.background_color = Color(0.006, 0.007, 0.011)
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color(0.51, 0.57, 0.67)
-    env.ambient_light_energy = 1.05
+    env.ambient_light_energy = 0.78
     # Studio environment light is reflected in the obsidian but NOT displayed
     # as a sky/background. Dark table and clean void stay user-approved.
     var studio_sky := Sky.new()
@@ -356,7 +357,7 @@ func _make_world() -> void:
 
     var light := DirectionalLight3D.new()
     light.rotation_degrees = Vector3(-63.0, 24.0, 0.0)
-    light.light_energy = 1.28
+    light.light_energy = 1.35
     light.shadow_enabled = true
     add_child(light)
 
@@ -367,7 +368,7 @@ func _make_world() -> void:
     fill.name = "SoftStudioBounce"
     fill.rotation_degrees = Vector3(-46.0, -133.0, 0.0)
     fill.light_color = Color(0.72, 0.83, 1.0)
-    fill.light_energy = 0.76
+    fill.light_energy = 0.48
     fill.shadow_enabled = false
     add_child(fill)
 
@@ -384,7 +385,9 @@ func _make_world() -> void:
         velvet.albedo_texture,velvet.normal_texture)
     add_child(velvet_impact)
 
-    var rail_material := Premium.blackened_metal()
+    # Separate glossy-black lacquered ebony geometry with light-catching
+    # chamfered edges. Old square StaticBody3D collision remains unchanged.
+    var rail_material := Premium.ebony_rail_material()
     _make_static_box("RailLeft", Vector3(-TABLE_WIDTH * 0.5, 0.34, 0), Vector3(0.35, 0.9, TABLE_LENGTH), rail_material)
     _make_static_box("RailRight", Vector3(TABLE_WIDTH * 0.5, 0.34, 0), Vector3(0.35, 0.9, TABLE_LENGTH), rail_material)
     _make_static_box("RailTop", Vector3(0, 0.34, -TABLE_LENGTH * 0.5), Vector3(TABLE_WIDTH, 0.9, 0.35), rail_material)
@@ -431,9 +434,12 @@ func _make_static_box(node_name: String, origin: Vector3, dimensions: Vector3, m
     # Godot auto-generated names change with sibling count. The M5 felt skin
     # must address this exact visual mesh without touching StaticBody/Jolt.
     mesh_node.name = "StaticBoxVisual"
-    var mesh := BoxMesh.new()
-    mesh.size = dimensions
-    mesh_node.mesh = mesh
+    if node_name.begins_with("Rail"):
+        mesh_node.mesh = BeveledBox.create(dimensions,0.052)
+    else:
+        var mesh := BoxMesh.new()
+        mesh.size = dimensions
+        mesh_node.mesh = mesh
     mesh_node.material_override = material
     body.add_child(mesh_node)
     add_child(body)

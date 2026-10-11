@@ -82,6 +82,8 @@ jobs:
         run: godot --headless --path . --script res://tests/m5_alpha4_home_ui.gd
       - name: M5 true Jolt table contact makes local velvet recover, untouched floor collider
         run: godot --headless --path . --script res://tests/m5_real_felt_contact.gd
+      - name: M5 premium chamfered ebony rails with unchanged Jolt collision boxes
+        run: godot --headless --path . --script res://tests/m5_ebony_rails.gd
       - name: Physical scene integration smoke
         run: godot --headless --path . --script res://tests/physics_smoke.gd
       - name: Natural D20-only non-colliding spatial critical aura

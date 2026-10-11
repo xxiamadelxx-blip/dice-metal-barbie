@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 user rejected PS1 concrete-looking black table; fix fatal unnamed mesh + author actual black-green velvet fabric PBR and hold visual gate",
+    "task": "M5 improve beyond Alpha4 visuals: polished glass obsidian PBR + bevelled ebony lacquer rails; Alpha4 UX retained, fix honest multibounce Jolt felt recovery",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Exact-SHA Gauntlet: confirm resolved prior fatal Godot 'VelvetTable/MeshInstance3D not found' by explicitly naming StaticBoxVisual, initialize felt surface; tests/m5_real_felt_contact.gd verifies real Jolt D6 contact/0.45s recovery. Examine real native-01-launch and native-17/18 original screenshots at 720×1280; pixel critic velvet_nap must detect greener textile and nonflat fine pile, then verify all source body physics, 24fps and AVD/ARM64. If red root cause from original CI logs and fix. User explicitly considers last screenshot unacceptable PS1 concrete; no more artistic acceptance claims merely from CI.",
+    "next_action": "Inspect NEXT exact SHA Gauntlet native screenshots after rail bevel/PBR modifications, Blender/MeshLab/Inkscape real artifacts, Jolt real multibounce contact and settled decay, 24fps, Android/ARM64. Previous #38180995190 native failed with legitimate second Jolt floor impact at 0.35s; avoid falsely treating subsequent real collisions as fault. Compare genuine 720x1280 launch/D20 macro to user request 'better than Alpha4' visual quality: need truly dark glass faces/highlights and lacquered bevel rails; no arbitrary art PASS solely from numerical smoke. Fix failures at source and preserve project docs in next checkpoint. On-device Nord3 still separate.",
     "blockers": [
-      "Previous run #38180542605 native and Jolt RED due to missing MeshInstance3D child name, resulting null surface and invalid position; targeted fix candidate not yet verified.",
-      "User rejects screenshot because tabletop appears grey cloud/concrete instead of velvet; fabric tile/anisotropic shader candidate must be visually scrutinized on actual Godot PNG.",
-      "New true contact pulse, nat20/nat1 sparks and visual material remain UNVERIFIED until exact-head new Gauntlet.",
-      "OnePlus Nord 3 hardware and M6 signing remain open."
+      "M5 user clarified Alpha4 is UX reference, not visual ceiling; actual Godot polished black obsidian/ebony rail quality still NOT ACCEPTED until original screenshot critique.",
+      "Previous #38180995190 failed native recovery check because REAL D6 bounced twice, not broken cloth solver; new QA awaits actual physical settlement and 0.38s without contact.",
+      "New beveled, reflection-capable rails (visual-only), tuned cool stone dark-glass shading and less flat fill light unverified by CI/Android.",
+      "M5 contact sound/haptics still OPEN, real OnePlus Nord3 M6 still NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -82,11 +82,11 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605/artifacts/11717845412"
     ],
-    "last_observed_sha": "b716a766fe7679bb2161926bdba321f3f46862d9",
+    "last_observed_sha": "59c8432163f8bbf23660295b3e2b7dc7c4b6fdf9",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Previous Gauntlet actual native log 'Node not found: MeshInstance3D' / invalid null position and Jolt fallback D6 failure. Explicitly named all static visual boxes, no physical collider moved. Changed stale 256x256 large cloudy blue-grey noise to finer jade-black directional nap; shader true textile tiling with anisotropic normal; added original pixel critic. CANDIDATE NOT VERIFIED. Local CLI not available."
+    "verification_note": "Preflight real previous native logs and original 720x1280 screenshot performed; Alpha4 used for UX only. New code uses visual ArrayMesh chamfer rails, keeps original StaticBody3D collision boxes; studio ambient reduced and more controlled facet shadow, obsidian diffuse reduced with tighter clearcoat. Source screens and Android acceptance NOT VERIFIED."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
