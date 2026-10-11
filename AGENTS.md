@@ -18,3 +18,4 @@ LEAD → BUILDER → INDEPENDENT CRITIC (when actually available) → COMPARISON
 
 Use feature branches and PRs. Do not push unreviewed work directly to `main` unless explicitly authorized. Never commit signing keys or passwords.
 
+For all new substantial candidate acceptance reviews, apply the fail-closed independent evidence contract in `docs/GAUNTLET_ACCEPTANCE_V2.md` and verify it with `scripts/gauntlet_evidence.py`. This adds to, never replaces, the existing visual/temporal/Android Gauntlet or other agents' active work.
