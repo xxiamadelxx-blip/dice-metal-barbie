@@ -79,6 +79,7 @@ func _run() -> void:
     await process_frame
     view.set_history(saved)
     var text_area := view.find_child("ActualIndividualFacesAndRerolls",true,false) as RichTextLabel
+    print("M4_D100_HISTORY_RENDERED_DETAIL=",text_area.text if text_area != null else "(missing RichTextLabel)")
     _assert(text_area!=null and text_area.text.contains("10/10 → 6/1"),
         "Real user history must explain BOTH physical percentile pairs")
     view.queue_free()
