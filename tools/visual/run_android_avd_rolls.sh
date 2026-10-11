@@ -228,6 +228,35 @@ PY
     sleep 2
   done
 fi
+# Verify actual Android user navigation into the COMPLETE physical-roll
+# history after BOTH genuine casts. This is a real ADB click, not UI mocking.
+m4_history_open=0
+if test "$m4_completed" = 1 && test "$m4_reroll_completed" = 1; then
+  adb exec-out screencap -p > qa-evidence/android-avd/m4-before-history-drawer.png
+  adb shell input tap 50 97
+  sleep 1
+  adb exec-out screencap -p > qa-evidence/android-avd/m4-history-drawer-open.png
+  # Layout grounded by 720x1280 native QA: complete history row appears
+  # beneath real D6 selector and presets, centered near x540,y482.
+  adb shell input tap 540 482
+  sleep 1.2
+  adb exec-out screencap -p > qa-evidence/android-avd/m4-full-history-open.png
+  adb logcat -d -v time -s godot:I '*:S' > "$m4_log" || true
+  if grep -Eq 'DICE_M4_HISTORY_OPEN records=([2-9]|[1-9][0-9]+)' "$m4_log"; then
+    python3 - <<'PY'
+from PIL import Image,ImageChops
+before=Image.open('qa-evidence/android-avd/m4-history-drawer-open.png').convert('RGB')
+after=Image.open('qa-evidence/android-avd/m4-full-history-open.png').convert('RGB')
+assert before.size==after.size==(720,1280), 'Android full-history pixel dimensions wrong'
+diff=ImageChops.difference(before.crop((30,60,690,1190)),
+                           after.crop((30,60,690,1190))).convert('L')
+changed=sum(v for i,v in enumerate(diff.histogram()) if i>18)
+print('Actual Android full-history modal changed pixels:',changed)
+assert changed>15000,'Real Android history dialog not visibly present'
+PY
+    m4_history_open=1
+  fi
+fi
 if test "$m4_completed" = 1 || test "$m4_failed" = 1; then
   sleep 1.5
   recorder_pids="$(adb shell pidof screenrecord | tr -d '\r' || true)"
@@ -243,13 +272,13 @@ ffmpeg -hide_banner -loglevel error -y \
   -i qa-evidence/android-avd/dice-M4-source.mp4 -vf fps=24 \
   -c:v libx264 -preset ultrafast -crf 20 -pix_fmt yuv420p \
   qa-evidence/android-avd/roll-M4-24fps.mp4
-if test "$m4_completed" != 1 || test "$m4_reroll_completed" != 1; then
-  echo "FAIL: actual Android physical mixed-throw or player-selected D6 reroll did not complete"
+if test "$m4_completed" != 1 || test "$m4_reroll_completed" != 1 || test "$m4_history_open" != 1; then
+  echo "FAIL: actual Android mixed throw, physical D6 reroll, or full history click did not complete"
   python3 tools/visual/snapshot_failed_avd_frames.py qa-evidence/android-avd M4 || true
   tail -60 "$m4_log"
   exit 16
 fi
-grep -E 'DICE_M4_PHYSICAL_(STARTED|COMPLETED)|DICE_M4_REAL_REROLL_(STARTED|COMPLETED)' "$m4_log" > qa-evidence/android-avd/result-M4.txt
+grep -E 'DICE_M4_PHYSICAL_(STARTED|COMPLETED)|DICE_M4_REAL_REROLL_(STARTED|COMPLETED)|DICE_M4_HISTORY_OPEN' "$m4_log" > qa-evidence/android-avd/result-M4.txt
 cat qa-evidence/android-avd/roll-D*-godot.log > qa-evidence/android-avd/godot-qa-events-all.log
 adb logcat -d -v time > qa-evidence/android-avd/logcat.txt || true
 if grep -Eq 'QueuePresentKHR failed|FATAL EXCEPTION.*org.dicemetalbarbie' qa-evidence/android-avd/logcat.txt; then

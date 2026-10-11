@@ -86,6 +86,8 @@ def inspect_advanced_m4(root):
     assert (root/"completed-M4.png").stat().st_size>10000
     assert (root/"m4-reroll-selector-open.png").stat().st_size>10000
     assert (root/"m4-after-reroll-tap.png").stat().st_size>10000
+    assert (root/"m4-history-drawer-open.png").stat().st_size>10000
+    assert (root/"m4-full-history-open.png").stat().st_size>10000
     log=(root/"roll-M4-godot.log").read_text()
     assert "DICE_M4_PHYSICAL_STARTED 2d6+1d20-3" in log, (
         "Actual Android M4 formula button never started Godot/Jolt")
@@ -98,6 +100,9 @@ def inspect_advanced_m4(root):
         "Real ADB click never selected the original physical D6 source")
     assert re.search(r"DICE_M4_REAL_REROLL_COMPLETED D6=[1-6] attempts=2",log), (
         "No real second D6 physical top face and preserved first attempt")
+    history=re.search(r"DICE_M4_HISTORY_OPEN records=(\d+)",log)
+    assert history is not None and int(history.group(1))>=2, (
+        "Android never opened full physical history of original and rerolled values")
     assert "DICE_M4_PHYSICAL_FAILED" not in log,"Godot signaled a failed composite"
     actual=int(matches[0])
     rerolled=int(matches[1])
@@ -141,6 +146,8 @@ def inspect_advanced_m4(root):
         "real_Jolt_result":actual,
         "rerolled_real_Jolt_result":rerolled,
         "real_player_Android_reroll_tapped":True,
+        "android_full_history_opened_by_actual_tap":True,
+        "all_saved_physical_history_rows":int(history.group(1)),
         "real_D6_reroll_initial_face_preserved":True,
         "real_godot_start_and_completion":True,
         "frame_count_all_checked":frames,"ordered_24_frame_sheets":math.ceil(frames/24),

@@ -131,12 +131,36 @@ func _run() -> void:
         push_error("M4 actual on-screen result not saved in offline history")
         quit(37)
         return
+    # An additional capture section must show the REAL detailed local
+    # history dialog, including both genuine source faces after the reroll.
+    button.pressed.emit()
+    var open_history := panel.find_child("OpenFullPhysicalHistory",true,false) as Button
+    if open_history == null:
+        push_error("M4 history visual capture has no full history button")
+        quit(47)
+        return
+    open_history.pressed.emit()
+    await process_frame
+    var history_dialog := scene.get("history_dialog") as AcceptDialog
+    if history_dialog == null or not history_dialog.visible:
+        push_error("M4 history popup never appeared in the real screenshot")
+        quit(48)
+        return
+    if int(history_dialog.call("visible_record_count")) < 2:
+        push_error("M4 history popup omitted original or rerolled physical cast")
+        quit(49)
+        return
+    await create_timer(1.6).timeout
+    history_dialog.hide()
+    panel.visible = false
+    await create_timer(0.3).timeout
     var summary := {"provenance":"REAL_LINUX_MESA_GODOT_JOLT_HUD_NOT_ANDROID",
         "physical_formula":result["formula"],"real_Jolt_result":result["total"],
         "real_physical_groups":result["groups"].size(),
         "original_real_total_before_reroll":first_total,
         "rerolled_actual_source_trace":new_attempts,
         "native_real_player_reroll":true,
+        "real_history_popup_showed_both_physical_results":true,
         "real_visible_retained_Jolt_bodies":physically_visible.size(),
         "peak_simultaneously_rolling":int(pool.get("peak_simultaneously_rolling")),
         "seconds_real_body_rolls":elapsed,

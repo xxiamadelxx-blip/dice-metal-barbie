@@ -55,6 +55,8 @@ def run(path):
     assert data["status"]=="completed" and data["real_physical_groups"]>=2
     assert data["real_visible_retained_Jolt_bodies"]>=2, "Source movie lost an original Jolt die"
     assert data["peak_simultaneously_rolling"]>=2, "Jolt throws were sequential, not concurrent"
+    assert data.get("real_history_popup_showed_both_physical_results") is True, (
+        "Real local history popup was not opened in the original recording")
     assert data.get("native_real_player_reroll") is True, (
         "UI capture stopped before the player's actual physical source reroll")
     assert len(data.get("rerolled_actual_source_trace",[])) == 2, (
@@ -115,6 +117,7 @@ def run(path):
         "actual_initial_physical_value_before_reroll":data["original_real_total_before_reroll"],
         "physical_reroll_source_faces":data["rerolled_actual_source_trace"],
         "player_selected_real_reroll_verified":True,
+        "real_full_history_popup_visible_in_recorded_video":True,
         "original_retained_visible_jolt_bodies":data["real_visible_retained_Jolt_bodies"],
         "peak_truly_simultaneously_rolling_bodies":data["peak_simultaneously_rolling"],
         "engine_render_fps_during_physics":

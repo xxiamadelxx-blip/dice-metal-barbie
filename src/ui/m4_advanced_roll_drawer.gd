@@ -5,6 +5,7 @@ signal physical_roll_requested(expression: String, mode: String, d100_mode: Stri
 signal preset_save_requested(title: String, expression: String, mode: String, d100_mode: String)
 signal preset_delete_requested(title: String)
 signal history_clear_requested
+signal history_open_requested
 signal physical_reroll_requested(group_index: int, die_index: int)
 
 var formula_input: LineEdit
@@ -134,6 +135,12 @@ func _ready() -> void:
     history_preview.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     history_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     history_row.add_child(history_preview)
+    var view_all := Button.new()
+    view_all.name = "OpenFullPhysicalHistory"
+    view_all.text = "ИСТОРИЯ"
+    view_all.custom_minimum_size.y = 44
+    view_all.pressed.connect(func(): history_open_requested.emit())
+    history_row.add_child(view_all)
     var clear := Button.new()
     clear.name = "ClearSavedHistory"
     clear.text = "ОЧИСТИТЬ"
