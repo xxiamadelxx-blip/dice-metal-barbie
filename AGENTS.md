@@ -7,7 +7,7 @@ For EVERY Dice coding, design, art, audio, security, architecture, performance, 
 1. Read `docs/handoff/ACTIVE_ROUTING_HANDOFF.json` and real current GitHub branch, PR, CI and accepted milestone (the saved state is a pointer, not necessarily current truth).
 2. In an available terminal call `python3 scripts/engineering_router.py enter --intent "<literal user request>"`; for stuck work use `--intent "завис"`, for agent transfer call `python3 scripts/engineering_router.py handoff`. If no terminal is available, follow the same steps through GitHub repository reads and explicitly mark CLI `NOT_VERIFIED`.
 3. Select only required route(s) and actually present tools; verify installation/execution/auth separately. Keep approved Godot/Jolt physics, offline Android and creative workflow from feature branch unchanged.
-4. Run scope-matched tests + real artifact critique / independent Gauntlet when authorized. Never claim PASS for unrun checks, an absent external reviewer, or unavailable OnePlus Nord 3 hardware.
+4. Run scope-matched tests + real artifact critique / **local** two-model independent Gauntlet when actually runnable. Never claim PASS for unrun checks, an absent external reviewer, or unavailable OnePlus Nord 3 hardware.
 5. Before yielding, checkpoint exact task/route/SHAs/evidence/blockers/next action using `scripts/engineering_router.py checkpoint`, then **commit and push** the tracked `docs/handoff/ACTIVE_ROUTING_HANDOFF.json` to the relevant branch/PR. A local edit alone is NOT durable handoff.
 
 Never create a competing agent runbook; update the canonical router, and preserve feature work. These rules apply from fresh sessions, not only the current chat.
@@ -30,3 +30,7 @@ LEAD → BUILDER → INDEPENDENT CRITIC (when actually available) → COMPARISON
 
 Use feature branches and PRs. Do not push unreviewed work directly to `main` unless explicitly authorized. Never commit signing keys or passwords.
 
+
+## Local independent critic routing
+
+The default Dice critic is **Ollama running on the GitHub Actions CPU runner**, not OpenRouter. See `docs/GAUNTLET_AUTOPILOT.md` and `.github/workflows/gauntlet-autopilot.yml`. Real role separation uses distinct local models and separate requests: `qwen2.5-coder:1.5b` builder vs `qwen2.5-coder:3b` critic. Do not ask the user for model API keys or re-enable `GAUNTLET_AI_TOKEN` in default workflows. Run independent critique only when it adds value and report `NOT_VERIFIED` on any model/container failure; preserve existing native tests.
