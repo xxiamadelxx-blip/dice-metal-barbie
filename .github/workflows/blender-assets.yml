@@ -63,8 +63,10 @@ jobs:
         run: |
           set -euo pipefail
           inkscape --version
-          ffmpeg -hide_banner -version | head -1
-          ffprobe -hide_banner -version | head -1
+          ffmpeg -hide_banner -version > build/premium-glb/ffmpeg-version.txt
+          ffprobe -hide_banner -version > build/premium-glb/ffprobe-version.txt
+          sed -n '1p' build/premium-glb/ffmpeg-version.txt
+          sed -n '1p' build/premium-glb/ffprobe-version.txt
           test -s src/assets/ui/m5_roll_action.svg
           inkscape src/assets/ui/m5_roll_action.svg --export-filename=build/premium-glb/m5_roll_action_256.png --export-width=256 --export-height=256
           test -s build/premium-glb/m5_roll_action_256.png
