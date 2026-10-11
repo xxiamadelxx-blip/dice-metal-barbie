@@ -177,8 +177,7 @@ def write_pbr_image(out, name, rgb):
     image.pack()
     return image
 
-def texture_set(out):
-    dim=256
+def texture_set(out, dim=256, prefix='obsidian'):
     rng=np.random.default_rng(210626)
     low=tile_noise(rng,dim,7)-0.5
     mid=tile_noise(rng,dim,24)-0.5
@@ -199,25 +198,61 @@ def texture_set(out):
     gy=(np.roll(height,-1,axis=0)-np.roll(height,1,axis=0))*.20
     normal=np.stack((np.clip(.5-gx,.43,.57),np.clip(.5-gy,.43,.57),
                      np.sqrt(np.maximum(.7,1.0-(gx*2)**2-(gy*2)**2))),axis=2)
-    return {'albedo':write_pbr_image(out,'obsidian_albedo',albedo),
-            'roughness':write_pbr_image(out,'obsidian_roughness',rough),
-            'normal':write_pbr_image(out,'obsidian_normal',normal)}
+    return {'albedo':write_pbr_image(out,prefix+'_albedo',albedo),
+            'roughness':write_pbr_image(out,prefix+'_roughness',rough),
+            'normal':write_pbr_image(out,prefix+'_normal',normal)}
 
-def stone_uv(mesh):
-    uv=mesh.uv_layers.new(name='StoneUV')
-    # Angular UV projection on the 3D stone; no headless UI operator or
-    # mesh changes. Every exported stone primitive gets TEXCOORD_0.
-    for polygon in mesh.polygons:
-        for loop_index in polygon.loop_indices:
-            vertex=mesh.vertices[mesh.loops[loop_index].vertex_index].co
-            length=max(vertex.length,1.0e-8)
-            u=(math.atan2(vertex.y,vertex.x)+math.pi)/(2.0*math.pi)
-            v=math.acos(max(-1.0,min(1.0,vertex.z/length)))/math.pi
-            uv.data[loop_index].uv=(u,v)
+def stone_uv(mesh, sides):
+    # An actual 5×4 FACE ATLAS for D20, not the old polar/spherical seam
+    # running through numerals. Every Boolean-cut/edge polygon inherits its
+    # nearest original numbered face; each face gets isolated 12% padding.
+    # This operates on the FINAL engraved render mesh, never the Jolt hull.
+    uv=mesh.uv_layers.new(name='D20FaceAtlas' if sides==20 else 'StoneUV')
+    if sides==20:
+        vertices,faces,_=model(20)
+        atlas=[]
+        for face in faces:
+            a,b,c=(vertices[i] for i in face)
+            origin=(a+b+c)/3.0
+            outward=(b-a).cross(c-a).normalized()
+            if outward.dot(origin)<0.0:
+                outward=-outward
+            u_axis=(b-a).normalized()
+            v_axis=outward.cross(u_axis).normalized()
+            radial=max(abs((p-origin).dot(axis)) for p in (a,b,c)
+                       for axis in (u_axis,v_axis))
+            atlas.append((origin,outward,u_axis,v_axis,max(radial,0.01)*1.22))
+        counts=[0]*20
+        for polygon in mesh.polygons:
+            center=polygon.center
+            direction=center.normalized() if center.length>1.e-7 else polygon.normal
+            face_index=max(range(20),key=lambda k: atlas[k][1].dot(direction))
+            counts[face_index]+=1
+            origin,_,u_axis,v_axis,radius=atlas[face_index]
+            tile_x=face_index%5
+            tile_y=face_index//5
+            for loop_index in polygon.loop_indices:
+                pt=mesh.vertices[mesh.loops[loop_index].vertex_index].co
+                du=max(-0.40,min(0.40,(pt-origin).dot(u_axis)/(2.0*radius)))
+                dv=max(-0.40,min(0.40,(pt-origin).dot(v_axis)/(2.0*radius)))
+                uv.data[loop_index].uv=((tile_x+0.5+du)/5.0,
+                                        (tile_y+0.5+dv)/4.0)
+        assert min(counts)>0, 'Every canonical D20 face must have actual UV polygons'
+        print('D20_FACE_UV_ATLAS: 5x4 islands, face_polygons='+str(counts),flush=True)
+    else:
+        # Existing accepted D4/D6/D8/D12 atlas untouched in this vertical
+        # slice; roll out authored per-face UV to each die only after D20 QA.
+        for polygon in mesh.polygons:
+            for loop_index in polygon.loop_indices:
+                vertex=mesh.vertices[mesh.loops[loop_index].vertex_index].co
+                length=max(vertex.length,1.0e-8)
+                u=(math.atan2(vertex.y,vertex.x)+math.pi)/(2.0*math.pi)
+                v=math.acos(max(-1.0,min(1.0,vertex.z/length)))/math.pi
+                uv.data[loop_index].uv=(u,v)
     return uv
 
-def apply_stone_maps(shell, maps):
-    stone_uv(shell.data)
+def apply_stone_maps(shell, maps, sides):
+    stone_uv(shell.data,sides)
     stone=shell.data.materials[0]
     nodes=stone.node_tree.nodes
     links=stone.node_tree.links
@@ -396,13 +431,58 @@ def engraved_die(sides, font, maps):
     print('Booleans D%d: stone polygons=%d bronze polygons=%d' % (sides, len(shell.data.polygons), len(bronze.data.polygons)))
     assert len(shell.data.polygons) >= sides*2
     assert len(bronze.data.polygons)>sides*5
-    apply_stone_maps(shell,maps)
+    apply_stone_maps(shell,maps,sides)
     return shell,bronze,values
+
+def bake_true_d20_ao(shell, out):
+    """Actually bake light-independent cavity occlusion from cut Blender mesh.
+    This first D20-only lookdev proof uses SAME-MESH AO, NOT a high→low normal
+    bake or a fake AI image. The AO map ships in the evidence artifact; its
+    glTF occlusion hookup is gated on a separate importer compatibility test.
+    """
+    scene=bpy.context.scene
+    scene.render.engine='CYCLES'
+    scene.cycles.samples=8
+    scene.cycles.device='CPU'
+    scene.render.bake.margin=10
+    baked=bpy.data.images.new('D20_Cycles_TrueCavityAO',width=1024,
+                             height=1024,alpha=False,float_buffer=False)
+    baked.generated_color=(1.0,1.0,1.0,1.0)
+    material=shell.data.materials[0]
+    nodes=material.node_tree.nodes
+    target=nodes.new('ShaderNodeTexImage')
+    target.name='D20_ActualCyclesAOBakeTarget'
+    target.image=baked
+    nodes.active=target
+    active(shell)
+    bpy.ops.object.bake(type='AO')
+    destination=out/'d20_cycles_baked_ao.png'
+    baked.filepath_raw=str(destination)
+    baked.file_format='PNG'
+    baked.save()
+    assert destination.is_file() and destination.stat().st_size>10000, (
+        'D20 true Cycles AO did not produce an image')
+    pixels=np.empty(1024*1024*4,dtype=np.float32)
+    baked.pixels.foreach_get(pixels)
+    values=pixels.reshape((-1,4))[:,0]
+    # Excluding untouched white atlas background: a real cavity on the
+    # engraved render shell must contain occluded pixels.
+    touched=values[values<.98]
+    assert len(touched)>2000 and float(np.min(touched))<.88, (
+        'D20 AO bake missing meaningful physical cavities')
+    print('D20_CYCLES_AO_BAKED: pixels=%d min=%.4f' %
+          (len(touched),float(touched.min())),flush=True)
+    return {'file':destination.name,'resolution':1024,
+            'bake':'Blender Cycles AO from exact Boolean-cut render shell',
+            'cavity_pixels':int(len(touched)),
+            'cavity_min':float(touched.min()),
+            'runtime_ao': 'NOT_IN_GLTF_YET_IMPORT_TEST_REQUIRED'}
 
 def export_and_preview(sides,out,font,maps):
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
     shell,gold,values=engraved_die(sides,font,maps)
+    d20_ao=bake_true_d20_ao(shell,out) if sides==20 else None
     # MeshLab receives the same final Boolean-cut shell via OBJ for actual
     # geometry inspection. It is only a QA candidate, never a Jolt hull.
     # MeshLab 2020's old OBJ importer asserts even on triangulated Boolean
@@ -465,10 +545,15 @@ def export_and_preview(sides,out,font,maps):
     preview=out/('d%d_boolean_preview.png'%sides)
     scene.render.filepath=str(preview)
     bpy.ops.render.render(write_still=True)
-    return {'faces':len(values),'numbers':values,'engraved_glyphs':12 if sides==4 else sides,
+    entry={'faces':len(values),'numbers':values,'engraved_glyphs':12 if sides==4 else sides,
             'underbar_numbers':[v for v in values if v in (6,9)],
             'triangles':len(shell.data.polygons),
             'glb':filepath.name,'preview':preview.name,'glb_bytes':filepath.stat().st_size}
+    if sides==20:
+        entry['lookdev']={'uv_layout':'numbered_face_planar_5x4',
+                          'pbr_resolution':1024,'face_padding_fraction':.10,
+                          'ao':d20_ao}
+    return entry
 
 def main():
     parser=argparse.ArgumentParser()
@@ -489,6 +574,9 @@ def main():
         raise FileNotFoundError('D4 source requires DejaVuSans-Bold.ttf (fonts-dejavu-core)')
     apex_font=bpy.data.fonts.load(str(heavy))
     maps=texture_set(out)
+    # First production-quality vertical slice ONLY: D20 1024px PBR and
+    # isolated per-number UV islands. All legacy dice remain unchanged.
+    d20_maps=texture_set(out,dim=1024,prefix='d20_obsidian')
     manifest={'blender':bpy.app.version_string,
               'note':'visual-only source; Jolt hull and outcome unchanged',
               'pbr':{'size':256,'images':[im.filepath_raw.split('/')[-1] for im in maps.values()],
@@ -497,7 +585,8 @@ def main():
               'dice':{}}
     for sides in (20,6,8,12,4):
         used_font=apex_font if sides==4 else font
-        manifest['dice']['D%d'%sides]=export_and_preview(sides,out,used_font,maps)
+        chosen=d20_maps if sides==20 else maps
+        manifest['dice']['D%d'%sides]=export_and_preview(sides,out,used_font,chosen)
         if sides==4:
             manifest['dice']['D4']['typeface']=used_font.name
             manifest['dice']['D4']['glyph_size']=.31

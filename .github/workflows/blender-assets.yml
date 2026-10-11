@@ -37,6 +37,11 @@ jobs:
           for tex in obsidian_albedo obsidian_roughness obsidian_normal; do
             test -s "build/premium-glb/${tex}.png"
           done
+          for name in d20_obsidian_albedo d20_obsidian_roughness d20_obsidian_normal d20_cycles_baked_ao; do
+            test -s "build/premium-glb/${name}.png"
+          done
+          grep -F "D20_FACE_UV_ATLAS: 5x4 islands" build/premium-glb/generator.log
+          grep -F "D20_CYCLES_AO_BAKED:" build/premium-glb/generator.log
           for die in d20 d6 d8 d12 d4; do
             test -s "build/premium-glb/${die}_boolean_engraved.glb"
             test -s "build/premium-glb/${die}_boolean_preview.png"
@@ -58,6 +63,10 @@ jobs:
             identify -format "%f %wx%h %[colorspace]\\n" "build/premium-glb/${tex}.png"
             test "$(identify -format '%wx%h' "build/premium-glb/${tex}.png")" = "256x256"
           done
+          for tex in d20_obsidian_albedo d20_obsidian_roughness d20_obsidian_normal d20_cycles_baked_ao; do
+            identify -format "%f %wx%h %[colorspace]\\n" "build/premium-glb/${tex}.png"
+            test "$(identify -format '%wx%h' "build/premium-glb/${tex}.png")" = "1024x1024"
+          done
       - name: M5 real Inkscape SVG export and verified source-to-output proof
         if: steps.art_source.outputs.run == 'true'
         run: |
@@ -76,7 +85,9 @@ jobs:
           import hashlib, json, subprocess
           root=Path("build/premium-glb")
           names=["m5_roll_action_256.png", "obsidian_albedo.png",
-                 "obsidian_roughness.png", "obsidian_normal.png"]
+                 "obsidian_roughness.png", "obsidian_normal.png",
+                 "d20_obsidian_albedo.png", "d20_obsidian_roughness.png",
+                 "d20_obsidian_normal.png", "d20_cycles_baked_ao.png"]
           names += [f"{d}_boolean_engraved.glb" for d in ("d4","d6","d8","d12","d20")]
           names += [f"{d}_checked.obj" for d in ("d4","d6","d8","d12","d20")]
           manifest={"scope":"M5 offline tool-routing and executable artifact proof",
@@ -84,7 +95,7 @@ jobs:
                     "oneplus_nord3_hardware":"NOT_VERIFIED",
                     "blender":"actual sculpt+true Boolean numerals+GLB export",
                     "meshlab":"real PLY import and OBJ export under Xvfb",
-                    "imagemagick":"real 256x256 PBR texture identification",
+                    "imagemagick":"real 256px legacy PBR + 1024px D20 atlas and Cycles cavity AO image dimensions",
                     "inkscape":"original SVG to 256x256 rendered PNG",
                     "ffmpeg":"available for authentic Godot video QA in temporal job; no synthetic gameplay",
                     "material_maker":"optional only if actual PTEX export is proven; Python/Blender fallback",

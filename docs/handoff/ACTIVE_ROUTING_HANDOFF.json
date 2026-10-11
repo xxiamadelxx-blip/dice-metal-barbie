@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 real Godot/native D4 facet contrast RED; add genuine side-key plus authored normal microtexture to improve photographed D4 and stone",
+    "task": "M5 artist PBR vertical slice actual Blender D20 numbered-face UV atlas, 1024 textures and physical Cycles AO bake; preserve real physics",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect exact-new-head Gauntlet new native-01 Godot 720x1280 after real StudioCardD4 side light + stronger imported Blender normal map. Previous #38182322434 Blender and eight 24fps physical throws PASS, native pixel stage RED exclusively on real D4 facet_dynamic_range=4.36 with unchanged strict 8.0 requirement; other dice D20 36, D12 33.58, D6 38.86, and velvet p90-p10=3.5 pass. Side light in actual world 3.0/1.85/2.45 must reach preview D4 and bring partially shadowed physical side facets above real velvet. Never lower art metric just to pass. Verify Android AVD/Jolt and original frame quality. Alpha4 UI only, better premium art still not accepted.",
+    "next_action": "Check NEW exact head unified Gauntlet Blender production first: D20 5x4 separate numbered-face planar UV atlas on exact Boolean cut stone + three 1024px source PBR maps + true Cycles same-mesh cavity AO PNG, inspect real bake logs and GLB UV TEXCOORD_0, generator manifest, hash evidence. Fail closed if AO missing; fix Blender UV/bake source, do not weaken test. Then inspect Godot Mesa actual 720x1280 and Android/ARM64 24fps/source results. IMPORTANT AO is artifact only, NOT runtime imported until separate glTF material Occlusion port QA, and high-to-low normal baking not done. Rest D4/D6/D8/D12 256px original pipeline maintained to limit blast radius; physical Jolt unchanged.",
     "blockers": [
-      "Prior #38182322434 native D4 side facet visible luminance spread only 4.36 vs strict 8.0, despite D20/D12/D6 and texture passing; correct real side lighting candidate NOT VERIFIED.",
-      "Artistic quality still PS1/polyhedral plastic by user benchmark despite screenshot improvements; further PBR reflection maps and authored real mesh polishing may be needed after new frame critic.",
-      "Android/Jolt results from old run not yet all completed; new exact-SHA must pass 24fps/ARM64/AVD and source critic.",
-      "OnePlus Nord3 physical device and signed app update not yet verified."
+      "New D20 UV atlas and true Cycles same-mesh AO bake candidate NOT VERIFIED by any real CI yet; needs headless Blender confirmation.",
+      "AO baked as standalone lookdev artifact NOT linked into glTF/Godot occlusion until compatible import tested; honest status enforced by validator.",
+      "Alpha4 UX only, production visual quality still NOT ACCEPTED; texture slice D20 alone won't fix velvet/ebony.",
+      "OnePlus Nord 3 handset, FPS and signing M6 remain NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -87,11 +87,11 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434/artifacts/11717812770"
     ],
-    "last_observed_sha": "213dbc0d7047983b5bc887be61055b01ebfec73b",
+    "last_observed_sha": "6bd605c40cad663596db366ba485551b31186683",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Inspected actual native-01 and native D20 original images for exact SHA 213dbc0; last 24fps job SUCCESS but 720x1280 image D4 side has insufficient facet spread (4.36 versus 8) while D20, D12, D6 pass. Real physical StudioCardD4 side key at actual x3/y1.85/z2.45 with radius3.4 and slightly stronger imported normal map. Keeps user-visible strict test and all Jolt bodies untouched."
+    "verification_note": "Read canonical router and live source. Former Blender D20 texture procedural 256 with spherical UV, no bake. New D20-only 5x4 independent UV atlas with strong padding, 1024 base/roughness/normal, actual Cycles AO from exact Boolean-cut Blender visual shell, per-source manifest and CI validation; physical Jolt hull/face output unchanged. AO not yet linked into glTF runtime, no AI provider connected. Cloud Gauntlet at this new SHA pending."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

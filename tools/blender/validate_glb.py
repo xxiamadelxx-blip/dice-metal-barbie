@@ -13,6 +13,22 @@ def validate(root):
     for filename in pbr['images']:
         png=(root/filename).read_bytes()
         assert png[:8]==bytes.fromhex("89504e470d0a1a0a") and len(png)>8000, 'Empty texture '+filename
+    look=manifest['dice']['D20'].get('lookdev',{})
+    assert look.get('uv_layout')=='numbered_face_planar_5x4', 'D20 requires real separate planar face UV atlas'
+    assert look.get('pbr_resolution')==1024, 'D20 high-resolution lookdev textures missing'
+    ao=look.get('ao',{})
+    assert ao.get('bake','').startswith('Blender Cycles AO'), 'AO must be genuinely Cycles baked'
+    assert ao.get('runtime_ao')=='NOT_IN_GLTF_YET_IMPORT_TEST_REQUIRED', (
+        'Do not claim an AO map is imported when its runtime hookup is untested')
+    assert ao.get('cavity_pixels',0)>2000 and ao.get('cavity_min',1.0)<.88, (
+        'AO bake has no significant engraved surface cavity shadow')
+    for name in [ao['file'],'d20_obsidian_albedo.png',
+                 'd20_obsidian_roughness.png','d20_obsidian_normal.png']:
+        raw=(root/name).read_bytes()
+        assert raw[:8]==b'\\x89PNG\\r\\n\\x1a\\n', 'D20 actual bake or PBR PNG missing'
+        width,height=struct.unpack_from('>II',raw,16)
+        assert (width,height)==(1024,1024), 'D20 actual UV/texture resolution incorrect: '+name
+        assert len(raw)>10000, 'D20 PNG is empty/flat '+name
     for sides in (20,6,8,12,4):
         entry=manifest['dice'][f'D{sides}']
         values=entry['numbers']
