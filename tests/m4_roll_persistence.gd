@@ -61,9 +61,15 @@ func _run() -> void:
     var saved := restarted.snapshot()
     _assert((saved["history"] as Array).size() == 2,
         "Physical and percentile history entries were lost after relaunch")
-    _assert(saved["history"][0]["total"] == 100 and
-        saved["history"][0]["groups"][0]["percentile_source_d10_faces"] == [[10,10]],
-        "Saved physical percentile D10 source faces were altered")
+    # JSON.parse_string restores untyped nested arrays; check the actual
+    # numeric physical face values, not Array[T] identity/equality semantics.
+    var loaded_pairs: Array = saved["history"][0]["groups"][0]["percentile_source_d10_faces"]
+    var source_digits_preserved := false
+    if loaded_pairs.size() == 1 and typeof(loaded_pairs[0]) == TYPE_ARRAY:
+        var digits: Array = loaded_pairs[0]
+        source_digits_preserved = digits.size() == 2 and int(digits[0]) == 10 and int(digits[1]) == 10
+    _assert(int(saved["history"][0]["total"]) == 100 and source_digits_preserved,
+        "Persisted D100 raw faces wrong: " + JSON.stringify(saved["history"][0]))
     _assert(saved["history"][1]["total"] == 25,
         "Saved Jolt-derived mixed-pool result was altered")
     _assert(saved["presets"]["Атака босса"]["formula"] == "1d20+7",
