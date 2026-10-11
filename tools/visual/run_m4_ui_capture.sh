@@ -34,7 +34,7 @@ fpid=$!
 sleep .8
 kill -0 "$fpid"
 touch "$OUT/go"
-for i in $(seq 1 600); do
+for i in $(seq 1 1600); do
   test -f "$OUT/done" && break
   kill -0 "$gpid" 2>/dev/null || { tail -100 "$OUT/godot-live.log"; exit 1; }
   kill -0 "$fpid" 2>/dev/null || { cat "$OUT/ffmpeg.log"; exit 1; }

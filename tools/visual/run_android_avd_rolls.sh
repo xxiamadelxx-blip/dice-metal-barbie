@@ -32,6 +32,27 @@ dismiss_immersive_tutorial() {
 cp qa-evidence/android-avd/launch-initial-avd.png qa-evidence/android-avd/launch-before-consent.png
 dismiss_immersive_tutorial qa-evidence/android-avd/launch-initial-avd.png
 adb exec-out screencap -p > qa-evidence/android-avd/launch-after-system-consent.png
+# Separate ANDROID SYSTEM blocker: failed run #38133903845 showed a
+# Pixel Launcher ANR over an already rendered Godot scene, not a game blackout.
+# Only tap "Close app" after BOTH screenshot geometry and system ANR log agree.
+dismiss_launcher_anr() {
+  local screenshot="$1"
+  local target
+  target="$(python3 tools/visual/detect_android_launcher_anr.py "$screenshot")" || return 1
+  if test -z "$target"; then return 0; fi
+  if adb logcat -d -v time -s ActivityManager:E WindowManager:I '*:S' |
+      grep -Fq "ANR in com.google.android.apps.nexuslauncher"; then
+    local x y
+    read -r x y <<< "$target"
+    echo "Android SYSTEM Pixel Launcher ANR confirmed: dismiss Close app at ($x,$y)"
+    adb shell input tap "$x" "$y"
+    sleep 2
+  else
+    echo "FAIL: suspected Launcher ANR screenshot without matching system log"
+    return 1
+  fi
+}
+dismiss_launcher_anr qa-evidence/android-avd/launch-after-system-consent.png
 # SwiftShader may require >10 s to compile the first 3D scene on Android 35.
 # Review genuine ADB screenshots every 5 s; reject Android pop-ups, black
 # screens and the Godot splash. Never start recording until the game draws.
@@ -41,6 +62,7 @@ for attempt in $(seq 1 20); do
   # Dialog may animate in AFTER the initial screenshot; safely re-detect
   # on every readiness iteration. The resulting frame is not falsely PASS.
   dismiss_immersive_tutorial qa-evidence/android-avd/launch-after-immersive-dismiss.png
+  dismiss_launcher_anr qa-evidence/android-avd/launch-after-immersive-dismiss.png
   if python3 - <<'PY'
 from PIL import Image,ImageStat
 im=Image.open('qa-evidence/android-avd/launch-after-immersive-dismiss.png').convert('RGB')

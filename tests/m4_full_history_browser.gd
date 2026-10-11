@@ -130,6 +130,19 @@ func _run() -> void:
     _check(detail.text.contains("Кубик 1: 3  ·  засчитано: 3") and
         detail.text.contains("Кубик 2: 18  ·  засчитано: (не выбран)"),
         "History wrong: must mark kept disadvantage D20 die #1: "+detail.text)
+    # Read-only display oracle: user-visible source D10 chronology. Test
+    # numbers are NOT claimed as actual physical throws or saved to disk.
+    var paired: Dictionary = Formula.evaluate(Formula.parse("1d100+1d6"),
+        [[{"states":[[4,1],[8,1],[8,10]]}],[3]])
+    _check(bool(paired.get("ok",false)),"Paired D100 view fixture invalid")
+    dialog.call("set_history",[paired])
+    _check(detail.text.contains("41 → 81 → 80") and
+        detail.text.contains("4/1 → 8/1 → 8/10") and
+        detail.text.contains("десятки/единицы"),
+        "Full history hides original/intermediate/final source D10 faces: "+detail.text)
+    # View must remain non-destructive for actual previous Jolt data.
+    _check((store.call("snapshot")["history"] as Array).size()==saved.size(),
+        "Displaying pair source chronology changed real stored history")
     # Screen-render load test: repeat a COPY of an actually tested source
     # record to reach 200 rows. This only stress-tests the UI; these are NOT
     # 200 claimed independent physical throws and are NEVER persisted.

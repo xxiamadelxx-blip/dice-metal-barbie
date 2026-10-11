@@ -119,6 +119,7 @@ func _choose_visible_row(displayed_index: int) -> void:
         var attempts: Array = group.get("attempts",[])
         var chosen: Array = group.get("kept_faces",[])
         var percentile: Array = group.get("percentile_source_d10_faces",[])
+        var percentile_history: Array = group.get("percentile_source_d10_attempts",[])
         # Advantage/disadvantage keeps only ONE of the two real D20 bodies.
         # The kept face belongs to the ACTUAL winning source die, not the
         # first entry of the array by accident. On a tie, keep the first.
@@ -149,6 +150,14 @@ func _choose_visible_row(displayed_index: int) -> void:
                 if digits.size()==2:
                     content += "  ·  два реальных D10: %s/%s" % [
                         str(digits[0]),str(digits[1])]
+            if di < percentile_history.size() and typeof(percentile_history[di]) == TYPE_ARRAY:
+                var digit_states: Array = percentile_history[di]
+                if digit_states.size() > 1:
+                    var steps: Array[String] = []
+                    for pair in digit_states:
+                        if typeof(pair) == TYPE_ARRAY and pair.size() == 2:
+                            steps.append("%s/%s" % [str(pair[0]),str(pair[1])])
+                    content += "  ·  исходные D10 (десятки/единицы): " + " → ".join(steps)
             lines.append(content)
     lines.append("")
     lines.append("Источник: сохранённые фактические верхние грани Godot/Jolt")

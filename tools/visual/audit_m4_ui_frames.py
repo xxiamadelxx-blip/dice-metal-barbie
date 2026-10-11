@@ -61,6 +61,18 @@ def run(path):
         "UI capture stopped before the player's actual physical source reroll")
     assert len(data.get("rerolled_actual_source_trace",[])) == 2, (
         "Original and repeated real face outcomes must both remain in evidence")
+    assert data.get("paired_D100_genuine_tens_and_ones_rerolls") is True, (
+        "Video stopped before separate selected real percentile source rerolls")
+    assert data.get("paired_D100_history_dialog_showed_digit_chronology") is True, (
+        "Full history dialog never displayed genuine source digits")
+    assert data.get("paired_D100_original_Jolt_bodies_retained")==3, (
+        "A real D10 source or partner D6 vanished during physical reroll")
+    pair_states=data.get("paired_D100_source_digit_states",[])
+    assert len(pair_states)==3 and all(len(p)==2 and all(1<=int(x)<=10 for x in p)
+        for p in pair_states), ("Unverified original/tens/ones source face sequence")
+    assert pair_states[0][1]==pair_states[1][1] and (
+        pair_states[1][0]==pair_states[2][0]), (
+        "Partial physical source reroll incorrectly changed retained partner D10")
     assert (out/"done").exists()
     film=out/"m4-real-ui-24fps.mp4"
     assert film.stat().st_size>30000
@@ -118,6 +130,9 @@ def run(path):
         "physical_reroll_source_faces":data["rerolled_actual_source_trace"],
         "player_selected_real_reroll_verified":True,
         "real_full_history_popup_visible_in_recorded_video":True,
+        "paired_D100_actual_source_states":pair_states,
+        "paired_D100_after_two_physical_rerolls":data["paired_D100_actual_total"],
+        "source_digit_history_shown_in_actual_popup":True,
         "original_retained_visible_jolt_bodies":data["real_visible_retained_Jolt_bodies"],
         "peak_truly_simultaneously_rolling_bodies":data["peak_simultaneously_rolling"],
         "engine_render_fps_during_physics":

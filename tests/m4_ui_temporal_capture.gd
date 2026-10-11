@@ -154,12 +154,105 @@ func _run() -> void:
     history_dialog.hide()
     panel.visible = false
     await create_timer(0.3).timeout
+    # The SAME original FFmpeg footage now continues through real physical
+    # D100 percentile source selection, tens reroll and ones reroll.
+    button.pressed.emit()
+    formula.text = "1d100+1d6"
+    send.pressed.emit()
+    pool = scene.get("physical_pool") as Node3D
+    if pool == null or not bool(pool.get("busy")):
+        push_error("Real D100 pair formula UI failed to launch Jolt")
+        quit(50)
+        return
+    var pair_start := Time.get_ticks_usec()
+    var pair_frames := Engine.get_frames_drawn()
+    max_until = Time.get_ticks_msec()+55000
+    while bool(pool.get("busy")):
+        if Time.get_ticks_msec()>max_until:
+            push_error("Original paired percentile Jolt visual cast timed out")
+            quit(51)
+            return
+        await physics_frame
+    var pair_result: Dictionary = pool.get("last_result")
+    var pair_bodies: Array = pool.get("_active")
+    if not bool(pair_result.get("ok",false)) or pair_bodies.size()!=3:
+        push_error("Visual D100 pair was not two D10 plus one D6")
+        quit(52)
+        return
+    var original_pair: Array = pair_result["groups"][0]["percentile_source_d10_faces"][0]
+    var other_face := int((pair_bodies[2] as RigidBody3D).get("result"))
+    for digit in ["tens","ones"]:
+        await create_timer(0.35).timeout
+        button.pressed.emit()
+        if not panel.visible:
+            push_error("Physical D100 source picker did not visibly reopen")
+            quit(53)
+            return
+        choose.select(0 if digit=="tens" else 1)
+        var slots: Array = panel.get("reroll_slots")
+        if slots.size()<2 or slots[choose.selected].get("digit","")!=digit:
+            push_error("Source picker selected wrong actual percentile D10")
+            quit(54)
+            return
+        await create_timer(0.55).timeout
+        reroll.pressed.emit()
+        if not bool(pool.get("busy")) or panel.visible:
+            push_error("Source picker did not launch new visible Jolt throw")
+            quit(55)
+            return
+        max_until = Time.get_ticks_msec()+55000
+        while bool(pool.get("busy")):
+            if Time.get_ticks_msec()>max_until:
+                push_error("Selected true percentile D10 capture timed out")
+                quit(56)
+                return
+            await physics_frame
+        pair_result = pool.get("last_result")
+        if not bool(pair_result.get("ok",false)):
+            push_error("Actual selected percentile Jolt result invalid")
+            quit(57)
+            return
+        var states: Array = pair_result["groups"][0]["percentile_source_d10_attempts"][0]
+        var actual_tens := int((pair_bodies[0] as RigidBody3D).get("result"))
+        var actual_ones := int((pair_bodies[1] as RigidBody3D).get("result"))
+        if states.size()!=(2 if digit=="tens" else 3) or (
+                int(states[0][0])!=int(original_pair[0])) or (
+                int(states[0][1])!=int(original_pair[1])) or (
+                int(states[-1][0])!=actual_tens) or (
+                int(states[-1][1])!=actual_ones) or (
+                int((pair_bodies[2] as RigidBody3D).get("result"))!=other_face):
+            push_error("Visual D100 source chronology diverges from visible Jolt")
+            quit(58)
+            return
+    elapsed += float(Time.get_ticks_usec()-pair_start)/1000000.0
+    frames_drawn += Engine.get_frames_drawn()-pair_frames
+    await create_timer(0.35).timeout
+    button.pressed.emit()
+    open_history.pressed.emit()
+    await process_frame
+    var actual_source_detail := history_dialog.find_child(
+        "ActualIndividualFacesAndRerolls",true,false) as RichTextLabel
+    if not history_dialog.visible or actual_source_detail == null or (
+            not actual_source_detail.text.contains("десятки/единицы")):
+        push_error("Full physical history omitted photographed paired-D10 attempts")
+        quit(59)
+        return
+    await create_timer(1.0).timeout
+    history_dialog.hide()
+    panel.visible = false
+    await create_timer(0.2).timeout
+    var real_pair_states: Array = pair_result["groups"][0]["percentile_source_d10_attempts"][0]
     var summary := {"provenance":"REAL_LINUX_MESA_GODOT_JOLT_HUD_NOT_ANDROID",
         "physical_formula":result["formula"],"real_Jolt_result":result["total"],
         "real_physical_groups":result["groups"].size(),
         "original_real_total_before_reroll":first_total,
         "rerolled_actual_source_trace":new_attempts,
         "native_real_player_reroll":true,
+        "paired_D100_genuine_tens_and_ones_rerolls":true,
+        "paired_D100_source_digit_states":real_pair_states,
+        "paired_D100_actual_total":pair_result["total"],
+        "paired_D100_original_Jolt_bodies_retained":pair_bodies.size(),
+        "paired_D100_history_dialog_showed_digit_chronology":true,
         "real_history_popup_showed_both_physical_results":true,
         "real_visible_retained_Jolt_bodies":physically_visible.size(),
         "peak_simultaneously_rolling":int(pool.get("peak_simultaneously_rolling")),
