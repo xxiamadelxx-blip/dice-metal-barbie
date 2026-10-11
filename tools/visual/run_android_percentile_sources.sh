@@ -93,10 +93,33 @@ adb shell input tap 250 175
 adb shell input keyevent KEYCODE_MOVE_END
 for i in $(seq 1 35); do adb shell input keyevent KEYCODE_DEL; done
 adb shell input text '1d100+1d6'
-adb shell input keyevent KEYCODE_BACK
+# DO NOT send KEYCODE_BACK: on the real Android AVD the keyboard is already
+# absent and BACK takes the actual Godot app to Pixel Launcher. The source
+# 38149288426 screenshot showed the correct formula AND the full drawer just
+# before the old BACK; the final screenshot was the Android home screen.
 sleep .8
 adb exec-out screencap -p > "$out/m4-pair-formula-entered.png"
+# Original Android screen must STILL show the active app/drawer. Stale, blank,
+# launcher or accidental full-screen navigation cannot qualify as success.
+python3 - "$out/m4-pair-before-drawer.png" "$out/m4-pair-formula-entered.png" <<'PY'
+import sys
+from PIL import Image, ImageChops
+before=Image.open(sys.argv[1]).convert('RGB')
+after=Image.open(sys.argv[2]).convert('RGB')
+assert before.size==after.size==(720,1280)
+d=ImageChops.difference(before.crop((17,110,703,580)),after.crop((17,110,703,580))).convert('L')
+changed=sum(n for v,n in enumerate(d.histogram()) if v>16)
+print('M4 pair Android actual editor still visible:',changed,'different pixels')
+assert changed>8500,'Real formula drawer vanished before launch; do not tap Launcher'
+PY
+app_pid="$(adb shell pidof org.dicemetalbarbie.dnddice | tr -d '\\r' || true)"
+if test -z "$app_pid"; then
+  echo 'FAIL: Godot Android process quit after original text input'
+  exit 25
+fi
 adb shell input tap 355 285
+sleep .5
+adb exec-out screencap -p > "$out/m4-pair-after-formula-tap.png"
 initial=0
 for i in $(seq 1 55); do
   sleep 2
