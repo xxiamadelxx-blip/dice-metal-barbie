@@ -155,12 +155,85 @@ def inspect_advanced_m4(root):
         "black_frames":black,"hud_text_ocr":"NOT_VERIFIED",
         "recording_fps":24,"unique_render_fps":"NOT_VERIFIED"}
 
+def inspect_pair_sources_m4(root):
+    """Original Android ADB-tapped D100 pair: source tensile digits, both Jolt."""
+    source=root/"dice-M4-PAIR-source.mp4"
+    film=root/"roll-M4-PAIR-24fps.mp4"
+    log=(root/"roll-M4-PAIR-godot.log").read_text()
+    assert source.stat().st_size>30000 and film.stat().st_size>30000, (
+        "No real Android D100 pair source recording")
+    for filename in ("m4-pair-formula-entered.png","m4-pair-tens-picker.png",
+            "m4-pair-after-tens.png","m4-pair-ones-popup.png",
+            "m4-pair-ones-selected.png","m4-pair-after-ones.png",
+            "m4-pair-history-drawer.png","m4-pair-full-history.png"):
+        assert (root/filename).stat().st_size>10000, (
+            "Original Android screenshot missing: "+filename)
+    assert "DICE_M4_PHYSICAL_STARTED 1d100+1d6" in log, (
+        "Android player did not submit paired D100 formula")
+    assert "DICE_M4_SIMULTANEOUS_STARTED=3" in log and (
+        "DICE_M4_SIMULTANEOUS_COMPLETED=3" in log), (
+        "Real AVD did not finish two independent physical D10 with D6")
+    values=[int(x) for x in re.findall(
+        r"DICE_M4_PHYSICAL_COMPLETED 1d100\+1d6=([0-9]+)",log)]
+    assert len(values)==3 and all(2<=v<=106 for v in values), (
+        "Android needs initial plus two genuine percentile-source Jolt totals")
+    assert "DICE_M4_REAL_REROLL_STARTED group=0 die=0 digit=tens" in log
+    assert "DICE_M4_REAL_REROLL_STARTED group=0 die=0 digit=ones" in log
+    assert re.search(r"DICE_M4_REAL_REROLL_COMPLETED D10=(10|[1-9]) attempts=2",log)
+    assert re.search(r"DICE_M4_REAL_REROLL_COMPLETED D10=(10|[1-9]) attempts=3",log)
+    assert not re.search(r"DICE_M4_PHYSICAL_FAILED|DICE_M4_REAL_REROLL_FAILED",log)
+    popup=re.findall(r"DICE_M4_HISTORY_OPEN records=(\d+)",log)
+    assert popup and int(popup[-1])>=3, (
+        "Android did not click into physical history containing both D10 rerolls")
+    old=None
+    frames=0
+    changed=0
+    duplicates=0
+    black=0
+    sheet_frames=[]
+    with (root/"every-avd-frame-M4-PAIR.jsonl").open("w") as file:
+        for idx,image in video_frames(film):
+            crop=image.crop((80,150,640,930)).resize((96,144)).convert("L")
+            luminance=ImageStat.Stat(crop).mean[0]
+            delta=0 if old is None else sum(
+                ImageChops.difference(crop,old).histogram()[10:])
+            changed+=int(delta>36)
+            duplicates+=int(old is not None and delta==0)
+            black+=int(luminance<8)
+            file.write(json.dumps({"frame":idx,"t_s":round(idx/24,4),
+                "source":"REAL_ANDROID_JOLT_PERCENTILE_TENS_ONES",
+                "luminance":round(luminance,2),"changed_pixels":delta,
+                "black":luminance<8})+"\n")
+            sheet_frames.append((idx,image.resize((120,215))))
+            if len(sheet_frames)==24:
+                save_every_frame_sheet(root,"M4-PAIR",idx//24,sheet_frames)
+                sheet_frames=[]
+            frames+=1
+            old=crop
+    if sheet_frames:
+        save_every_frame_sheet(root,"M4-PAIR",(frames-1)//24,sheet_frames)
+    assert frames>=120,"Android player source walkthrough recording too short"
+    assert changed>=8,"Android source video remained visually frozen"
+    assert black==0,"Black Android D100 source scene frames"
+    return {"capture_key":"M4_PAIR_REAL_TOUCH_TENS_ONES",
+        "real_formula":"1d100+1d6","actual_totals_after_each_physical_cast":values,
+        "genuine_android_tens_tap":True,"genuine_android_ones_tap":True,
+        "actual_clicked_full_history_rows":int(popup[-1]),
+        "frames_checked_sequentially":frames,
+        "consecutive_24_frame_sheets":math.ceil(frames/24),
+        "frames_with_pixel_changes":changed,"exact_duplicates":duplicates,
+        "black_frames":black,"independent_semantic_qa":"NOT_VERIFIED",
+        "hardware_oneplus_nord3_fps":"NOT_VERIFIED"}
+
+
 def main(root):
     all_dice=[inspect(root,s) for s in (4,6,8,12,20,10,100,"100_PAIR")]
     m4=inspect_advanced_m4(root)
+    pair=inspect_pair_sources_m4(root)
     report={"provenance":"REAL_ANDROID_EMULATOR_X86_64_ADB_SCREENRECORD",
             "results":all_dice,"m4_real_clicked_physical_ui":m4,
-            "frames_examined":sum(x["frames_checked_sequentially"] for x in all_dice)+m4["frame_count_all_checked"],
+            "m4_real_clicked_percentile_source_digits":pair,
+            "frames_examined":sum(x["frames_checked_sequentially"] for x in all_dice)+m4["frame_count_all_checked"]+pair["frames_checked_sequentially"],
             "status":"TEMPORAL_EVIDENCE_ONLY",
             "limitations":["24fps extracted screen frames can repeat if AVD GPU/source is slower",
                            "actual FPS and numerical face/HUD consistency unverified",

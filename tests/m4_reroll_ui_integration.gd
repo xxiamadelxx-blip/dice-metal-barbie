@@ -131,10 +131,10 @@ func _run() -> void:
                 open.pressed.emit()
                 _check(panel.visible,"Drawer did not reopen for paired source picker")
                 var choices: Array=panel.get("reroll_slots")
-                var index: int=0 if digit=="tens" else 1
-                _check(choices.size()>=3 and choices[index].get("digit","")==digit,
+                var pair_item: int=0 if digit=="tens" else 1
+                _check(choices.size()>=3 and choices[pair_item].get("digit","")==digit,
                     "Separate selectable physical tens/ones missing from real UI")
-                selector.select(index)
+                selector.select(pair_item)
                 reroll.pressed.emit()
                 _check(bool(pool.get("busy")) and not panel.visible,
                     "Chosen physical percentile D10 was not launched by the UI")

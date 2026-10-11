@@ -20,4 +20,4 @@
 
 - Full unified Gauntlet on the new exact code/GLB set PASS, including Android AVD actual game and all 8 baseline original recorded Jolt rolls, M4 physical D6 touch/reroll/history and valid ARM64 build.
 - Native player-facing selected paired-D100 controls + 24fps original frame capture both pass.
-- **Remaining:** one dedicated true Android touchscreen source-dropdown walkthrough for paired tens and ones; physical Nord 3 install, fps, aesthetics remain NOT VERIFIED. M5 final art/UX/audio and M6 release are not ready.
+- **New candidate:** a dedicated original Android ADB touchscreen source-dropdown walkthrough for paired tens and ones plus separate uncut recorded video, every-frame JSONL and 24-frame contact sheets has been authored, but is **NOT VERIFIED** until the next exact-source full Gauntlet. Physical Nord 3 install, fps and aesthetics remain NOT VERIFIED. M5 final art/UX/audio and M6 release are not ready.

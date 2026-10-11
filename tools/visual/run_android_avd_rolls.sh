@@ -308,4 +308,7 @@ if grep -Eq 'QueuePresentKHR failed|FATAL EXCEPTION.*org.dicemetalbarbie' qa-evi
   grep -E 'QueuePresentKHR failed|FATAL EXCEPTION' qa-evidence/android-avd/logcat.txt | tail -12
   exit 7
 fi
-echo "PASS 8 baseline real physical Android recordings plus real M4 formula and selected D6 reroll video"
+# NEW: separate genuine Android screenrecord of tens AND ones selections,
+# after preserving all prior eight baseline + M4 D6/full-history checks.
+bash tools/visual/run_android_percentile_sources.sh
+echo "PASS 8 baseline Jolt videos, real M4 D6 history, AND physical D100 tens/ones Android touches"
