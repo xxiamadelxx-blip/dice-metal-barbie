@@ -17,7 +17,7 @@ def read_glb(path):
         offset+=8
         chunks.append((kind,raw[offset:offset+size]))
         offset+=size
-    assert len(chunks)==2 and chunks[0][0]==b"JSON" and chunks[1][0]==b"BIN\\x00"
+    assert len(chunks)==2 and chunks[0][0]==b"JSON" and chunks[1][0]==(b"BIN"+bytes([0]))
     return json.loads(chunks[0][1]),chunks[1][1]
 
 def write_glb(scene,data):
@@ -26,7 +26,7 @@ def write_glb(scene,data):
     b=aligned(data,bytes([0]))
     size=12+8+len(j)+8+len(b)
     return (struct.pack("<4sII",b"glTF",2,size)+struct.pack("<I4s",len(j),b"JSON")
-            +j+struct.pack("<I4s",len(b),b"BIN\\x00")+b)
+            +j+struct.pack("<I4s",len(b),(b"BIN"+bytes([0])))+b)
 
 def run(source,ai_source,out,report):
     scene,original=read_glb(source)
@@ -77,7 +77,7 @@ def run(source,ai_source,out,report):
         "Android_default_changed":False,"source_image_pixels":list(source_img.size),
         "new_image_resolution":1024,"new_color_mean":round(float(toned.mean()),2),
         "new_unique_colors":int(len(np.unique(toned.reshape((-1,3)),axis=0)))}
-    Path(report).write_text(json.dumps(result,indent=2,ensure_ascii=False)+"\\n")
+    Path(report).write_text(json.dumps(result,indent=2,ensure_ascii=False)+chr(10))
     print("PASS_D20_AI_IMAGE_TO_EXISTING_GLTF "+json.dumps(result))
 
 if __name__=="__main__":
