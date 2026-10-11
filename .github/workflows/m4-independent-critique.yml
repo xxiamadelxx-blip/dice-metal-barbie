@@ -1,0 +1,72 @@
+name: M4 local independent Qwen 7B review of real source
+on:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'tools/visual/run_android_percentile_sources.sh'
+      - 'docs/QA_M4_PERCENTILE_AND_ANDROID_ANR.md'
+      - '.github/workflows/m4-independent-critique.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: m4-local-critic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  review-source-and-failure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GAUNTLET_AI_BACKEND: ollama_local
+      GAUNTLET_BUILDER_MODEL: qwen2.5-coder:1.5b
+      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:7b
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Mandatory router entry and source contracts
+        run: |
+          set -euo pipefail
+          python3 scripts/engineering_router.py validate
+          python3 scripts/engineering_router.py enter --intent 'продолжай M4 Android D100' > "$RUNNER_TEMP/m4-router-enter.json"
+          python3 scripts/engineering_router.py audit > "$RUNNER_TEMP/m4-router-audit.json"
+          bash -n tools/visual/run_android_percentile_sources.sh
+          python3 -m unittest discover -s tests -p 'test_engineering_router.py' -v
+      - name: Load both real separate local Ollama models
+        run: bash scripts/gauntlet_setup_local.sh
+      - name: Qwen 7B independent critique of current exact-source implementation
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          from pathlib import Path
+          out=Path(os.environ['RUNNER_TEMP'])/'m4-local-review'
+          out.mkdir(exist_ok=True)
+          script=Path('tools/visual/run_android_percentile_sources.sh').read_text()
+          report=Path('docs/QA_M4_PERCENTILE_AND_ANDROID_ANR.md').read_text()
+          prompt=('Independent QA critic for a Godot/Jolt DnD dice application. Inspect ACTUAL source and original failed CI facts, without builder explanations. '
+                  'Find concrete critical/major/minor defects, false test positives, Android startup, ADB input/restart reliability, correct two-physical-D10 tens/ones reroll and source-result preservation. '
+                  'Do not call Godot, Android or physical phone PASS without new raw runtime evidence. Distinguish code-source assessment from real runtime NOT_VERIFIED. '
+                  'Last full #38135657551: 8 baseline Android throws, D6 reroll and history worked; separate paired D100 Android test failed exit 21, 3223 frames only 8 changed, four black, no physical completion.\n\nACTUAL TEST SCRIPT:\n'+script+'\n\nHISTORICAL SOURCE EVIDENCE:\n'+report)
+          (out/'original-prompt.txt').write_text(prompt)
+          body=json.dumps({'model':'qwen2.5-coder:7b','prompt':prompt,'stream':False,'options':{'temperature':0,'num_predict':950}}).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/api/generate',data=body,headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=420) as response: result=json.load(response)
+          (out/'original-response.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+          answer=result.get('response','')
+          (out/'critic-report.md').write_text(answer)
+          assert len(answer.strip()) > 100, 'Missing independent Qwen reviewer response'
+          (out/'provenance.json').write_text(json.dumps({'source_sha':os.environ['GITHUB_SHA'],'critic_model':'qwen2.5-coder:7b','critic_response_received':True,'Android_physical_runtime':'NOT_VERIFIED','phone_release':'NOT_VERIFIED','findings':'REQUIRE_TRIAGE'},indent=2))
+          print('Actual Qwen 7B raw independent M4 source critique retained; no claimed Android PASS')
+          PY
+      - name: Preserve original prompts, response and router evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-local-qwen-7b-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/m4-local-review/
+            ${{ runner.temp }}/m4-router-enter.json
+            ${{ runner.temp }}/m4-router-audit.json
+          if-no-files-found: warn
+          retention-days: 14

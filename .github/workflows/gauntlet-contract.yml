@@ -1,0 +1,31 @@
+name: Gauntlet evidence contract regression (not independent artistic QA)
+on:
+  pull_request:
+    paths:
+      - 'scripts/gauntlet_evidence.py'
+      - 'scripts/gauntlet_autopilot.py'
+      - 'tests/test_gauntlet_autopilot.py'
+      - 'tests/test_gauntlet_evidence.py'
+      - 'docs/GAUNTLET_ACCEPTANCE_V2.md'
+      - '.github/workflows/gauntlet-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gauntlet-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify validator syntax
+        run: python3 -m py_compile scripts/gauntlet_evidence.py scripts/gauntlet_autopilot.py tests/test_gauntlet_evidence.py tests/test_gauntlet_autopilot.py
+      - name: Validate positive and fail-closed negative evidence
+        run: python3 -m unittest discover -s tests -p 'test_gauntlet_*.py' -v
+      - name: Clarify CI scope
+        run: echo "PASS here checks schema-validation software only. Independent critic, visual/physics/artistic QA and physical Android are separate gates."

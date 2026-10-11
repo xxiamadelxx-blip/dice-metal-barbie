@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "repository": "xxiamadelxx-blip/dice-metal-barbie",
+  "active": {
+    "task": "M4 physical paired D100 Android source reroll after merging full engineering architecture into PR #23",
+    "route": "reliability-persistence",
+    "status": "in_progress",
+    "owner": "Dice engineering agent (canonical router)",
+    "next_action": "Inspect new PR exact-commit native/Godot/Jolt, full all-frame 24fps/Android and Qwen7B critic Actions artifacts; fix remaining paired physical D100 source tap defects, rerun Gauntlet, keep M4 active.",
+    "blockers": [
+      "Full #38135657551 failed Android paired-D100 player tap flow; new real restart readiness candidate must pass AVD.",
+      "On-device Nord 3 FPS/upgrade and M5 artistic acceptance remain NOT_VERIFIED."
+    ],
+    "evidence": [
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38135657551",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38143702935",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/23"
+    ],
+    "last_observed_sha": "f91c041ff766686a1571da832ded793b11aee1d1",
+    "last_verified_sha": "d2e5ddc7509a52bd31cb7ddd61c3ca1ea9ce1c0f",
+    "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
+    "updated_at": "2026-10-11",
+    "verification_note": "Remotely examined exact main and PR HEAD; ported governance by merged Git tree, preserved all feature GLB/Jolt/UI files. New Android readiness and separate Qwen M4 review not accepted until their exact-source CI."
+  },
+  "incidents": {}
+}

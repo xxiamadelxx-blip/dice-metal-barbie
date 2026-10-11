@@ -1,0 +1,682 @@
+{
+  "schema_version": 1,
+  "repository": "xxiamadelxx-blip/dice-metal-barbie",
+  "policy": "docs/ENGINEERING_ROUTER.md",
+  "entrypoint": "python3 scripts/engineering_router.py enter --intent 'продолжай'",
+  "execution_modes": [
+    "continue",
+    "stuck",
+    "handoff",
+    "new-task"
+  ],
+  "mandatory_preflight": [
+    "AGENTS.md",
+    "docs/CONTEXT.md",
+    "docs/PRD.md",
+    "docs/ARCHITECTURE.md",
+    "docs/GAUNTLET_LOOP.md",
+    "docs/ENGINEERING_ROUTER.md",
+    "docs/handoff/ACTIVE_ROUTING_HANDOFF.json"
+  ],
+  "defaults": {
+    "fallback_route": "agent-operations",
+    "max_tool_probes": 15,
+    "offline_apk": true,
+    "independent_critic_is_external": true
+  },
+  "routes": [
+    {
+      "id": "agent-operations",
+      "title": "Agent orchestration, recovery & handoff",
+      "priority": 100,
+      "triggers": [
+        "continue",
+        "stuck",
+        "handoff",
+        "agent",
+        "продолж",
+        "завис",
+        "передач",
+        "восстанов"
+      ],
+      "paths": [
+        "AGENTS.md",
+        "docs/handoff/",
+        "scripts/engineering_router.py",
+        "scripts/gauntlet_autopilot.py"
+      ],
+      "tools": [
+        {
+          "name": "Python stdlib + Git",
+          "kind": "required"
+        },
+        {
+          "name": "GitHub PR/Actions",
+          "kind": "external-evidence"
+        },
+        {
+          "name": "Superpowers / engineering guardrails skills",
+          "kind": "if-connected"
+        }
+      ],
+      "checks": [
+        "python3 -m unittest discover -s tests -p test_engineering_router.py -v"
+      ],
+      "artifacts": [
+        "exact SHA/branch and dirty status",
+        "current task and next action",
+        "failed-attempt fingerprint and blocker",
+        "verified test/CI URLs"
+      ],
+      "requires": [
+        "never assume a chat summary outranks live repo",
+        "new agent must run enter before acting",
+        "do not forge independent critic"
+      ],
+      "fallback": "Use repository files and GitHub manual evidence; record NOT_VERIFIED"
+    },
+    {
+      "id": "code",
+      "title": "GDScript and Python code quality",
+      "priority": 90,
+      "triggers": [
+        "code",
+        "refactor",
+        "bug",
+        "script",
+        "код",
+        "рефактор",
+        "функц",
+        "ошиб"
+      ],
+      "paths": [
+        "src/",
+        "scripts/",
+        "tests/"
+      ],
+      "tools": [
+        {
+          "name": "Godot 4.6.3 / gdscript parser",
+          "kind": "required-when-runtime-code"
+        },
+        {
+          "name": "Python unittest / py_compile",
+          "kind": "required-when-python"
+        },
+        {
+          "name": "gdtoolkit gdformat/gdlint",
+          "kind": "candidate-version-check"
+        },
+        {
+          "name": "Tree-sitter / LSP / ripgrep",
+          "kind": "optional"
+        }
+      ],
+      "checks": [
+        "Godot headless import and touched GDScript tests",
+        "Python unittest and py_compile for touched Python",
+        "exact-SHA separate-context critic"
+      ],
+      "artifacts": [
+        "source diff and exact SHA",
+        "test log and regression case"
+      ],
+      "requires": [
+        "preserve physics outcome truth",
+        "do not add fake snapping"
+      ],
+      "fallback": "Godot headless and existing repository tests"
+    },
+    {
+      "id": "architecture",
+      "title": "Dependency boundaries & C4/ADR architecture",
+      "priority": 85,
+      "triggers": [
+        "architecture",
+        "design-decision",
+        "module",
+        "dependency",
+        "архитектур",
+        "зависимост",
+        "контракт"
+      ],
+      "paths": [
+        "docs/ARCHITECTURE.md",
+        "docs/decisions/",
+        "src/"
+      ],
+      "tools": [
+        {
+          "name": "Structurizr DSL / C4",
+          "kind": "candidate"
+        },
+        {
+          "name": "Mermaid",
+          "kind": "available-as-text"
+        },
+        {
+          "name": "Python dependency analyzer",
+          "kind": "recommended"
+        },
+        {
+          "name": "ripgrep",
+          "kind": "optional"
+        }
+      ],
+      "checks": [
+        "Architecture file/ADR reference audit",
+        "Detect forbidden boundary import and cycles",
+        "Check runtime authority remains Godot/Jolt"
+      ],
+      "artifacts": [
+        "C4 component graph",
+        "ADR with rejected alternatives",
+        "dependency report"
+      ],
+      "requires": [
+        "do not rewrite approved product architecture without consent"
+      ],
+      "fallback": "Mermaid + source graph in repo"
+    },
+    {
+      "id": "creative-3d",
+      "title": "3D sculpture, material and visual asset",
+      "priority": 85,
+      "triggers": [
+        "visual",
+        "dice model",
+        "sculpt",
+        "mesh",
+        "texture",
+        "3d",
+        "визуал",
+        "кубик",
+        "текстур",
+        "модел"
+      ],
+      "paths": [
+        "src/assets/",
+        "src/visual/",
+        "tools/blender/",
+        "docs/CREATIVE_TOOLCHAIN.md"
+      ],
+      "tools": [
+        {
+          "name": "Blender + Python",
+          "kind": "when-asset-authoring"
+        },
+        {
+          "name": "OpenSCAD / MeshLab / Trimesh",
+          "kind": "candidate-by-need"
+        },
+        {
+          "name": "Material Maker / ImageMagick / Pillow",
+          "kind": "candidate-by-need"
+        },
+        {
+          "name": "Godot native frames",
+          "kind": "required-for-result"
+        }
+      ],
+      "checks": [
+        "GLB geometry/material checks where available",
+        "Real Godot/Jolt render and full temporal 24fps frame audit where applicable",
+        "Compare approved look and visible face"
+      ],
+      "artifacts": [
+        "GLB manifest and source generator",
+        "real unmodified screenshot/video",
+        "per-frame audit JSONL"
+      ],
+      "requires": [
+        "visual assets never override collision/face authority"
+      ],
+      "fallback": "Use Blender/Python/Godot approved current pipeline"
+    },
+    {
+      "id": "interface-accessibility",
+      "title": "Android UI, a11y, icons & localization",
+      "priority": 78,
+      "triggers": [
+        "ui",
+        "ux",
+        "menu",
+        "screen",
+        "button",
+        "accessibility",
+        "localization",
+        "интерфейс",
+        "меню",
+        "кнопк",
+        "шрифт",
+        "язык"
+      ],
+      "paths": [
+        "src/ui/",
+        "src/main.gd",
+        "docs/DESIGN.md"
+      ],
+      "tools": [
+        {
+          "name": "Godot Control / real screenshot",
+          "kind": "required"
+        },
+        {
+          "name": "Figma / Inkscape",
+          "kind": "optional-if-authorized"
+        },
+        {
+          "name": "Android accessibility tools",
+          "kind": "candidate"
+        }
+      ],
+      "checks": [
+        "Real hit targets/fonts/contrast/focus",
+        "720x1280 and varying phone screen sizes",
+        "No fake screenshot acceptance"
+      ],
+      "artifacts": [
+        "real device/AVD screenshot",
+        "readability and interaction checklist"
+      ],
+      "requires": [
+        "do not expose unimplemented menu options",
+        "no change to approved overhead view"
+      ],
+      "fallback": "Godot native screenshots and manual semantic check"
+    },
+    {
+      "id": "audio-haptics",
+      "title": "Physical audio, SFX mixing & haptics",
+      "priority": 95,
+      "triggers": [
+        "sound",
+        "audio",
+        "music",
+        "sfx",
+        "haptic",
+        "звук",
+        "аудио",
+        "громк",
+        "вибра"
+      ],
+      "paths": [
+        "src/audio/",
+        "src/visual/",
+        "src/main.gd"
+      ],
+      "tools": [
+        {
+          "name": "Godot AudioStream + AudioBus",
+          "kind": "runtime-authority"
+        },
+        {
+          "name": "FFmpeg + ffprobe / SoX",
+          "kind": "candidate-and-probe"
+        },
+        {
+          "name": "Audacity / jsfxr",
+          "kind": "asset-authoring-candidate"
+        },
+        {
+          "name": "Godot/Jolt contacts",
+          "kind": "sync-authority"
+        }
+      ],
+      "checks": [
+        "Origin from physical contact speed/time",
+        "No clipping/normalization/pumping",
+        "Headphone/speaker/device playback and mute settings"
+      ],
+      "artifacts": [
+        "original/processed licensed WAV/OGG",
+        "signal measurements and physical test clip"
+      ],
+      "requires": [
+        "offline assets only; no external service at runtime",
+        "sound feature not marked PASS without audition"
+      ],
+      "fallback": "Procedural Godot synthesis and documented manual listening"
+    },
+    {
+      "id": "security",
+      "title": "Secrets, dependencies & source security",
+      "priority": 74,
+      "triggers": [
+        "security",
+        "vulnerability",
+        "secrets",
+        "permission",
+        "безопас",
+        "секрет",
+        "уязвим"
+      ],
+      "paths": [
+        ".github/",
+        "scripts/",
+        "src/",
+        "export_presets.cfg"
+      ],
+      "tools": [
+        {
+          "name": "Gitleaks",
+          "kind": "candidate"
+        },
+        {
+          "name": "Semgrep / CodeQL where languages supported",
+          "kind": "candidate-scope-limited"
+        },
+        {
+          "name": "Trivy / OSV-Scanner",
+          "kind": "candidate"
+        }
+      ],
+      "checks": [
+        "No signing secrets in git",
+        "Dependency and license provenance",
+        "Source scope access and offline Android permissions"
+      ],
+      "artifacts": [
+        "redacted security findings",
+        "tools, scan status, false positive decisions"
+      ],
+      "requires": [
+        "do not claim CodeQL analyzes GDScript"
+      ],
+      "fallback": "Secret-pattern audit and reviewed permission manifest"
+    },
+    {
+      "id": "performance",
+      "title": "FPS, frame pacing, memory, battery",
+      "priority": 70,
+      "triggers": [
+        "fps",
+        "slow",
+        "performance",
+        "stutter",
+        "latency",
+        "lag",
+        "производител",
+        "тормоз",
+        "фпс"
+      ],
+      "paths": [
+        "src/",
+        "project.godot",
+        "docs/TEST_PLAN.md"
+      ],
+      "tools": [
+        {
+          "name": "Godot profiler",
+          "kind": "required-at-runtime"
+        },
+        {
+          "name": "Android Perfetto / ADB",
+          "kind": "device-evidence"
+        },
+        {
+          "name": "FFmpeg frame pacing",
+          "kind": "capture-evidence"
+        }
+      ],
+      "checks": [
+        "Real engine FPS distinct frames not file FPS",
+        "RAM/load spikes and battery/thermal on Nord 3",
+        "Budget 16.67ms for 60fps"
+      ],
+      "artifacts": [
+        "profiler trace",
+        "measured FPS and hardware model",
+        "AVD vs phone explicitly separated"
+      ],
+      "requires": [
+        "cannot claim handset FPS from Mesa rendering"
+      ],
+      "fallback": "Headless/virtual GPU metrics NOT_VERIFIED device"
+    },
+    {
+      "id": "reliability-persistence",
+      "title": "Stress, offline persistence & crash recovery",
+      "priority": 73,
+      "triggers": [
+        "crash",
+        "save",
+        "history",
+        "stress",
+        "race",
+        "hang",
+        "память",
+        "история",
+        "краш",
+        "потер",
+        "сохран"
+      ],
+      "paths": [
+        "src/core/",
+        "tests/",
+        "docs/RELEASE.md"
+      ],
+      "tools": [
+        {
+          "name": "Godot/Jolt long-run tests",
+          "kind": "required"
+        },
+        {
+          "name": "Python statistical/audit checks",
+          "kind": "if-applicable"
+        },
+        {
+          "name": "Android emulator",
+          "kind": "device-emulation"
+        }
+      ],
+      "checks": [
+        "Repeated physical throws and race/lifecycle",
+        "Corrupted save + recovery + offline restart",
+        "Roundtrip/versioned persistence"
+      ],
+      "artifacts": [
+        "seed/trial count and failure repro",
+        "saved state checksums",
+        "uncut end-to-end logs"
+      ],
+      "requires": [
+        "never fake dice values or successful test"
+      ],
+      "fallback": "Record exact unverified runtime tests"
+    },
+    {
+      "id": "android-release",
+      "title": "ARM64 builds, signing, device upgrade",
+      "priority": 72,
+      "triggers": [
+        "apk",
+        "android",
+        "install",
+        "release",
+        "signature",
+        "подпис",
+        "обновлен",
+        "релиз",
+        "установ"
+      ],
+      "paths": [
+        ".github/workflows/",
+        "export_presets.cfg",
+        "docs/RELEASE.md"
+      ],
+      "tools": [
+        {
+          "name": "Godot export",
+          "kind": "required"
+        },
+        {
+          "name": "apksigner / ADB",
+          "kind": "device-and-signature"
+        },
+        {
+          "name": "Android emulator",
+          "kind": "CI-optional"
+        }
+      ],
+      "checks": [
+        "Exact SHA APK and valid signature",
+        "Upgrade without removing existing app/data",
+        "Offline Nord 3 actual smoke before release"
+      ],
+      "artifacts": [
+        "APK hash/build run URL",
+        "signature certificate fingerprint",
+        "physical device test result"
+      ],
+      "requires": [
+        "do not rotate keystore or publish without explicit approval"
+      ],
+      "fallback": "Debug ARM64 artifact; release NOT_VERIFIED"
+    },
+    {
+      "id": "supply-chain",
+      "title": "Dependencies, SBOM and licenses",
+      "priority": 67,
+      "triggers": [
+        "dependency",
+        "license",
+        "sbom",
+        "asset-rights",
+        "лиценз",
+        "библиотек",
+        "пакет"
+      ],
+      "paths": [
+        ".github/",
+        "docs/",
+        "scripts/",
+        "src/assets/"
+      ],
+      "tools": [
+        {
+          "name": "OSV-Scanner/Trivy",
+          "kind": "candidate"
+        },
+        {
+          "name": "SBOM generator",
+          "kind": "candidate"
+        },
+        {
+          "name": "Git review",
+          "kind": "required"
+        }
+      ],
+      "checks": [
+        "Licenses for audio/fonts/GLB",
+        "Pinned and approved dependency versions",
+        "No unreviewed remote binary"
+      ],
+      "artifacts": [
+        "SBOM or dependency list",
+        "license manifest and provenance"
+      ],
+      "requires": [
+        "no proprietary unlicensed media"
+      ],
+      "fallback": "Manual bill of materials in PR evidence"
+    },
+    {
+      "id": "observability",
+      "title": "Logs, failure classification & telemetry",
+      "priority": 68,
+      "triggers": [
+        "log",
+        "telemetry",
+        "diagnose",
+        "monitor",
+        "отчет",
+        "лог",
+        "телеметр",
+        "диагност"
+      ],
+      "paths": [
+        "scripts/",
+        "tests/",
+        "docs/handoff/"
+      ],
+      "tools": [
+        {
+          "name": "Structured Python/Godot logs",
+          "kind": "required"
+        },
+        {
+          "name": "GitHub Actions artifacts",
+          "kind": "external-source"
+        },
+        {
+          "name": "OpenTelemetry",
+          "kind": "only-if-server-architecture"
+        }
+      ],
+      "checks": [
+        "Stable event identifiers / redact private details",
+        "Cross-check logs against exact SHA",
+        "Avoid runtime online telemetry for offline app"
+      ],
+      "artifacts": [
+        "log event schema",
+        "failure category and linked artifact"
+      ],
+      "requires": [
+        "offline-by-default and no data exfiltration"
+      ],
+      "fallback": "Local JSONL structured logs"
+    },
+    {
+      "id": "qa-critic",
+      "title": "Independent Gauntlet and evidence acceptance",
+      "priority": 92,
+      "triggers": [
+        "gauntlet",
+        "audit",
+        "review",
+        "test",
+        "qa",
+        "critic",
+        "прием",
+        "аудит",
+        "тест",
+        "провер"
+      ],
+      "paths": [
+        "scripts/gauntlet_autopilot.py",
+        "scripts/gauntlet_evidence.py",
+        "docs/GAUNTLET_LOOP.md"
+      ],
+      "tools": [
+        {
+          "name": "Two isolated model context invocations",
+          "kind": "requires-auth"
+        },
+        {
+          "name": "Python contract validator",
+          "kind": "available-in-repo"
+        },
+        {
+          "name": "Godot/Android real artifact suite",
+          "kind": "as-required"
+        }
+      ],
+      "checks": [
+        "Artifact SHA pinned",
+        "Separate critic truly invoked",
+        "FAIL/NOT_VERIFIED prohibit release"
+      ],
+      "artifacts": [
+        "critic raw review",
+        "test evidence per criterion",
+        "fix/change ref and retest"
+      ],
+      "requires": [
+        "no self-approval or fictitious tool/model invocation"
+      ],
+      "fallback": "Deterministic tests + adversarial self-check; independence NOT_VERIFIED"
+    }
+  ]
+}

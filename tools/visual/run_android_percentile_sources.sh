@@ -31,8 +31,33 @@ finish() {
 trap finish EXIT
 adb shell am force-stop org.dicemetalbarbie.dnddice
 adb shell monkey -p org.dicemetalbarbie.dnddice 1
-sleep 8
-adb exec-out screencap -p > "$out/m4-pair-before-drawer.png"
+# The new Android process can still show a splash or system overlay after 8s.
+# Prove actual rendered stage pixels BEFORE tapping formula/picker controls.
+# Same strict 720x1280 image gate as the successful baseline AVD test.
+ready=0
+for attempt in $(seq 1 20); do
+  adb exec-out screencap -p > "$out/m4-pair-before-drawer.png"
+  if python3 - "$out/m4-pair-before-drawer.png" <<'PY'
+import sys
+from PIL import Image, ImageStat
+im = Image.open(sys.argv[1]).convert('RGB')
+assert im.size == (720, 1280), f'Unexpected Android viewport {im.size}'
+s = ImageStat.Stat(im.crop((40, 85, 680, 485)).convert('L'))
+print('M4 pair AVD restart stage:', round(s.mean[0], 2), round(s.stddev[0], 2))
+assert 7 < s.mean[0] < 150 and s.stddev[0] > 6, 'Android game not playable yet'
+PY
+  then
+    ready=1
+    break
+  fi
+  cp "$out/m4-pair-before-drawer.png" "$out/m4-pair-not-ready-$attempt.png"
+  sleep 5
+done
+if test "$ready" != 1; then
+  adb logcat -d -v time > "$out/m4-pair-restart-not-ready.log" || true
+  echo 'FAIL: Android restart never rendered a playable game stage'
+  exit 20
+fi
 adb logcat -c || true
 adb shell screenrecord --size 720x1280 --bit-rate 4500000 \
   --time-limit 175 "$device" &
