@@ -39,6 +39,14 @@ func _run() -> void:
             _check(preview != null and light.global_position.distance_to(
                     preview.global_position)<light.omni_range,
                 "Light falls outside actual D20 reflection radius: "+light_name)
+    var d4_card := scene.get_node_or_null("StudioCardD4") as OmniLight3D
+    var d4_preview := scene.get_node_or_null("IdleDiceDisplay/PreviewD4") as RigidBody3D
+    _check(d4_card != null and d4_preview != null,
+        "Actual D4 side-light or original physical showcase missing")
+    if d4_card != null and d4_preview != null:
+        _check(d4_card.global_position.distance_to(d4_preview.global_position)
+            < d4_card.omni_range, "D4 side key physically cannot light its real visual mesh")
+        _check(d4_card.light_energy > 0.9, "D4 side material must have a visible real bounce")
     var unique := BeveledBox.create(Vector3(0.35,0.9,10.8),0.052)
     _check(unique != null and unique.get_surface_count()==1,
         "Bevel factory did not generate valid single-surface rail mesh")

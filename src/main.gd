@@ -404,6 +404,11 @@ func _make_world() -> void:
         Color(1.0,0.84,0.65),540.0,1.10)
     _make_accent_light("StudioCardCool",Vector3(2.6,2.9,-0.7),
         Color(0.72,0.84,1.0),560.0,0.73)
+    # True D4 tetrahedral apex points to camera: one broad panel occupies
+    # most pixels. A small *side* light reveals its dark actual side faces
+    # without flattening that triangular bevel into uniform grey.
+    _make_accent_light("StudioCardD4",Vector3(3.0,1.85,2.45),
+        Color(0.96,0.77,0.54),340.0,1.18)
 
 func _make_visual_trim(node_name: String, origin: Vector3, dimensions: Vector3, material: Material) -> void:
     var line := MeshInstance3D.new()

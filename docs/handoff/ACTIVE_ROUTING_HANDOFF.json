@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 premium true black glass and visible studio PBR reflections; user wants visuals substantially above Alpha4, which is UX only",
+    "task": "M5 real Godot/native D4 facet contrast RED; add genuine side-key plus authored normal microtexture to improve photographed D4 and stone",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect exact new full Gauntlet native 720x1280 screenshots: formerly real D20/D12 faces matte slate and studio card lights y6/6.5 were outside their own 4.8/4.4m ranges. New lights y2.7/2.9 with real reach assertions, blacker authored maps, and independent color-agnostic silhouette pixel metric (same 13k/19k/14k/9k strict object minimum; facet variation + contrast added). If red, inspect original QA, correct and repeat. Preserve real contact felt, nat20/1 and Android/ARM64. Keep M5 art acceptance open until screenshots; main untouched.",
+    "next_action": "Inspect exact-new-head Gauntlet new native-01 Godot 720x1280 after real StudioCardD4 side light + stronger imported Blender normal map. Previous #38182322434 Blender and eight 24fps physical throws PASS, native pixel stage RED exclusively on real D4 facet_dynamic_range=4.36 with unchanged strict 8.0 requirement; other dice D20 36, D12 33.58, D6 38.86, and velvet p90-p10=3.5 pass. Side light in actual world 3.0/1.85/2.45 must reach preview D4 and bring partially shadowed physical side facets above real velvet. Never lower art metric just to pass. Verify Android AVD/Jolt and original frame quality. Alpha4 UI only, better premium art still not accepted.",
     "blockers": [
-      "Previous exact #38181811827 native original screenshots visually still grey/plastic; old pixel critic incorrectly required blue color and counted dark D20 as missing.",
-      "Actual native/Android visual improvement from corrected real studio light positions and darker maps not yet verified.",
-      "No physical handset OnePlus Nord3 or premium art acceptance, sound/haptics not finished.",
-      "Local engineering_router.py CLI not available without git checkout; GitHub canonical docs preflight complete."
+      "Prior #38182322434 native D4 side facet visible luminance spread only 4.36 vs strict 8.0, despite D20/D12/D6 and texture passing; correct real side lighting candidate NOT VERIFIED.",
+      "Artistic quality still PS1/polyhedral plastic by user benchmark despite screenshot improvements; further PBR reflection maps and authored real mesh polishing may be needed after new frame critic.",
+      "Android/Jolt results from old run not yet all completed; new exact-SHA must pass 24fps/ARM64/AVD and source critic.",
+      "OnePlus Nord3 physical device and signed app update not yet verified."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -83,13 +83,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605/artifacts/11717845412",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181403900",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181811827",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181811827/artifacts/11717973108"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181811827/artifacts/11717973108",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434/artifacts/11717812770"
     ],
-    "last_observed_sha": "b4495ceaa09d8921a9cfff0c5dc6fb8d9c203783",
+    "last_observed_sha": "213dbc0d7047983b5bc887be61055b01ebfec73b",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Actual Godot original b4495ce screenshot inspected: D20 detail and four-die launch still opaque slate; dark-green velvet okay but not user accepted. Previous native metric based on blue-only hue was conceptually invalid for true black obsidian; new metric requires minimum same silhouette area, stronger contrast to actual felt and independent facet dynamic range. Updated real key/card positions and tested physical D20 range. Await exact Gauntlet."
+    "verification_note": "Inspected actual native-01 and native D20 original images for exact SHA 213dbc0; last 24fps job SUCCESS but 720x1280 image D4 side has insufficient facet spread (4.36 versus 8) while D20, D12, D6 pass. Real physical StudioCardD4 side key at actual x3/y1.85/z2.45 with radius3.4 and slightly stronger imported normal map. Keeps user-visible strict test and all Jolt bodies untouched."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

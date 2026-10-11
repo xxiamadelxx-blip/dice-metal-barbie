@@ -132,7 +132,10 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
         stone.roughness_texture_channel = original.roughness_texture_channel
         stone.normal_enabled = original.normal_enabled
         stone.normal_texture = original.normal_texture
-        stone.normal_scale = 0.28
+        # Actual authored Blender normal detail is too subtle on 720px D4
+        # side faces. Preserve the true normal map while adding readable
+        # micro-bevel glints under physical studio key / D4 side light.
+        stone.normal_scale = 0.44
     return stone
 
 static func _gold_inset_for_glb() -> StandardMaterial3D:
