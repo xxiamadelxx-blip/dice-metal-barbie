@@ -68,10 +68,17 @@ def showcase_face_readability(path):
         values=sorted(_luma(px) for px in pixels)
         p75=values[int(.75*(len(values)-1))]
         gold=sum(1 for r,g,b in pixels if r>95 and r>g*1.29 and g>b*1.18)
-        stone=sum(1 for r,g,b in pixels
-                  if (b-r)>9 and _luma((r,g,b))>62 and b>68)
+        # Obsidian must be BLACK, not blue. The old B-R>9 requirement
+        # excluded true dark reflective facets even when fully visible.
+        values=sorted(_luma((r,g,b)) for r,g,b in pixels
+            if _luma((r,g,b))>reference+12.0
+            and _luma((r,g,b))<165.0
+            and not (r>95 and r>g*1.29 and g>b*1.18))
+        stone=len(values)
+        variation=(values[int(.85*(stone-1))]-values[int(.15*(stone-1))]) if stone>5 else 0.0
         data["dice"][name]={"p75":round(p75,2),"against_felt":round(p75-reference,2),
-                            "bronze_pixels":gold,"stone_visible_pixels":stone}
+                            "bronze_pixels":gold,"stone_visible_pixels":stone,
+                            "facet_dynamic_range":round(variation,2)}
     return data
 
 def analyze(path):
@@ -118,8 +125,11 @@ if __name__ == "__main__":
         for name,entry in metrics["normal_camera"]["dice"].items():
             assert entry["stone_visible_pixels"] >= min_hero_stone_pixels[name], (
                 "%s preview too small/hidden at 720x1280 overhead" % name)
-            assert entry["against_felt"] >= 4.0, (
-                "%s faceted stone disappears into velvet at normal 14.2 camera" % name)
+            assert entry["against_felt"] >= 10.0, (
+                "%s black stone must contrast clearly against true velvet" % name)
+            min_facets={"D20":12.0,"D12":10.0,"D6":10.0,"D4":8.0}
+            assert entry["facet_dynamic_range"] >= min_facets[name], (
+                "%s stone looks uniform and plastic, not genuinely faceted" % name)
             assert entry["bronze_pixels"] >= 30, (
                 "%s engraving disappears at normal 14.2 camera" % name)
         print("PASS native smoke thresholds; ARTISTIC ACCEPTANCE STILL OPEN")

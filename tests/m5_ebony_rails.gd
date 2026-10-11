@@ -30,6 +30,15 @@ func _run() -> void:
             var mat := mesh.material_override as StandardMaterial3D
             _check(mat != null and mat.clearcoat_enabled,
                 "Ebony lacquer requires real reflective PBR material")
+    # PBR studio cards must actually REACH the real D20 material.
+    for light_name in ["StudioCardWarm","StudioCardCool"]:
+        var light := scene.get_node_or_null(light_name) as OmniLight3D
+        _check(light != null,"Missing real studio light "+light_name)
+        if light != null:
+            var preview := scene.get_node_or_null("IdleDiceDisplay/PreviewD20") as RigidBody3D
+            _check(preview != null and light.global_position.distance_to(
+                    preview.global_position)<light.omni_range,
+                "Light falls outside actual D20 reflection radius: "+light_name)
     var unique := BeveledBox.create(Vector3(0.35,0.9,10.8),0.052)
     _check(unique != null and unique.get_surface_count()==1,
         "Bevel factory did not generate valid single-surface rail mesh")

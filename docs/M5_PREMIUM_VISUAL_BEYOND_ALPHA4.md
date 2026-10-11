@@ -19,3 +19,9 @@ Actual 3D fibrous velvet anisotropy at arm's-length mobile resolution, true die 
 ## Exact 2026-10-12 contract failure and repair
 
 [Previous exact-source Gauntlet #38181403900](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181403900) **native FAIL** during `tests/engraved_assets.gd`: five `D4/D6/D8/D12/D20 obsidian metallic response outside physical-art budget`. The actual strict art regression requires source `_stone_pbr_for_glb().metallic` in **[0.15, 0.35]**, while first edited pass was 0.06. We restore **0.20** with retained GLB mapped roughness/normal and dark glass clearcoat; do **not** change the acceptance threshold. No screenshot of the failed source's ebony rails was generated: new same-SHA native/Godot visual evidence required before any art judgment.
+
+## Exact Godot image finding: glass needs real studio reflections
+
+Original native frame #38181811827 (artifact 11717973108) includes all 18 captured screenshots, true physical floor-contact and recovered-felt frames. Although engine geometry, texture and D20 physical result passed, hero D20/D12 still looked flat blue-grey. The practical cause was studio light sources outside their own attenuation radii: y6.0/range4.8 and y6.5/range4.4, both farther than their influence from the 0.7-high display dice. Move sources inside their real ranges, keep 90-degree camera, and add source reach contract. Tint authored imported source albedo darker without losing PBR normal/roughness.
+
+Native color critic former B-minus-R blue pixel count was inappropriate for TRUE black obsidian. Replacing it does not waive area verification: the same pixel minima 13k/19k/14k/9k remain and now measure dark object relative to the SAME rendered velvet frame. Stronger silhouette contrast threshold (10 instead of 4) and additional independent facet luminance spread (8-12) required. User visual acceptance is still OPEN, exact new native frames must be inspected.

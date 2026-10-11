@@ -398,8 +398,12 @@ func _make_world() -> void:
     _make_visual_trim("WarmRimRight", Vector3(3.23, 0.805, 0), Vector3(0.025, 0.025, 10.25), rim)
     _make_visual_trim("WarmRimTop", Vector3(0, 0.805, -5.24), Vector3(6.5, 0.025, 0.025), rim)
     _make_visual_trim("WarmRimBottom", Vector3(0, 0.805, 5.24), Vector3(6.5, 0.025, 0.025), rim)
-    _make_accent_light(Vector3(-2.7, 6.0, -3.4), Color(1.0, 0.74, 0.46), 480.0, 0.85)
-    _make_accent_light(Vector3(3.0, 6.5, 3.0), Color(0.54, 0.71, 1.0), 440.0, 0.42)
+    # Previous card lamps at y6.0/y6.5 were OUTSIDE their illumination
+    # radii from the hero dice and reflected nothing on black obsidian.
+    _make_accent_light("StudioCardWarm",Vector3(-2.7,2.7,-3.35),
+        Color(1.0,0.84,0.65),540.0,1.10)
+    _make_accent_light("StudioCardCool",Vector3(2.6,2.9,-0.7),
+        Color(0.72,0.84,1.0),560.0,0.73)
 
 func _make_visual_trim(node_name: String, origin: Vector3, dimensions: Vector3, material: Material) -> void:
     var line := MeshInstance3D.new()
@@ -411,8 +415,10 @@ func _make_visual_trim(node_name: String, origin: Vector3, dimensions: Vector3, 
     line.material_override = material
     add_child(line)
 
-func _make_accent_light(origin: Vector3, tint: Color, range_value: float, strength: float) -> void:
+func _make_accent_light(node_name: String, origin: Vector3, tint: Color,
+        range_value: float, strength: float) -> void:
     var lamp := OmniLight3D.new()
+    lamp.name = node_name
     lamp.position = origin
     lamp.light_color = tint
     lamp.omni_range = range_value / 100.0

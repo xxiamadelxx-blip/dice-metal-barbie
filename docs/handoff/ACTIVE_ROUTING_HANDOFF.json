@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 premium visual art regression: repair obsidian metallic contract on original shader and inspect native/Android after valid same-run tests",
+    "task": "M5 premium true black glass and visible studio PBR reflections; user wants visuals substantially above Alpha4, which is UX only",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect new exact-source unified Gauntlet after fixing five Godot engraved GLB metallic range assertion failures. Test metallic 0.20 within 0.15–0.35, retain original GLB albedo+normal+roughness textures and tightened clearcoat. Then inspect native original 720x1280 scenes including ebony rail bevels, nat20/aura, source-triggered velvet and actual 24fps Android. Inspect remaining run #38181403900 if it fails physical Jolt or AVD; do not relabel green. Alpha4 is UX only, visual quality must exceed it; no merge until user-artistic acceptance.",
+    "next_action": "Inspect exact new full Gauntlet native 720x1280 screenshots: formerly real D20/D12 faces matte slate and studio card lights y6/6.5 were outside their own 4.8/4.4m ranges. New lights y2.7/2.9 with real reach assertions, blacker authored maps, and independent color-agnostic silhouette pixel metric (same 13k/19k/14k/9k strict object minimum; facet variation + contrast added). If red, inspect original QA, correct and repeat. Preserve real contact felt, nat20/1 and Android/ARM64. Keep M5 art acceptance open until screenshots; main untouched.",
     "blockers": [
-      "Former exact-head #38181403900 native scene art contract RED: current PBR metallic 0.06 out of tested 0.15–0.35 for all five sculpted D4/D6/D8/D12/D20; 0.20 fix in new candidate UNVERIFIED.",
-      "New ebony beveled rail and stone clearcoat actual native screenshots not yet produced because failed contract short-circuited visual capture.",
-      "Jolt/24fps/AVD previous combined run status not yet all resolved, full new CI must validate untouched old M4.",
-      "Actual user-facing art quality and OnePlus Nord3 hardware are NOT VERIFIED."
+      "Previous exact #38181811827 native original screenshots visually still grey/plastic; old pixel critic incorrectly required blue color and counted dark D20 as missing.",
+      "Actual native/Android visual improvement from corrected real studio light positions and darker maps not yet verified.",
+      "No physical handset OnePlus Nord3 or premium art acceptance, sound/haptics not finished.",
+      "Local engineering_router.py CLI not available without git checkout; GitHub canonical docs preflight complete."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -81,13 +81,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009/artifacts/11716229926",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605/artifacts/11717845412",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181403900"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181403900",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181811827",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181811827/artifacts/11717973108"
     ],
-    "last_observed_sha": "edc29e826eb0e2303ac1d776ee3fee4ee4e471ed",
+    "last_observed_sha": "b4495ceaa09d8921a9cfff0c5dc6fb8d9c203783",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "GitHub CI real source bug: engraved_assets.gd asserts 0.15<=mapped.metallic<=0.35; recent 0.06 violated across D4/D6/D8/D12/D20, not spurious. Restoring 0.20 rather than weakening thresholds. Unit/physics and art acceptance still require full exact-SHA evidence. Local engineering_router CLI unavailable because no locally mounted repo. GitHub connected docs/routes read."
+    "verification_note": "Actual Godot original b4495ce screenshot inspected: D20 detail and four-die launch still opaque slate; dark-green velvet okay but not user accepted. Previous native metric based on blue-only hue was conceptually invalid for true black obsidian; new metric requires minimum same silhouette area, stronger contrast to actual felt and independent facet dynamic range. Updated real key/card positions and tested physical D20 range. Await exact Gauntlet."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

@@ -120,7 +120,9 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
             # another graphite color would make the imported D20 near black.
             # Keep native engraved map detail, but lower its previous bright
             # graphite diffuse face value. Reflectivity remains via clearcoat.
-            stone.albedo_color = Color(0.78,0.81,0.83)
+            # Keep authored Blender albedo/normal/roughness, but tint source
+            # diffuse charcoal rather than blue-grey slate plastic.
+            stone.albedo_color = Color(0.52,0.54,0.55)
         stone.roughness_texture = original.roughness_texture
         if stone.roughness_texture != null:
             # Godot multiplies the scalar by the GLB's physical roughness
