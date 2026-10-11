@@ -91,6 +91,9 @@ jobs:
           python3 tools/visual/test_detect_android_immersive.py -v
           python3 tools/visual/test_detect_android_launcher_anr.py -v
           python3 tools/visual/test_detect_android_system_anr.py -v
+          # Cheap deterministic regression: Godot telemetry may arrive BEFORE
+          # Android framebuffer updates. Same strict metric as final critic.
+          python3 tools/visual/test_pool_editor_pixels.py -v
           mkdir -p qa-evidence/android-avd
       - uses: reactivecircus/android-emulator-runner@v2
         with:
