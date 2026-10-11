@@ -28,6 +28,29 @@ jobs:
         run: godot --headless --path . --script res://tests/m4_percentile_pair_reroll_store.gd
       - name: Actually reroll TWO original Godot Jolt D10 simultaneously twice
         run: godot --headless --path . --script res://tests/m4_percentile_pair_physics.gd
+      - name: Test player clicking original physical D100 pair in production UI
+        run: godot --headless --path . --script res://tests/m4_percentile_pair_ui_integration.gd
+      - name: Install genuine Mesa/Xvfb and FFmpeg source capture tools
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ffmpeg xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 \
+            libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 \
+            libxkbcommon0 libwayland-cursor0 python3-pil
+      - name: Record ACTUAL real D100 source pair player reroll at 24 captured fps
+        env:
+          M4_CAPTURE_SCRIPT: res://tests/m4_percentile_ui_temporal_capture.gd
+        run: bash tools/visual/run_m4_ui_capture.sh
+      - name: Critique every real physical D100 video frame and both source digits
+        run: python3 tools/visual/audit_m4_percentile_frames.py qa-evidence/m4-ui-24fps
+      - name: Preserve original video, complete every-frame sheets and real face trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-real-two-D10-percentile-reroll-24fps
+          path: qa-evidence/m4-ui-24fps/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Retest original percentile and physical D20/D6 reroll without regression
         run: |
           godot --headless --path . --script res://tests/percentile_pair_mapping.gd

@@ -130,16 +130,16 @@ func _choose_visible_row(displayed_index: int) -> void:
             var source_faces: Array = source if typeof(source) == TYPE_ARRAY else [source]
             var ordered: Array[String] = []
             for physical_face in source_faces:
-                ordered.append(str(physical_face))
+                ordered.append(str(int(physical_face)))
             var original_text := " → ".join(ordered)
             var selected_text := "(не выбран)"
             if is_advantage:
                 if not kept_source_marked and not source_faces.is_empty() and (
                         int(source_faces[-1]) == int(chosen[0])):
-                    selected_text = str(chosen[0])
+                    selected_text = str(int(chosen[0]))
                     kept_source_marked = true
             elif di < chosen.size():
-                selected_text = str(chosen[di])
+                selected_text = str(int(chosen[di]))
             var content := "  Кубик %d: %s  ·  засчитано: %s" % [
                 di+1,original_text,selected_text]
             if source_faces.size()>1:
@@ -148,13 +148,13 @@ func _choose_visible_row(displayed_index: int) -> void:
                 var digits: Array = percentile[di]
                 if digits.size()==2 and typeof(digits[0]) == TYPE_INT:
                     content += "  ·  два реальных D10: %s/%s" % [
-                        str(digits[0]),str(digits[1])]
+                        str(int(digits[0])),str(int(digits[1]))]
                 elif not digits.is_empty():
                     var full_source_trace: Array[String] = []
                     for pair in digits:
                         if typeof(pair) == TYPE_ARRAY and pair.size()==2:
                             full_source_trace.append("%s/%s" % [
-                                str(pair[0]),str(pair[1])])
+                                str(int(pair[0])),str(int(pair[1]))])
                     if not full_source_trace.is_empty():
                         content += "  ·  физические пары D10: " + " → ".join(full_source_trace)
             lines.append(content)

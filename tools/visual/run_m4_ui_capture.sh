@@ -18,7 +18,7 @@ clean() {
 trap clean EXIT
 export DISPLAY=:99
 sleep 1
-godot --path . --rendering-method gl_compatibility --script res://tests/m4_ui_temporal_capture.gd > "$OUT/godot-live.log" 2>&1 &
+godot --path . --rendering-method gl_compatibility --script "${M4_CAPTURE_SCRIPT:-res://tests/m4_ui_temporal_capture.gd}" > "$OUT/godot-live.log" 2>&1 &
 gpid=$!
 for i in $(seq 1 450); do
   test -f "$OUT/ready" && break
