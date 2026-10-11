@@ -21,15 +21,6 @@ jobs:
           godot --headless --path . --script res://tests/m4_pool_composer_jolt.gd > m4-current-composer.log 2>&1 || { tail -150 m4-current-composer.log; exit 1; }
           grep -F 'M4_ACTUAL_POOL_COMPOSER_JOLT checks=' m4-current-composer.log
           ! grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Invalid call' m4-current-composer.log
-      - name: Bash and Python source preflight for EXTRA Android test, not AVD PASS
-        run: |
-          set -eu
-          bash -n tools/visual/run_android_avd_rolls.sh
-          bash -n tools/visual/run_android_percentile_sources.sh
-          bash -n tools/visual/run_android_pool_editor.sh
-          python3 -m py_compile tools/visual/audit_android_avd_sequence.py
-          grep -F 'bash tools/visual/run_android_percentile_sources.sh' tools/visual/run_android_avd_rolls.sh
-          grep -F 'bash tools/visual/run_android_pool_editor.sh' tools/visual/run_android_avd_rolls.sh
       - name: Keep original Godot/Jolt evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -37,3 +28,19 @@ jobs:
           name: m4-current-composer-android-preflight
           path: m4-current-composer.log
           if-no-files-found: warn
+
+  android-script-syntax:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check actual Android Bash and Python in a host WITH python3
+        run: |
+          set -euo pipefail
+          python3 --version
+          bash -n tools/visual/run_android_avd_rolls.sh
+          bash -n tools/visual/run_android_percentile_sources.sh
+          bash -n tools/visual/run_android_pool_editor.sh
+          python3 -m py_compile tools/visual/audit_android_avd_sequence.py
+          grep -F 'bash tools/visual/run_android_percentile_sources.sh' tools/visual/run_android_avd_rolls.sh
+          grep -F 'bash tools/visual/run_android_pool_editor.sh' tools/visual/run_android_avd_rolls.sh
+          echo 'PASS syntax/provenance only; actual AVD touch remains NOT VERIFIED'
