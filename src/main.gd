@@ -489,14 +489,14 @@ func _make_overlay() -> void:
     var tray_caption := Label.new()
     tray_caption.name = "M5PhysicalTrayCaption"
     tray_caption.text = "ФИЗИЧЕСКИЙ ЛОТОК"
-    tray_caption.position = Vector2(48, 158)
+    tray_caption.position = Vector2(48, 125)
     tray_caption.add_theme_font_size_override("font_size", 13)
     tray_caption.add_theme_color_override("font_color", Color(0.70, 0.65, 0.54))
     root.add_child(tray_caption)
     m5_live_formula = Label.new()
     m5_live_formula.name = "M5LivePhysicalFormula"
     m5_live_formula.text = "1d6 · обычный"
-    m5_live_formula.position = Vector2(48, 183)
+    m5_live_formula.position = Vector2(48, 148)
     m5_live_formula.add_theme_font_size_override("font_size", 18)
     m5_live_formula.add_theme_color_override("font_color", Color(0.92, 0.84, 0.66))
     root.add_child(m5_live_formula)

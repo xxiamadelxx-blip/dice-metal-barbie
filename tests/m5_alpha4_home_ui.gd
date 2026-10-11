@@ -39,6 +39,13 @@ func _run() -> void:
         "Physical tray semantic caption missing")
     _check(formula != null and formula.text == "1d6 · обычный",
         "Initial physical formula must match default actual D6")
+    # Visual critic: original #38179746009 native-01-launch screenshot had
+    # both texts drawn ON TOP of the showcased D20's bevel at y~=178.
+    # Keep the lower edge of live formula ABOVE that authored 3D silhouette.
+    _check(tray != null and tray.position.y <= 130.0,
+        "Physical stage eyebrow overlaps the D20 hero die")
+    _check(formula != null and formula.position.y <= 150.0,
+        "Live formula overlays the D20 bevel in real original screenshot")
     _check(hamburger != null and history != null and composer != null,
         "Real menu, history and pool shortcuts required")
     if hamburger != null and history != null and composer != null:

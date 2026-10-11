@@ -2,16 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 Alpha4 best-of launch Godot screen: real offline header, formula readout, history + live physical composition shortcuts",
+    "task": "M5 Alpha4 genuine Godot launch refinements; keep text above first D20 hero silhouette",
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect NEW exact source unified PR #23 Gauntlet after user-requested Alpha4 launch adaptation. Verify tests/m5_compact_dock.gd + tests/m5_alpha4_home_ui.gd in Jolt/ARM64 job, actual 720x1280 native Godot screenshots and Android AVD original full 24fps clicks/physics; if a job is RED, fetch its original logs and correct without relaxing gates. Visual critique check menu/history/compose hit targets, no overlap, readable brand/formula/tray and always real result. Then implement user-specified true impact-triggered felt table movement and nat20/nat1 Jolt-only source VFX, and refine premium art. Do not copy online Alpha4 broadcast, unsupported dice, preselected visual results.",
+    "next_action": "Inspect exact new PR head Gauntlet after Alpha4 visual placement correction (eyebrow y125 and live formula y148) against unmodified Godot launch screenshot. Prior #38179746009 native test PASSED but original screenshot revealed stage text covering D20 bevel at y178; source and test now correct position. Re-check actual 720x1280 screenshot, real history and composition shortcuts, seven-die dock, 8-source AVD/Jolt, 24fps and ARM64. Then tackle authentic contact-driven velvet pulse and nat20/nat1 VFX without changing result authority. Keep PR Draft, M5 art and Nord 3 NOT VERIFIED.",
     "blockers": [
-      "New Alpha4-inspired UI candidate UNVERIFIED until exact-head Godot/Android full Gauntlet.",
-      "Prior exact-head run #38179419563 in progress at task start, may be superseded by new commit; do not claim it tested the new layout.",
-      "M5 user desired real impact felt response and natural D20 critical gold/red still need true contact/render evidence; artistic acceptance open.",
-      "OnePlus Nord 3 performance and M6 signed update remain NOT VERIFIED."
+      "Prior #38179746009 native pass screenshot confirmed initial caption and formula occluded D20; adjusted to y125/y148, NEW full Gauntlet NOT VERIFIED.",
+      "New first-screen visible UI, real history and compose controls were exercised by Godot headless tests; still need new Android pixel/24fps acceptance.",
+      "M5 premium obsidian art, authentic velvet deformation and contact sound/haptics remain OPEN; Nord 3 handset NOT VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -76,9 +75,11 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/feat/m5-approved-minimal-premium-visual-pass-1/docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/d9d6b8683a88d882e447728a1878cf424d8b28b8/docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38177825891",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179419563"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179419563",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009/artifacts/11716229926"
     ],
-    "last_observed_sha": "1120736901541249bfaeff2b9ffc11e04d068044",
+    "last_observed_sha": "63a17890254ebee661121d9170884bb09550ef5c",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
