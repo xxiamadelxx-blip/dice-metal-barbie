@@ -149,7 +149,8 @@ def git_info(root: Path) -> dict[str, str]:
 
 def parse_mode(intent: str) -> str:
     term = intent.lower()
-    if any(x in term for x in STUCK_WORDS):
+    if (re.search(r"(?<![а-яёa-z])(?:завис(?!им)|застр|stuck\\b|hang\\b)", term)
+            or "ошибка агента" in term):
         return "stuck"
     if any(x in term for x in HANDOFF_WORDS):
         return "handoff"
