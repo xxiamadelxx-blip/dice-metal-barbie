@@ -55,6 +55,10 @@ def run(path):
     assert data["status"]=="completed" and data["real_physical_groups"]>=2
     assert data["real_visible_retained_Jolt_bodies"]>=2, "Source movie lost an original Jolt die"
     assert data["peak_simultaneously_rolling"]>=2, "Jolt throws were sequential, not concurrent"
+    assert data.get("native_real_player_reroll") is True, (
+        "UI capture stopped before the player's actual physical source reroll")
+    assert len(data.get("rerolled_actual_source_trace",[])) == 2, (
+        "Original and repeated real face outcomes must both remain in evidence")
     assert (out/"done").exists()
     film=out/"m4-real-ui-24fps.mp4"
     assert film.stat().st_size>30000
@@ -108,6 +112,9 @@ def run(path):
         "identical_decoded_frames":repeats,
         "physical_formula":data["physical_formula"],
         "actual_physical_value":data["real_Jolt_result"],
+        "actual_initial_physical_value_before_reroll":data["original_real_total_before_reroll"],
+        "physical_reroll_source_faces":data["rerolled_actual_source_trace"],
+        "player_selected_real_reroll_verified":True,
         "original_retained_visible_jolt_bodies":data["real_visible_retained_Jolt_bodies"],
         "peak_truly_simultaneously_rolling_bodies":data["peak_simultaneously_rolling"],
         "engine_render_fps_during_physics":

@@ -1,0 +1,15 @@
+# M4: one real selected-die reroll, end-to-end
+
+Current independent native Godot pass: [#38126506929](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38126506929). Android final combined commit pending. Do not claim on-device FPS.
+
+## Behavior
+After a genuine complete physically simultaneous pool, the hidden upper-left drawer shows the already-rolled nonpercentile physical dice by exact group and die index. Tap **ПЕРЕБРОСИТЬ** to rethrow that die through its ORIGINAL Jolt rigid body. All untouched dice stay on the tabletop, frozen in their original REAL sleep poses, never replaced or selected from a cosmetic RNG. The selected die genuinely receives a new native random orientation, impulse and torque; the controller checks its actual sleeping upper face and Jolt's original result signal. Then `RollFormula.evaluate` recomputes total from the full `attempts` trace (old/new real upper faces). `RollPersistence.append_physical_result` independently revalidates the entire physical arithmetic and writes offline to `user://`, preserving the original and replacement face values.
+
+D20's crit aura only comes from selected natural 1 or 20 physically visible, not modified totals. Paired D100 uses two genuine D10 source bodies and is not offered as a partial digit reroll until an explicit trace policy is implemented. This is NOT equivalent to saying D&D "reroll" rules automatically apply: user explicitly chooses the die. Previous successful roll snapshots stay in the history (bounded 200), with a new reroll result as another chronological entry.
+
+## Gauntlet
+- Actual source tests: `tests/m4_physical_reroll.gd` + `tests/m4_reroll_ui_integration.gd` (source upper faces, real source body reused, preserved other physical faces/poses, preserved reroll attempts, exact recalculated total).
+- UI capture `tests/m4_ui_temporal_capture.gd` spans both full original cast and one player-selected physical rethrow in an **uncut** mobile-aspect Mesa window source video; `tools/visual/audit_m4_ui_frames.py` examines every decoded frame, builds full chronological 24-frame contact sheets and checks metadata for both source faces.
+- Android `tools/visual/run_android_avd_rolls.sh` opens the actual drawer with ADB, taps formula, waits for three genuine simultaneous Jolt bodies and the first sum, reopens the actual Android physical die picker and taps **ПЕРЕБРОСИТЬ**, demands the second Jolt real D6 signal AND the second updated formula total. `tools/visual/audit_android_avd_sequence.py` audits both outcomes and all 24fps video frames. Preserve raw screenshots/MP4 even if gate fails. Explicit tap coordinates apply only to the 720x1280 QA AVD.
+- Previous [full eight-mode native+Android Blender/MeshLab/ARM64 Gauntlet #38125778973](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38125778973) PASS on pre-reroll core SHA. MUST repeat the entire Gauntlet on the NEW combined PR SHA before claiming Android reroll acceptance.
+- M4 is STILL IN PROGRESS; detailed history, percentile-partial selection policy, hardware performance/visual sign-off remain open. M5 premium approved design waits for M4 completion.

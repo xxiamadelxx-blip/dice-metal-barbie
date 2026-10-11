@@ -5,6 +5,7 @@ signal physical_roll_requested(expression: String, mode: String, d100_mode: Stri
 signal preset_save_requested(title: String, expression: String, mode: String, d100_mode: String)
 signal preset_delete_requested(title: String)
 signal history_clear_requested
+signal physical_reroll_requested(group_index: int, die_index: int)
 
 var formula_input: LineEdit
 var name_input: LineEdit
@@ -12,6 +13,9 @@ var modes: OptionButton
 var hundred_modes: OptionButton
 var preset_select: OptionButton
 var roll_button: Button
+var reroll_picker: OptionButton
+var reroll_button: Button
+var reroll_slots: Array[Dictionary] = []
 var feedback: Label
 var history_preview: Label
 var saved_titles: Array[String] = []
@@ -23,7 +27,7 @@ func _ready() -> void:
     offset_left = 16
     offset_right = -16
     offset_top = 105
-    offset_bottom = 510
+    offset_bottom = 580
     var style := StyleBoxFlat.new()
     style.bg_color = Color(0.028,0.033,0.045,0.98)
     style.border_color = Color(0.41,0.32,0.21)
@@ -68,6 +72,28 @@ func _ready() -> void:
     roll_button.custom_minimum_size.y = 50
     roll_button.pressed.connect(_request_throw)
     content.add_child(roll_button)
+
+    # Reroll exactly ONE named source die, never change the other dice.
+    # Percentile paired D100 is intentionally excluded until its two
+    # physical D10 traces can be independently persisted across rerolls.
+    var reroll_row := HBoxContainer.new()
+    reroll_row.add_theme_constant_override("separation",8)
+    content.add_child(reroll_row)
+    reroll_picker = OptionButton.new()
+    reroll_picker.name = "ChoosePhysicalDieToReroll"
+    reroll_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    reroll_picker.custom_minimum_size.y = 44
+    reroll_picker.add_item("Сначала бросьте формулу")
+    reroll_picker.disabled = true
+    reroll_row.add_child(reroll_picker)
+    reroll_button = Button.new()
+    reroll_button.name = "RerollChosenPhysicalDie"
+    reroll_button.text = "ПЕРЕБРОСИТЬ"
+    reroll_button.custom_minimum_size.y = 44
+    reroll_button.disabled = true
+    reroll_button.pressed.connect(_request_physical_reroll)
+    reroll_row.add_child(reroll_button)
+
     var preset_row := HBoxContainer.new()
     preset_row.add_theme_constant_override("separation",8)
     content.add_child(preset_row)
@@ -131,6 +157,41 @@ func _hundred_mode() -> String:
 func _request_throw() -> void:
     physical_roll_requested.emit(formula_input.text,_selected_mode(),_hundred_mode())
 
+func _request_physical_reroll() -> void:
+    var idx := reroll_picker.selected
+    if idx < 0 or idx >= reroll_slots.size():
+        feedback.text = "Сначала выберите физический кубик."
+        return
+    var chosen: Dictionary = reroll_slots[idx]
+    physical_reroll_requested.emit(int(chosen["group"]),int(chosen["die"]))
+
+func set_real_roll_result(outcome: Dictionary) -> void:
+    reroll_slots.clear()
+    reroll_picker.clear()
+    if bool(outcome.get("ok",false)):
+        var all_groups: Array = outcome.get("groups",[])
+        for gi in range(all_groups.size()):
+            var group: Dictionary = all_groups[gi]
+            var attempts: Array = group.get("attempts",[])
+            var faces: Array = group.get("observed_faces",[])
+            var percentiles: Array = group.get("percentile_source_d10_faces",[])
+            for di in range(attempts.size()):
+                # A paired D100 cannot be partially rerolled without
+                # corrupting both preserved physical tens/ones sources.
+                var is_pair := false
+                if di < percentiles.size() and typeof(percentiles[di]) == TYPE_ARRAY:
+                    is_pair = (percentiles[di] as Array).size() == 2
+                if is_pair:
+                    continue
+                var face: int = int(faces[di]) if di < faces.size() else -1
+                reroll_slots.append({"group":gi,"die":di})
+                reroll_picker.add_item("D%d · №%d · выпало %d" %
+                    [int(group["sides"]),di+1,face])
+    if reroll_slots.is_empty():
+        reroll_picker.add_item("Нет доступных кубиков для переброса")
+    reroll_picker.disabled = reroll_slots.is_empty()
+    reroll_button.disabled = reroll_slots.is_empty()
+
 func _request_save() -> void:
     preset_save_requested.emit(name_input.text,formula_input.text,
         _selected_mode(),_hundred_mode())
@@ -164,6 +225,12 @@ func show_message(message: String) -> void:
 func set_roll_locked(locked: bool) -> void:
     roll_button.disabled = locked
     formula_input.editable = not locked
+    if locked:
+        reroll_button.disabled = true
+        reroll_picker.disabled = true
+    else:
+        reroll_button.disabled = reroll_slots.is_empty()
+        reroll_picker.disabled = reroll_slots.is_empty()
 
 func refresh_local_state(data: Dictionary) -> void:
     var presets: Dictionary = data.get("presets",{})

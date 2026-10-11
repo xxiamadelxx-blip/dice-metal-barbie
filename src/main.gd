@@ -63,6 +63,7 @@ func _setup_m4_local_and_drawer() -> void:
     advanced_panel = AdvancedDrawer.new()
     overlay.add_child(advanced_panel)
     advanced_panel.connect("physical_roll_requested",Callable(self,"_request_advanced_throw"))
+    advanced_panel.connect("physical_reroll_requested",Callable(self,"_request_m4_physical_reroll"))
     advanced_panel.connect("preset_save_requested",Callable(self,"_save_m4_preset"))
     advanced_panel.connect("preset_delete_requested",Callable(self,"_delete_m4_preset"))
     advanced_panel.connect("history_clear_requested",Callable(self,"_confirm_m4_history_clear"))
@@ -85,6 +86,8 @@ func _record_m4_result(result: Dictionary) -> void:
             advanced_panel.call("show_message",str(saved.get("error","Не удалось сохранить историю")))
 
 func _clear_pool_for_basic_throw() -> void:
+    if advanced_panel != null:
+        advanced_panel.call("set_real_roll_result",{})
     if is_instance_valid(physical_pool):
         if bool(physical_pool.get("busy")):
             return
@@ -154,6 +157,28 @@ func _request_advanced_throw(expression: String, mode: String, d100_mode: String
     if OS.is_debug_build():
         print("DICE_M4_PHYSICAL_STARTED "+expression)
 
+func _request_m4_physical_reroll(group_index: int, die_index: int) -> void:
+    if throw_button.disabled or not is_instance_valid(physical_pool):
+        return
+    var accepted: bool = physical_pool.call("reroll_one",group_index,die_index)
+    if not accepted:
+        advanced_panel.call("show_message",str(physical_pool.get("last_physical_error")))
+        return
+    # Previous valid source outcomes remain on table; only the explicitly
+    # selected physical body returns to the launch lane for a new Jolt roll.
+    last_result = -1
+    status_label.text = "ПЕРЕБРОС ВЫБРАННОГО КУБИКА…"
+    throw_button.disabled = true
+    selected_chooser.disabled = true
+    copy_button.visible = false
+    copy_button.disabled = true
+    advanced_panel.call("set_roll_locked",true)
+    advanced_panel.call("show_message","Jolt: выбранный кубик бросается заново")
+    advanced_panel.visible = false
+    advanced_open_button.disabled = true
+    if OS.is_debug_build():
+        print("DICE_M4_REAL_REROLL_STARTED group=%d die=%d" % [group_index,die_index])
+
 func _m4_physical_completed(result: Dictionary) -> void:
     if not bool(result.get("ok",false)):
         _m4_physical_failed("Итоговый расчёт недействителен")
@@ -170,6 +195,7 @@ func _m4_physical_completed(result: Dictionary) -> void:
     advanced_open_button.disabled = false
     advanced_panel.call("show_message","Итог по настоящим физическим граням: %d" % last_result)
     _record_m4_result(result)
+    advanced_panel.call("set_real_roll_result",result)
     if OS.is_debug_build():
         print("DICE_M4_PHYSICAL_COMPLETED %s=%d" % [last_advanced_formula,last_result])
 

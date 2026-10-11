@@ -61,6 +61,10 @@ jobs:
         run: godot --headless --path . --script res://tests/m4_physical_pool.gd
       - name: M4 actual drawer click plus genuine mixed Jolt and offline history
         run: godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd
+      - name: M4 selectively reroll actual Jolt body and retain all untouched real faces
+        run: godot --headless --path . --script res://tests/m4_physical_reroll.gd
+      - name: M4 click physical source picker, reroll and audit local history
+        run: godot --headless --path . --script res://tests/m4_reroll_ui_integration.gd
       - name: Physical scene integration smoke
         run: godot --headless --path . --script res://tests/physics_smoke.gd
       - name: Natural D20-only non-colliding spatial critical aura

@@ -84,6 +84,8 @@ def inspect_advanced_m4(root):
     assert film.stat().st_size>30000, "M4 Android 24fps transcode missing"
     assert (root/"m4-drawer-open.png").stat().st_size>10000
     assert (root/"completed-M4.png").stat().st_size>10000
+    assert (root/"m4-reroll-selector-open.png").stat().st_size>10000
+    assert (root/"m4-after-reroll-tap.png").stat().st_size>10000
     log=(root/"roll-M4-godot.log").read_text()
     assert "DICE_M4_PHYSICAL_STARTED 2d6+1d20-3" in log, (
         "Actual Android M4 formula button never started Godot/Jolt")
@@ -91,10 +93,16 @@ def inspect_advanced_m4(root):
         "DICE_M4_SIMULTANEOUS_COMPLETED=3" in log), (
         "Android must visibly launch and retain three actual Jolt source dice")
     matches=re.findall(r"DICE_M4_PHYSICAL_COMPLETED 2d6\+1d20-3=(-?[0-9]+)",log)
-    assert len(matches)==1,"Exactly one real Android Jolt composite result required"
+    assert len(matches)==2,"Android must physically complete original AND selected reroll"
+    assert "DICE_M4_REAL_REROLL_STARTED group=0 die=0" in log, (
+        "Real ADB click never selected the original physical D6 source")
+    assert re.search(r"DICE_M4_REAL_REROLL_COMPLETED D6=[1-6] attempts=2",log), (
+        "No real second D6 physical top face and preserved first attempt")
     assert "DICE_M4_PHYSICAL_FAILED" not in log,"Godot signaled a failed composite"
     actual=int(matches[0])
-    assert 0<=actual<=29, "2d6+1d20-3 outcome impossible"
+    rerolled=int(matches[1])
+    assert 0<=actual<=29 and 0<=rerolled<=29, (
+        "Original or rerolled physical formula result out of valid bounds")
     old=None
     frames=0
     motions=0
@@ -130,7 +138,11 @@ def inspect_advanced_m4(root):
     assert motions>=8,"M4 Android UI and Jolt physical stage remain visually frozen"
     return {"capture_key":"M4_REAL_PHYSICAL_UI","real_formula":"2d6+1d20-3",
         "true_simultaneous_Jolt_bodies":3,"real_persisting_physical_bodies":3,
-        "real_Jolt_result":actual,"real_godot_start_and_completion":True,
+        "real_Jolt_result":actual,
+        "rerolled_real_Jolt_result":rerolled,
+        "real_player_Android_reroll_tapped":True,
+        "real_D6_reroll_initial_face_preserved":True,
+        "real_godot_start_and_completion":True,
         "frame_count_all_checked":frames,"ordered_24_frame_sheets":math.ceil(frames/24),
         "frames_with_visible_changes":motions,"duplicate_frames":duplicates,
         "black_frames":black,"hud_text_ocr":"NOT_VERIFIED",
