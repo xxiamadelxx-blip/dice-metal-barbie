@@ -102,7 +102,11 @@ static func _stone_pbr_for_glb(source: Material = null) -> StandardMaterial3D:
     # (M5 tool-route Gauntlet #38174391709), despite genuinely bevelled
     # Blender geometry. Restore incident-light contrast and a narrow second
     # specular lobe. THIS is stone shading only, never a Jolt body change.
-    stone.metallic = 0.06
+    # Keep within the authored tested GLB dielectric/metallic hybrid window.
+    # The former 0.06 tripped five physically-backed art contract checks.
+    # Blacker PBR appearance comes from lower diffuse and clearcoat, NOT
+    # deleting the test's facet-reflection material invariant.
+    stone.metallic = 0.20
     stone.roughness = 0.23
     stone.clearcoat_enabled = true
     stone.clearcoat = 0.86

@@ -15,3 +15,7 @@ Actual 720×1280 `native-01-launch.png` from [Gauntlet #38180995190](https://git
 
 ## Not finished
 Actual 3D fibrous velvet anisotropy at arm's-length mobile resolution, true die edge/facet micro-polish, realistic contact-tied audio/haptics, full dark-wood and brass finish, die-origin nat20/nat1 polish, Nord 3 hardware performance. Artistic approval is NOT an automated job status.
+
+## Exact 2026-10-12 contract failure and repair
+
+[Previous exact-source Gauntlet #38181403900](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181403900) **native FAIL** during `tests/engraved_assets.gd`: five `D4/D6/D8/D12/D20 obsidian metallic response outside physical-art budget`. The actual strict art regression requires source `_stone_pbr_for_glb().metallic` in **[0.15, 0.35]**, while first edited pass was 0.06. We restore **0.20** with retained GLB mapped roughness/normal and dark glass clearcoat; do **not** change the acceptance threshold. No screenshot of the failed source's ebony rails was generated: new same-SHA native/Godot visual evidence required before any art judgment.

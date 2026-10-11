@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 improve beyond Alpha4 visuals: polished glass obsidian PBR + bevelled ebony lacquer rails; Alpha4 UX retained, fix honest multibounce Jolt felt recovery",
+    "task": "M5 premium visual art regression: repair obsidian metallic contract on original shader and inspect native/Android after valid same-run tests",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect NEXT exact SHA Gauntlet native screenshots after rail bevel/PBR modifications, Blender/MeshLab/Inkscape real artifacts, Jolt real multibounce contact and settled decay, 24fps, Android/ARM64. Previous #38180995190 native failed with legitimate second Jolt floor impact at 0.35s; avoid falsely treating subsequent real collisions as fault. Compare genuine 720x1280 launch/D20 macro to user request 'better than Alpha4' visual quality: need truly dark glass faces/highlights and lacquered bevel rails; no arbitrary art PASS solely from numerical smoke. Fix failures at source and preserve project docs in next checkpoint. On-device Nord3 still separate.",
+    "next_action": "Inspect new exact-source unified Gauntlet after fixing five Godot engraved GLB metallic range assertion failures. Test metallic 0.20 within 0.15–0.35, retain original GLB albedo+normal+roughness textures and tightened clearcoat. Then inspect native original 720x1280 scenes including ebony rail bevels, nat20/aura, source-triggered velvet and actual 24fps Android. Inspect remaining run #38181403900 if it fails physical Jolt or AVD; do not relabel green. Alpha4 is UX only, visual quality must exceed it; no merge until user-artistic acceptance.",
     "blockers": [
-      "M5 user clarified Alpha4 is UX reference, not visual ceiling; actual Godot polished black obsidian/ebony rail quality still NOT ACCEPTED until original screenshot critique.",
-      "Previous #38180995190 failed native recovery check because REAL D6 bounced twice, not broken cloth solver; new QA awaits actual physical settlement and 0.38s without contact.",
-      "New beveled, reflection-capable rails (visual-only), tuned cool stone dark-glass shading and less flat fill light unverified by CI/Android.",
-      "M5 contact sound/haptics still OPEN, real OnePlus Nord3 M6 still NOT_VERIFIED."
+      "Former exact-head #38181403900 native scene art contract RED: current PBR metallic 0.06 out of tested 0.15–0.35 for all five sculpted D4/D6/D8/D12/D20; 0.20 fix in new candidate UNVERIFIED.",
+      "New ebony beveled rail and stone clearcoat actual native screenshots not yet produced because failed contract short-circuited visual capture.",
+      "Jolt/24fps/AVD previous combined run status not yet all resolved, full new CI must validate untouched old M4.",
+      "Actual user-facing art quality and OnePlus Nord3 hardware are NOT VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -80,13 +80,14 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009/artifacts/11716229926",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605/artifacts/11717845412"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38180542605/artifacts/11717845412",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181403900"
     ],
-    "last_observed_sha": "59c8432163f8bbf23660295b3e2b7dc7c4b6fdf9",
+    "last_observed_sha": "edc29e826eb0e2303ac1d776ee3fee4ee4e471ed",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Preflight real previous native logs and original 720x1280 screenshot performed; Alpha4 used for UX only. New code uses visual ArrayMesh chamfer rails, keeps original StaticBody3D collision boxes; studio ambient reduced and more controlled facet shadow, obsidian diffuse reduced with tighter clearcoat. Source screens and Android acceptance NOT VERIFIED."
+    "verification_note": "GitHub CI real source bug: engraved_assets.gd asserts 0.15<=mapped.metallic<=0.35; recent 0.06 violated across D4/D6/D8/D12/D20, not spurious. Restoring 0.20 rather than weakening thresholds. Unit/physics and art acceptance still require full exact-SHA evidence. Local engineering_router CLI unavailable because no locally mounted repo. GitHub connected docs/routes read."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
