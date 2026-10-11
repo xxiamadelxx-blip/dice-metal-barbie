@@ -144,6 +144,70 @@ for spec in '4 85 1115 0' '6 220 1115 0' '8 355 1115 0' '12 490 1115 0' '20 625 
   fi
   grep -E "DICE_QA_(STARTED|COMPLETED) D$sides" "$roll_log" > "qa-evidence/android-avd/result-D$sides.txt"
 done
+# M4 actual Android UI click-through. Still one real APK: never simulate
+# random outputs or paste a prerecorded video; real ADB taps + Jolt log.
+echo "AVD M4: begin genuine Android screenrecord before opening advanced drawer"
+adb logcat -c || true
+adb exec-out screencap -p > qa-evidence/android-avd/m4-before-drawer.png
+adb shell screenrecord --size 720x1280 --bit-rate 4500000 \
+  --time-limit 175 "/sdcard/dice-M4.mp4" &
+m4_record_pid=$!
+sleep 1
+adb shell input tap 50 97
+sleep 1
+adb exec-out screencap -p > qa-evidence/android-avd/m4-drawer-open.png
+python3 - <<'PY'
+from PIL import Image, ImageChops
+a=Image.open('qa-evidence/android-avd/m4-before-drawer.png').convert('RGB')
+b=Image.open('qa-evidence/android-avd/m4-drawer-open.png').convert('RGB')
+assert a.size==b.size==(720,1280),'Android M4 viewport shifted'
+diff=ImageChops.difference(a.crop((17,106,703,510)), b.crop((17,106,703,510))).convert('L')
+changed=sum(n for i,n in enumerate(diff.histogram()) if i>16)
+print('M4 actual Android drawer pixels changed:',changed)
+assert changed>7500,'M4 advanced drawer did not visibly open on Android'
+PY
+# Actual native screenshot established exact 720x1280 hit target:
+# "БРОСИТЬ ФОРМУЛУ" occupies x32..688 and y259..310.
+adb shell input tap 355 285
+m4_completed=0
+m4_failed=0
+m4_log=qa-evidence/android-avd/roll-M4-godot.log
+for attempt in $(seq 1 82); do
+  sleep 2
+  adb logcat -d -v time -s godot:I '*:S' > "$m4_log" || true
+  if grep -Fq 'DICE_M4_PHYSICAL_FAILED ' "$m4_log"; then
+    m4_failed=1
+    echo "FAIL: real Jolt composite failed on Android AVD"
+    break
+  fi
+  if grep -Fq 'DICE_M4_PHYSICAL_STARTED 2d6+1d20-3' "$m4_log" &&
+     grep -Eq 'DICE_M4_PHYSICAL_COMPLETED 2d6\+1d20-3=-?[0-9]+' "$m4_log"; then
+    m4_completed=1
+    break
+  fi
+done
+if test "$m4_completed" = 1 || test "$m4_failed" = 1; then
+  sleep 1.5
+  recorder_pids="$(adb shell pidof screenrecord | tr -d '\r' || true)"
+  if test -n "$recorder_pids"; then adb shell kill -2 $recorder_pids || true; fi
+fi
+wait "$m4_record_pid" || true
+adb logcat -d -v time -s godot:I '*:S' > "$m4_log" || true
+adb exec-out screencap -p > qa-evidence/android-avd/completed-M4.png
+adb pull "/sdcard/dice-M4.mp4" "qa-evidence/android-avd/dice-M4-source.mp4"
+adb shell rm "/sdcard/dice-M4.mp4"
+test -s qa-evidence/android-avd/dice-M4-source.mp4
+ffmpeg -hide_banner -loglevel error -y \
+  -i qa-evidence/android-avd/dice-M4-source.mp4 -vf fps=24 \
+  -c:v libx264 -preset ultrafast -crf 20 -pix_fmt yuv420p \
+  qa-evidence/android-avd/roll-M4-24fps.mp4
+if test "$m4_completed" != 1; then
+  echo "FAIL: real M4 Android mixed-physical throw did not finish by 164s"
+  python3 tools/visual/snapshot_failed_avd_frames.py qa-evidence/android-avd M4 || true
+  tail -60 "$m4_log"
+  exit 16
+fi
+grep -E 'DICE_M4_PHYSICAL_(STARTED|COMPLETED)' "$m4_log" > qa-evidence/android-avd/result-M4.txt
 cat qa-evidence/android-avd/roll-D*-godot.log > qa-evidence/android-avd/godot-qa-events-all.log
 adb logcat -d -v time > qa-evidence/android-avd/logcat.txt || true
 if grep -Eq 'QueuePresentKHR failed|FATAL EXCEPTION.*org.dicemetalbarbie' qa-evidence/android-avd/logcat.txt; then
@@ -151,4 +215,4 @@ if grep -Eq 'QueuePresentKHR failed|FATAL EXCEPTION.*org.dicemetalbarbie' qa-evi
   grep -E 'QueuePresentKHR failed|FATAL EXCEPTION' qa-evidence/android-avd/logcat.txt | tail -12
   exit 7
 fi
-echo "PASS 8 genuine Android emulator physical screen recordings created"
+echo "PASS 8 baseline physical Android videos plus 1 real M4 advanced UI video created"

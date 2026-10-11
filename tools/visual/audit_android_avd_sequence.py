@@ -74,11 +74,70 @@ def inspect(root, sides):
             "duplicate_frames":duplicates,"near_black_frames":blackouts,
             "hud_result_ocr":"NOT_VERIFIED","avd_physical_fps":"NOT_VERIFIED"}
 
+def inspect_advanced_m4(root):
+    """Additional ORIGINAL Android screenrecord of actual tapped advanced UI.
+    This extends rather than weakens the existing eight baseline dice gates.
+    """
+    source=root/"dice-M4-source.mp4"
+    film=root/"roll-M4-24fps.mp4"
+    assert source.stat().st_size>30000, "Original M4 Android source recording missing"
+    assert film.stat().st_size>30000, "M4 Android 24fps transcode missing"
+    assert (root/"m4-drawer-open.png").stat().st_size>10000
+    assert (root/"completed-M4.png").stat().st_size>10000
+    log=(root/"roll-M4-godot.log").read_text()
+    assert "DICE_M4_PHYSICAL_STARTED 2d6+1d20-3" in log, (
+        "Actual Android M4 formula button never started Godot/Jolt")
+    matches=re.findall(r"DICE_M4_PHYSICAL_COMPLETED 2d6\+1d20-3=(-?[0-9]+)",log)
+    assert len(matches)==1,"Exactly one real Android Jolt composite result required"
+    assert "DICE_M4_PHYSICAL_FAILED" not in log,"Godot signaled a failed composite"
+    actual=int(matches[0])
+    assert 0<=actual<=29, "2d6+1d20-3 outcome impossible"
+    old=None
+    frames=0
+    motions=0
+    duplicates=0
+    black=0
+    sheets=[]
+    with (root/"every-avd-frame-M4.jsonl").open("w") as file:
+        for frame,image in video_frames(film):
+            # Include physical stage after drawer disappears; retain entire
+            # original frame in chronological 24-per-second storyboards.
+            crop=image.crop((80,150,640,930)).resize((96,144)).convert("L")
+            luminance=ImageStat.Stat(crop).mean[0]
+            diff=0 if old is None else sum(ImageChops.difference(crop,old).histogram()[10:])
+            moving=old is not None and diff>36
+            duplicate=old is not None and diff==0
+            motions+=int(moving)
+            duplicates+=int(duplicate)
+            black+=int(luminance<8)
+            file.write(json.dumps({"frame":frame,"t_s":round(frame/24,4),
+                "source":"REAL_ANDROID_X86_64_JOLT_M4_ADVANCED_UI",
+                "mean_luma":round(luminance,2),"changed_pixels":diff,
+                "exact_duplicate":bool(duplicate),"black_frame":luminance<8})+"\n")
+            sheets.append((frame,image.resize((120,215))))
+            if len(sheets)==24:
+                save_every_frame_sheet(root,"M4",frame//24,sheets)
+                sheets=[]
+            old=crop
+            frames+=1
+    if sheets:
+        save_every_frame_sheet(root,"M4",(frames-1)//24,sheets)
+    assert frames>=120,"M4 Android actual video shorter than 5 seconds"
+    assert black==0,"M4 Android video has black game stage"
+    assert motions>=8,"M4 Android UI and Jolt physical stage remain visually frozen"
+    return {"capture_key":"M4_REAL_PHYSICAL_UI","real_formula":"2d6+1d20-3",
+        "real_Jolt_result":actual,"real_godot_start_and_completion":True,
+        "frame_count_all_checked":frames,"ordered_24_frame_sheets":math.ceil(frames/24),
+        "frames_with_visible_changes":motions,"duplicate_frames":duplicates,
+        "black_frames":black,"hud_text_ocr":"NOT_VERIFIED",
+        "recording_fps":24,"unique_render_fps":"NOT_VERIFIED"}
+
 def main(root):
     all_dice=[inspect(root,s) for s in (4,6,8,12,20,10,100,"100_PAIR")]
+    m4=inspect_advanced_m4(root)
     report={"provenance":"REAL_ANDROID_EMULATOR_X86_64_ADB_SCREENRECORD",
-            "results":all_dice,
-            "frames_examined":sum(x["frames_checked_sequentially"] for x in all_dice),
+            "results":all_dice,"m4_real_clicked_physical_ui":m4,
+            "frames_examined":sum(x["frames_checked_sequentially"] for x in all_dice)+m4["frame_count_all_checked"],
             "status":"TEMPORAL_EVIDENCE_ONLY",
             "limitations":["24fps extracted screen frames can repeat if AVD GPU/source is slower",
                            "actual FPS and numerical face/HUD consistency unverified",

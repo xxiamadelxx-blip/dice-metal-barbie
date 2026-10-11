@@ -49,6 +49,18 @@ jobs:
         run: bash tools/visual/run_temporal_capture.sh
       - name: Sequentially decode and inspect EVERY video frame
         run: python3 tools/visual/audit_roll_sequence.py qa-evidence/temporal
+      - name: Record M4 advanced drawer and genuine multi-body Jolt formula
+        run: bash tools/visual/run_m4_ui_capture.sh
+      - name: Analyze every original M4 game UI screenshot at 24-frame cadence
+        run: python3 tools/visual/audit_m4_ui_frames.py qa-evidence/m4-ui-24fps
+      - name: Preserve M4 original UI video and all ordered frame sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-m4-advanced-24fps-every-frame
+          path: qa-evidence/m4-ui-24fps/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Publish full videos, per-frame metrics, result logs and contact sheets
         if: always()
         uses: actions/upload-artifact@v4

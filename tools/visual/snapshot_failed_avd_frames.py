@@ -12,6 +12,8 @@ from audit_roll_sequence import video_frames, save_every_frame_sheet
 
 def capture(root: Path, key: str) -> int:
     movie = root / ("roll-D%s-24fps.mp4" % key)
+    if key == "M4" and not movie.is_file():
+        movie = root / "roll-M4-24fps.mp4"
     if not movie.is_file():
         raise FileNotFoundError(movie)
     previous = None
