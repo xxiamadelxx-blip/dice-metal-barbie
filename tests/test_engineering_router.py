@@ -122,6 +122,19 @@ class EngineeringRouterTests(unittest.TestCase):
             self.assertEqual([], validate_state(updated, self.reg))
 
 
+    def test_no_verified_checkpoint_without_evidence(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "docs/handoff").mkdir(parents=True)
+            (root / "docs/handoff/ACTIVE_ROUTING_HANDOFF.json").write_text(
+                json.dumps(self.saved), encoding="utf-8")
+            from argparse import Namespace
+            args = Namespace(route="code", task="test", owner="agent",
+                             status="verified", next_action="close",
+                             blocker=[], evidence=[], verification_note="")
+            with self.assertRaisesRegex(RouterError, "requires authentic"):
+                checkpoint(root, self.reg, args)
+
     def test_identical_failed_approach_budget_across_agent_sessions(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
