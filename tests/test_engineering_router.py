@@ -119,6 +119,7 @@ class EngineeringRouterTests(unittest.TestCase):
             self.assertEqual(updated["active"]["route"], "audio-haptics")
             self.assertEqual(done["checkpoint"]["evidence"], [])
             self.assertEqual(updated["active"]["last_verified_sha"], "")
+            self.assertEqual(updated["active"]["last_observed_sha"], "")
             self.assertEqual([], validate_state(updated, self.reg))
 
 
