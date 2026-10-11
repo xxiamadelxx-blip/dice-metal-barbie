@@ -130,6 +130,8 @@ def validate_state(state: dict[str, Any], registry: dict[str, Any]) -> list[str]
             errors.append("invalid handoff " + key)
     if active.get("status") == "blocked" and not active.get("blockers"):
         errors.append("blocked task without specific blocker")
+    if active.get("status") == "verified" and not active.get("evidence"):
+        errors.append("verified state without original evidence")
     if "incidents" in state and not isinstance(state["incidents"], dict):
         errors.append("incident ledger must be object")
     return errors
@@ -264,6 +266,8 @@ def checkpoint(root: Path, registry: dict[str, Any], args: argparse.Namespace) -
         raise RouterError("route not in registry")
     if args.status == "blocked" and not args.blocker:
         raise RouterError("blocked checkpoint requires --blocker")
+    if args.status == "verified" and not args.evidence:
+        raise RouterError("verified checkpoint requires authentic --evidence")
     g = git_info(root)
     entry = {
         "task": args.task, "route": args.route, "status": args.status,
