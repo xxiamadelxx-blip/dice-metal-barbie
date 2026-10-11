@@ -61,6 +61,8 @@ jobs:
         run: godot --headless --path . --script res://tests/m4_roll_statistics.gd
       - name: M4 genuine Jolt mixed physical dice and paired percentile
         run: godot --headless --path . --script res://tests/m4_physical_pool.gd
+      - name: M4 D20 edge recovery: 12 real signed mixed Jolt throws, genuine top faces
+        run: godot --headless --path . --script res://tests/m4_d20_edge_stress.gd
       - name: M4 actual drawer click plus genuine mixed Jolt and offline history
         run: godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd
       - name: M4 real pool composer buttons, guarded expression and Jolt history

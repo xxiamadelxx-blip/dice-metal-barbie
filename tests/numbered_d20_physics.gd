@@ -69,7 +69,7 @@ func _run() -> void:
         if not finished:
             break
         _check(active.failure == "", "D20 failed: %s" % active.failure)
-        _check(active.edge_recovery_count <= 3, "D20 physical recovery exceeded budget")
+        _check(active.edge_recovery_count <= D20.MAX_EDGE_RECOVERY_ATTEMPTS, "D20 physical recovery exceeded budget")
         if active.failure != "":
             break
         var top: int = Ico.top_value(active.global_transform.basis.orthonormalized(), 0.02)
