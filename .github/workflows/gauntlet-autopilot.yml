@@ -29,10 +29,7 @@ jobs:
           TASK_SPEC: ${{ inputs.task_spec }}
         run: |
           set -euo pipefail
-          case "$TASK_SPEC" in
-            qa/gauntlet/tasks/*.json) ;;
-            *) echo "Refusing task spec outside approved directory"; exit 2 ;;
-          esac
+          [[ "$TASK_SPEC" =~ ^qa/gauntlet/tasks/[A-Za-z0-9_-]+[.]json$ ]] || { echo "Refusing task spec outside approved directory"; exit 2; }
           test -f "$TASK_SPEC"
           git diff --quiet
           git diff --cached --quiet
