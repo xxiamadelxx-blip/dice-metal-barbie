@@ -1,4 +1,4 @@
-name: Gauntlet autonomous isolated builder-critic loop
+name: Gauntlet autonomous independent LOCAL builder-critic loop
 on:
   workflow_dispatch:
     inputs:
@@ -18,7 +18,12 @@ concurrency:
 jobs:
   independent-agent-loop:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 42
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      GAUNTLET_AI_BACKEND: ollama_local
+      GAUNTLET_BUILDER_MODEL: qwen2.5-coder:1.5b
+      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:3b
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,16 +39,14 @@ jobs:
           git diff --quiet
           git diff --cached --quiet
           python3 -m unittest discover -s ${{ github.event.repository.name == 'dm-ai-campaign-app' && 'scripts/tests' || 'tests' }} -p 'test_gauntlet_*.py' -v
+      - name: Run two distinct local models, CPU only (no API key)
+        run: bash scripts/gauntlet_setup_local.sh
       - name: Start a unique isolated work branch, never edit main
         run: git checkout -b "gauntlet/autofix-${{ github.run_id }}"
       - name: Run real distinct builder and critic model calls with tests
         id: autonomy
         env:
           TASK_SPEC: ${{ inputs.task_spec }}
-          GAUNTLET_AI_URL: ${{ vars.GAUNTLET_AI_URL }}
-          GAUNTLET_AI_TOKEN: ${{ secrets.GAUNTLET_AI_TOKEN }}
-          GAUNTLET_BUILDER_MODEL: ${{ vars.GAUNTLET_BUILDER_MODEL }}
-          GAUNTLET_CRITIC_MODEL: ${{ vars.GAUNTLET_CRITIC_MODEL }}
         run: |
           set -euo pipefail
           python3 scripts/gauntlet_autopilot.py --spec "$TASK_SPEC" --root . --out "$RUNNER_TEMP/gauntlet-proof"

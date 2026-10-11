@@ -14,7 +14,7 @@ python3 scripts/engineering_router.py audit
 python3 scripts/engineering_router.py validate
 ```
 
-The router checks local git state, chooses a relevant evidence path, provides alternatives and never pretends an uninstalled tool or reviewer ran. To persist progress for another agent, create an evidence-backed `checkpoint`, **commit and push** the handoff JSON. Actual scope-specific tests and independent critique are performed through the pre-existing [Gauntlet Loop](docs/GAUNTLET_LOOP.md), not faked by the routing CLI. This infrastructure does not install every creative/security program and is not itself product feature completion.
+The default independent critic uses **local Ollama in GitHub Actions** without an API key (see [Gauntlet Autopilot](docs/GAUNTLET_AUTOPILOT.md)). The router checks local git state, chooses a relevant evidence path, provides alternatives and never pretends an uninstalled tool or reviewer ran. To persist progress for another agent, create an evidence-backed `checkpoint`, **commit and push** the handoff JSON. Actual scope-specific tests and independent critique are performed through the pre-existing [Gauntlet Loop](docs/GAUNTLET_LOOP.md), not faked by the routing CLI. This infrastructure does not install every creative/security program and is not itself product feature completion.
 
 Offline Dungeons & Dragons 3D dice for Android (initial target OnePlus Nord 3). Godot 4.6.3 / Jolt Physics / GDScript.
 

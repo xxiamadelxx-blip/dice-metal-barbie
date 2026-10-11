@@ -2,7 +2,7 @@
 
 **Repository:** `xxiamadelxx-blip/dice-metal-barbie`  
 **Authority:** `AGENTS.md` → this document → `config/engineering_routes.json` (machine-readable routing) → `docs/handoff/ACTIVE_ROUTING_HANDOFF.json` (durable current state).  
-**Runtime implementation:** `scripts/engineering_router.py`. **Actual independent review:** `scripts/gauntlet_autopilot.py` + `scripts/gauntlet_evidence.py` when external reviewer is truly available.
+**Runtime implementation:** `scripts/engineering_router.py`. **Actual independent review:** `scripts/gauntlet_autopilot.py` + `scripts/gauntlet_evidence.py` when separate local Ollama models actually execute.
 
 This is the **single mandatory entrypoint** for user instructions like **«продолжай»**, **«завис»**, **«застрял»**, **«передай новому агенту»**, or any fresh substantial Dice task. A chat phrase cannot trigger a shell command by itself. The *agent who receives it* must read this repository protocol and invoke the entrypoint before taking further action. No outside chatbot can be programmatically forced to read GitHub unless it has repo access; report that limitation rather than claiming guaranteed automatic adoption.
 
@@ -84,7 +84,7 @@ The last URL above is a **placeholder command example**, not an actual test reco
 | Android/release | Godot export, Android AVD, apksigner, ADB | APK/cert hashes + on-phone install/upgrade, no loss of existing app data |
 | Supply chain/licensing | source manifests/SBOM, OSV/Trivy if useful | license/asset provenance and pinned dependencies |
 | Observability | local structured logs, CI artifacts, optional external monitoring | actual log source and event identity, no app runtime telemetry requirement |
-| QA critic | exact-SHA tests, two stateless model roles if authorized | truly independent reviewer evidence, closed findings, no failed required gate |
+| QA critic | exact-SHA tests, separate local Ollama models by default | truly independent reviewer evidence, closed findings, no failed required gate |
 
 ### Existing visual subsystem: preserve instead of duplicating
 
@@ -104,7 +104,7 @@ Use a **C4 context/container/component graph** and an ADR for consequential chan
 
 - **Routing:** `config/engineering_routes.json` lists possible tools, alternatives and mandatory artifacts. The selection algorithm chooses the best matched domain, not all tools. It never installs software; `audit` reports `binary-found` vs `not-detected`, distinct from functioning export, authorized connector, successful APK and visual acceptance.
 - **Adaptive checks:** use the cheapest relevant gate first and escalate proportionally. Python-only docs/route work should not trigger a full Blender/Android build. Physics changes require Godot/Jolt; rendered roll/UI changes require full temporal evidence; release requires Android. A clean source compile is not a milestone PASS.
-- **Gauntlet:** an isolated approved task → frozen SHA → real narrow checks → separate raw-artifact critic → fix and new SHA → broad regression. `scripts/gauntlet_autopilot.py` only runs real external model calls with an authorized endpoint/token; without them mark independent critique `NOT_VERIFIED`. See `docs/GAUNTLET_AUTOPILOT.md`.
+- **Gauntlet:** an isolated approved task → frozen SHA → real narrow checks → separate raw-artifact critic → fix and new SHA → broad regression. `scripts/gauntlet_autopilot.py` runs two separate **local** Ollama models by default with no service API key; absent/failed model review is `NOT_VERIFIED`. See `docs/GAUNTLET_AUTOPILOT.md`.
 - **Anti-stall:** no more than two identical failed attempts without new evidence/hypothesis/tool. Unavailable tools change route; do not pretend they ran or ask the user to buy services for an offline personal app.
 - **Security:** never commit provider/API tokens, debug/release keystores, private user data or unlicensed media; no paid provider or external account without approval. Running untrusted code/test commands needs an isolated runner and bounded time/resource budget.
 - **Performance:** real hardware vs emulator vs Mesa software-rendered capture are separate evidence classes; 24fps encoding does not establish 24 distinct renders or 60fps on OnePlus Nord 3.
@@ -159,3 +159,8 @@ These are specialized **static/signal checks**, not a substitute for a separatel
 This is a trackable local gate. For cross-agent persistence, the agent **must commit/push** the handoff file. The GitHub connector can provide an equivalent update when a terminal is unavailable; never claim an automatic background monitor if no scheduled or live process exists.
 
 **SHA terminology:** `last_observed_sha` means the git commit visible to the agent, even before testing. `last_verified_sha` is set only for a `verified` checkpoint with recorded real evidence. Neither a Git SHA nor an evidence URL is proof that the linked test actually passed; the receiving agent must inspect the original CI artifact.
+
+
+### Local independent critic (the default, without OpenRouter)
+
+On Linux GitHub Actions, `.github/workflows/gauntlet-autopilot.yml` prepares CPU-only Ollama through `scripts/gauntlet_setup_local.sh`. Different weights `qwen2.5-coder:1.5b` (builder) and `qwen2.5-coder:3b` (critic) get separate raw prompts; the latter sees committed source diff and test output. No GitHub Secret or API-credit key is used. It is a narrow, low-resource supplementary code review, not a substitute for Godot physics, 24fps screenshots or real Android handset QA. Verify the actual first live run before claiming working independent critic. See `docs/GAUNTLET_AUTOPILOT.md`.

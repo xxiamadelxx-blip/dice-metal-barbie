@@ -12,15 +12,28 @@ This implementation is a bounded **execution system**, not just a checklist. It 
 6. Builder fixes observable defects, **new source SHA**, repeats tests and fresh critic; at most three iterations. Critical findings remain open until the critic explicitly marks the same ID resolved with real new evidence. No silent downgrade to PASS.
 7. `scripts/gauntlet_evidence.py` rechecks the complete trail and final exact SHA. The workflow can push the accepted local commits **only** to a fresh `gauntlet/autofix-...` branch and proposes a **draft PR**; it never merges, deploys, changes a live database, uses an existing feature branch as a write target, or declares Android/UX release readiness.
 
-## Provider is mandatory (no pretend AI)
+## Default critic: local CPU Ollama, ZERO service keys
 
-GitHub Models inference was retired 30 July 2026. The workflow cannot use `models:read` as an imaginary free model. The local runner uses a configured **OpenAI-compatible HTTPS chat-completions endpoint**; its runner process needs:
+**Canonical DEFAULT from 2026-10-11: no OpenRouter, Groq, credits, API keys or new accounts.** For Dice use `.github/workflows/gauntlet-autopilot.yml` with `scripts/gauntlet_setup_local.sh`. This workflow pulls two **different** local model weights on the temporary GitHub-hosted Ubuntu CPU runner:
 
-- `GAUNTLET_AI_URL`: absolute HTTPS chat completions endpoint (GitHub Actions **repository variable**).
-- `GAUNTLET_BUILDER_MODEL`, `GAUNTLET_CRITIC_MODEL`: explicit supported IDs (**repository variables**).
-- `GAUNTLET_AI_TOKEN`: personal/repository-provided provider token (**Actions secret**, never in git).
+- BUILDER `qwen2.5-coder:1.5b` for a scoped small source edit;
+- CRITIC `qwen2.5-coder:3b` for a separate stateless review of the exact candidate SHA, diff and actual test log.
 
-Missing/unauthorized/rate-limited endpoint => **NOT_VERIFIED**, not success; no fallback that invents a critic. Do not auto-open paid API accounts, change subscriptions or transfer existing DM provider credentials. For a repository that cannot use GitHub Actions due to billing, run the same Python CLI in an authorized isolated Codex/Codespace runner and keep logs locally; no PC on the user's side is required. Never run this against user content with an unapproved third-party provider.
+Official Ollama model registry provides these quantized weights at ~986 MB and ~1.9 GB. The models run **inside GitHub's ephemeral Linux runner**, not on the owner's Android phone or a remote paid inference API. The server binds to `127.0.0.1:11434` only. `GAUNTLET_AI_BACKEND=ollama_local` forces a fixed localhost URL and sends **no** Authorization header. The two model IDs must differ. Original test logs, review and gate verdict still pass through the existing `gauntlet_evidence.py` acceptance record. Critical / major findings carry between attempts.
+
+For a standalone authorized Linux shell with Docker available:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+export GAUNTLET_AI_BACKEND=ollama_local
+export GAUNTLET_BUILDER_MODEL=qwen2.5-coder:1.5b
+export GAUNTLET_CRITIC_MODEL=qwen2.5-coder:3b
+bash scripts/gauntlet_setup_local.sh
+```
+
+**Critical honesty:** Separate local models, separate stateless HTTP calls and saved raw responses establish role isolation; they do not imply human-grade quality, semantic video review, rigorous security analysis or phone acceptance. CPU generation can be slow. A small coder model may fail to create valid structured JSON or understand a complex Godot refactor: then `NOT_VERIFIED` and escalate to the human/ChatGPT development agent. Keep `GAUNTLET_AUTOPILOT` out of automatic every-commit execution to avoid unnecessary downloads; invoke on scoped tasks. GitHub Actions is available without metered service API on this public repo, but downloads still consume time and bandwidth.
+
+**Legacy external provider:** `GAUNTLET_AI_BACKEND=openai` still supports optional separate authorized HTTPS OpenAI-compatible endpoint/token. It is NOT used by the default Dice workflow. Previous OpenRouter free models returned HTTP 429/timeouts, and are no longer a critical-path dependency. Existing owner tokens should be deleted from GitHub Actions if no other task uses them; never request or expose those values in a PR.
 
 ## Example owner-approved task file
 
