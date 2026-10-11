@@ -1,0 +1,100 @@
+name: Local independent code critic (Ollama / no API key)
+
+# A tiny, bounded live test. No external AI provider and no production edits.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gauntlet-local-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gauntlet-local-critic-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  local-independent-critic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      GAUNTLET_AI_BACKEND: ollama_local
+      GAUNTLET_BUILDER_MODEL: qwen2.5-coder:1.5b
+      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:3b
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove Gauntlet local role separation without models
+        run: python3 -m unittest discover -s tests -p 'test_gauntlet_*.py' -v
+
+      - name: Start local CPU-only Ollama isolated on loopback
+        run: |
+          set -euo pipefail
+          docker run -d --name dice-gauntlet-ollama --pull always \
+            -p 127.0.0.1:11434:11434 \
+            -e OLLAMA_NUM_PARALLEL=1 -e OLLAMA_MAX_LOADED_MODELS=1 \
+            ollama/ollama:latest
+          for n in $(seq 1 45); do
+            if curl --fail --silent --show-error --max-time 2 http://127.0.0.1:11434/api/version; then
+              break
+            fi
+            sleep 2
+          done
+          curl --fail --silent --max-time 8 http://127.0.0.1:11434/api/version
+
+      - name: Pull two different local models (no key, no quota)
+        run: |
+          set -euo pipefail
+          docker exec dice-gauntlet-ollama ollama pull qwen2.5-coder:1.5b
+          docker exec dice-gauntlet-ollama ollama pull qwen2.5-coder:3b
+          docker exec dice-gauntlet-ollama ollama list
+
+      - name: Start disposable branch and confirm test fixture unchanged
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git diff --cached --exit-code
+          test "$(git status --porcelain | wc -l)" -eq 0
+          git checkout -b "gauntlet/local-critic-smoke-${{ github.run_id }}"
+          python3 -c "from runpy import run_path; assert run_path('qa/gauntlet/smoke_target.py')['standard_d6_faces']() == 5"
+
+      - name: Run real locally hosted builder → tests → DIFFERENT critic
+        run: |
+          set -euo pipefail
+          python3 scripts/gauntlet_autopilot.py \
+            --spec qa/gauntlet/tasks/openrouter_smoke.json \
+            --root . --out "$RUNNER_TEMP/local-critic-proof"
+          python3 scripts/gauntlet_evidence.py \
+            "$RUNNER_TEMP/local-critic-proof/gauntlet-record.json" \
+            --expected-sha "$(git rev-parse HEAD)" \
+            --repository "$GITHUB_REPOSITORY"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          proof = Path(os.environ["RUNNER_TEMP"]) / "local-critic-proof"
+          r = json.loads((proof / "gauntlet-record.json").read_text())
+          assert r["builder_id"] == "agent-builder:qwen2.5-coder:1.5b"
+          step = r["iterations"][-1]
+          assert step["critic"]["reviewer_id"] == "isolated-critic:qwen2.5-coder:3b"
+          assert step["critic"]["verdict"] == "PASS"
+          assert step["checks"][0]["status"] == "PASS"
+          assert step["critic"]["raw_artifact_review_ref"]
+          print("PASS: TWO distinct LOCAL models executed; reviewer verdict and original evidence recorded")
+          PY
+          test "$(git diff --name-only "${{ github.sha }}" HEAD)" = "qa/gauntlet/smoke_target.py"
+          git status --porcelain
+
+      - name: Keep independent evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ollama-local-independent-critic-${{ github.run_id }}
+          path: ${{ runner.temp }}/local-critic-proof/
+          if-no-files-found: warn
+          retention-days: 7
