@@ -112,6 +112,66 @@ if grep -Eq 'DICE_M4_POOL_APPLIED|DICE_M4_PHYSICAL_STARTED' "$log"; then
   echo 'FAIL: opening the editor implicitly applied a draft or started Jolt'
   exit 54
 fi
+# SECOND REAL-ANDROID INTERACTION ROUND: add/remove, flip physical group sign
+# twice, CANCEL pending draft, reopen original persistent valid expression.
+# Coordinates derived from exact original successful AVD full-height screenshot
+# #38164276191, not a programmatically emitted pressed() signal or a mock.
+touch_pool_event() {
+  local wanted="$1" occurrences="$2" filename="$3" failure="$4" found=0
+  for attempt in $(seq 1 14); do
+    sleep .65
+    adb logcat -d -v time -s godot:I '*:S' > "$log" || true
+    adb exec-out screencap -p > "$out/$filename"
+    found="$(grep -Fc "$wanted" "$log" || true)"
+    if test "$found" -ge "$occurrences"; then return 0; fi
+  done
+  echo "FAIL: real Android pool control did not modify active source: $wanted"
+  exit "$failure"
+}
+# D4 is the genuine initial OptionButton group die type. Add third PHYSICAL D4.
+adb shell input tap 524 514
+touch_pool_event 'DICE_M4_POOL_EDIT formula=2d6+1d20+1d4-3' 1 \
+  m4-pool-original-added-d4.png 62
+# The added third group is selected. Remove it with the real row hitbox.
+adb shell input tap 601 566
+touch_pool_event 'DICE_M4_POOL_EDIT formula=2d6+1d20-3' 1 \
+  m4-pool-original-removed-d4.png 63
+# Select the second ORIGINAL D20 group and flip its signed contribution.
+adb shell input tap 135 340
+sleep .6
+adb shell input tap 437 565
+touch_pool_event 'DICE_M4_POOL_EDIT formula=2d6-1d20-3' 1 \
+  m4-pool-original-negative-d20.png 64
+# Undo the negative sign with ANOTHER real touch; this is not a saved roll.
+adb shell input tap 437 565
+touch_pool_event 'DICE_M4_POOL_EDIT formula=2d6+1d20-3' 2 \
+  m4-pool-original-restored-d20.png 65
+# Real Cancel must discard the modal and leave the underlying formula alone.
+adb shell input tap 200 1000
+sleep 1
+adb exec-out screencap -p > "$out/m4-pool-original-after-cancel.png"
+adb logcat -d -v time -s godot:I '*:S' > "$log" || true
+if grep -Eq 'DICE_M4_POOL_APPLIED|DICE_M4_PHYSICAL_STARTED' "$log"; then
+  echo 'FAIL: Android Cancel applied draft or launched Jolt'
+  exit 66
+fi
+# Reopen via actual touchscreen. Re-emitted original formula is ground truth
+# that cancel did NOT apply any editor draft to the active physical pool.
+adb shell input tap 632 175
+reopened=0
+for attempt in $(seq 1 14); do
+  sleep .7
+  adb logcat -d -v time -s godot:I '*:S' > "$log" || true
+  adb exec-out screencap -p > "$out/m4-pool-original-reopened-after-cancel.png"
+  opens="$(grep -Fc 'DICE_M4_POOL_EDITOR_OPEN formula=2d6+1d20-3' "$log" || true)"
+  if test "$opens" -ge 2; then reopened=1; break; fi
+done
+if test "$reopened" != 1; then
+  echo 'FAIL: real Android Cancel did not preserve original formula on reopen'
+  exit 67
+fi
+# Existing final test still MUST change D6 quantity/modifier, Apply, throw
+# four TRUE rigid bodies and open actual saved history.
 # Real 720x1280 screenshot from prior native Jolt visual Gauntlet placed
 # D6 group count +1 near (280,565); flat modifier +1 near (573,618).
 adb shell input tap 280 565

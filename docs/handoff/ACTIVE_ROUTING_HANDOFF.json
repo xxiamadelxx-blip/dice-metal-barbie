@@ -2,15 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 physical pool editor: real Android count/modifier/apply/Jolt/history accepted; continue remaining editor touch cases and D20 source-selection UX",
+    "task": "M4 real Android editor coverage: add/remove D4, flip D20 sign, Cancel/reopen, then real four-body Jolt",
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering agent via canonical router",
-    "next_action": "Independently test remaining REAL Android pool editor Add/Remove/Sign/Cancel touch paths and source-result invariants, rather than only programmatic pressed.emit; consider explicit eligible D20 group choice for advantage/crit under multiple D20 groups. Do not advance M5 until M4 requirements complete.",
+    "next_action": "Run current exact-SHA Gauntlet for new expanded 10-step Android player editor; inspect original ADB source video/screens and event order. On red, correct real hitbox/timing only after original visual evidence. On pass update M4 checkpoint; then address explicit selected D20 group semantics if needed.",
     "blockers": [
-      "Remaining M4 mobile gesture coverage: editor Add/Remove/flip-sign/cancel and arbitrary pool D20 selection NOT VERIFIED; do not extrapolate from count/modifier to every button.",
-      "Independent local Qwen 7B ran (#38164275943) but critique paraphrased old Android source events rather than the new pool editor; meaningful NEW code review NOT VERIFIED despite workflow success.",
-      "OnePlus Nord 3 physical APK installation, production signing upgrade, on-device FPS/haptics and M5 visual/audio artistic approval NOT VERIFIED."
+      "Expanded Android real-touch ADD/REMOVE/SIGN/CANCEL scenario NOT_VERIFIED on new commit. Prior #38164276191 count/modifier/four-Jolt/history PASS remains evidence for earlier exact SHA.",
+      "Local Qwen prior critic was historical and generic; substantive source-adversarial review of expanded editor NOT_VERIFIED.",
+      "Real OnePlus Nord3 FPS/install/upgrade and M5 aesthetics/audio NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -49,11 +49,11 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164275943",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164275943/artifacts/11711522933"
     ],
-    "last_observed_sha": "1d89b5eae7e1927c9ac09261f0bdd5ef8de4d3ab",
+    "last_observed_sha": "4db968c3feacb99f0dead996e3e27bd4a119d117",
     "last_verified_sha": "7ab524091748142b033bceafbdfe89c30e061f38",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Full combined exact-code #38164276191 SUCCESS 9/9 including genuine Android touchscreen editor, physical formula 2d6+1d20-3 → 3d6+1d20-2 via 2 taps/Apply, four Jolt bodies settle total 23, history 14 rows, 1156 pool-video frames and 7774 total Android frames, 0 black; original PNG/screens/log examined. Source tested 7ab5240, bot pinned same-run GLB-only commit. CLI enter not executed in chat; real router CI PASS. Qwen execution but substantive critique NOT_VERIFIED."
+    "verification_note": "Full prior exact source Jolt/Android pool count+modifier+apply 23 PASS. Extended actual Add/Remove/Sign/Cancel ADB test to be run; no result claimed."
   },
   "incidents": {}
 }

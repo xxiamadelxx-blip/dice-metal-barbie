@@ -233,6 +233,10 @@ def inspect_physical_pool_editor_m4(root):
     log=(root/"roll-M4-POOL-godot.log").read_text()
     assert original.stat().st_size>30000 and film.stat().st_size>30000, "M4 pool source video missing"
     files=["m4-pool-original-drawer.png","m4-pool-original-dialog.png",
+           "m4-pool-original-added-d4.png","m4-pool-original-removed-d4.png",
+           "m4-pool-original-negative-d20.png","m4-pool-original-restored-d20.png",
+           "m4-pool-original-after-cancel.png",
+           "m4-pool-original-reopened-after-cancel.png",
            "m4-pool-original-count-changed.png","m4-pool-original-modifier-changed.png",
            "m4-pool-original-after-apply.png","m4-pool-original-physical-result.png",
            "m4-pool-original-saved-history.png"]
@@ -251,6 +255,23 @@ def inspect_physical_pool_editor_m4(root):
         assert e in log, "Real Android Godot event missing: "+e
         positions.append(log.index(e))
     assert positions==sorted(positions), "Player edit/throw/history events out of order"
+    full_ux_trace=[
+        "DICE_M4_POOL_EDITOR_OPEN formula=2d6+1d20-3",
+        "DICE_M4_POOL_EDIT formula=2d6+1d20+1d4-3",
+        "DICE_M4_POOL_EDIT formula=2d6+1d20-3",
+        "DICE_M4_POOL_EDIT formula=2d6-1d20-3",
+        "DICE_M4_POOL_EDIT formula=2d6+1d20-3",
+        "DICE_M4_POOL_EDITOR_OPEN formula=2d6+1d20-3",
+        "DICE_M4_POOL_EDIT formula=3d6+1d20-3",
+        "DICE_M4_POOL_EDIT formula=3d6+1d20-2",
+        "DICE_M4_POOL_APPLIED formula=3d6+1d20-2",
+        "DICE_M4_PHYSICAL_STARTED 3d6+1d20-2"
+    ]
+    cursor=0
+    for event in full_ux_trace:
+        pos=log.find(event,cursor)
+        assert pos>=cursor, "A real distinct Android edit/cancel action absent: "+event
+        cursor=pos+len(event)
     assert "DICE_M4_PHYSICAL_FAILED" not in log, "Source physical cast failed"
     totals=re.findall(r"DICE_M4_PHYSICAL_COMPLETED 3d6\+1d20-2=(-?[0-9]+)",log)
     assert len(totals)==1 and 2<=int(totals[0])<=36, (
@@ -263,8 +284,18 @@ def inspect_physical_pool_editor_m4(root):
                                    second.crop((50,170,680,1130))).convert("L")
         return sum(n for v,n in enumerate(diff.histogram()) if v>16)
     assert changed(files[0],files[1])>15000, "No rendered modal, only telemetry"
-    assert changed(files[1],files[2])>75, "Count tap produced no new rendered pixels"
-    assert changed(files[2],files[3])>75, "Modifier tap produced no new rendered pixels"
+    for earlier,later,label in [
+        (files[1],files[2],"D4 add"),
+        (files[2],files[3],"D4 remove"),
+        (files[3],files[4],"negative D20 group"),
+        (files[4],files[5],"restore D20 sign"),
+        (files[5],files[6],"actual cancel"),
+        (files[6],files[7],"actual reopen"),
+        (files[7],files[8],"D6 quantity"),
+        (files[8],files[9],"flat modifier")
+    ]:
+        assert changed(earlier,later)>75, (
+            "Actual Android editor touch lacked distinct visible pixels: "+label)
     last=None;frame_count=0;motion=0;duplicates=0;black=0;sheet=[]
     with (root/"every-avd-frame-M4-POOL.jsonl").open("w") as output:
         for idx,image in video_frames(film):
@@ -290,6 +321,9 @@ def inspect_physical_pool_editor_m4(root):
         "source_formula":"3d6+1d20-2","physical_bodies":4,
         "final_Jolt_total":int(totals[0]),"count_and_modifier_touch":True,
         "player_confirmed_formula_before_roll":True,
+        "android_real_touch_add_remove_d4":True,
+        "android_real_touch_signed_d20_twice":True,
+        "android_real_cancel_and_reopen_preserved_original_formula":True,
         "real_local_history_opened":True,"source_frames_inspected":frame_count,
         "nominal_24fps_sheets":math.ceil(frame_count/24),
         "moving_frames":motion,"duplicates":duplicates,"black_frames":black,
