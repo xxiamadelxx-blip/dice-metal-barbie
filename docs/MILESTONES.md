@@ -6,7 +6,7 @@
 | M1 Architecture | APPROVED | Godot 4.6 and Jolt selection |
 | M2 Foundation | AUTOMATED PASS; DEVICE NOT VERIFIED | [PR #1](https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/1) / [Issue #5](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/5) |
 | M3 Physical dice | **CLOUD GAUNTLET PASS / PHYSICAL DEVICE & FINE-GRAIN FAIRNESS OPEN** | [Full #38095490855](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38095490855) Blender, Jolt/ARM64, 8 real native and Android video modes PASS. [450 real Jolt trials #38095307038](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38095307038) 450/450, 2,001 checks, 0 errors; individual D100 face statistics/OnePlus Nord 3 not verified. M5 artistic approval also open. |
-| M4 Mechanics and state | NOT COMPLETE | Advanced formulas, rerolls, advantage/disadvantage, history, presets, persistence |
+| M4 Mechanics and state | **IN PROGRESS (source-level math and offline storage QA; UX/integration open)** | Dedicated real Godot QA on `qa/m4-formula`: signed formulas, real face trace (including both percentile D10), selected D20 natural crit, local user:// file/presets and non-destructive corruption safeguards. Must bind real multi-body Jolt, history/preset controls, Android clicks and 24fps screenshot setlist before M4 acceptance. |
 | M5 UX & Polish | NOT COMPLETE | Approved minimalist UI, actual sound/haptics, critical aura/flash, design review |
 | M6 Release | NOT STARTED | Stable signing, on-device install/upgrade, FPS/long-run QA, GitHub Release |
 

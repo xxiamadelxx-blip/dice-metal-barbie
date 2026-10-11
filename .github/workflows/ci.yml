@@ -53,6 +53,10 @@ jobs:
           done
       - name: Deterministic mechanics tests
         run: godot --headless --path . --script res://tests/smoke.gd
+      - name: M4 actual-face mixed formula, modifiers, selected D20 and D100 trace tests
+        run: godot --headless --path . --script res://tests/m4_roll_formula.gd
+      - name: M4 offline versioned results/presets with integrity and corruption QA
+        run: godot --headless --path . --script res://tests/m4_roll_persistence.gd
       - name: Physical scene integration smoke
         run: godot --headless --path . --script res://tests/physics_smoke.gd
       - name: Natural D20-only non-colliding spatial critical aura

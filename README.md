@@ -2,12 +2,12 @@
 
 Offline Dungeons & Dragons 3D dice for Android (initial target OnePlus Nord 3). Godot 4.6.3 / Jolt Physics / GDScript.
 
-## Current stage · 2026-10-10
+## Current stage · 2026-10-11
 
 - **M0 and M1:** user-approved requirements, minimalist overhead concept and Godot/Jolt architecture.
 - **M2:** automated foundation PASS, phone hardware QA NOT VERIFIED.
 - **M3:** CLOUD PHYSICS + VISUAL QA PASS; actual-phone and individual D100 face-probability QA OPEN. Seven real physical types **D4/D6/D8/D10/D12/D20/D100** and **D100_PAIR** (two independent D10) map genuine Jolt upper faces to outcomes, with no forced result. [Unified Gauntlet #38095490855](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38095490855): Blender/MeshLab, full eight native/Android 24fps recordings, physical Jolt/ARM64 all PASS. [Long-run 450-throw Jolt experiment #38095307038](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38095307038): 150 D10, 200 physical D100, 100 paired D100, 2,001 checks, zero failures, no large 10-group frequency anomaly. Statistical equality across EACH of 100 faces and real OnePlus device FPS/legibility NOT VERIFIED. Do not mistake successful mechanical tests for premium M5 design sign-off.
-- **M4–M6:** full rules/history/presets, polished UI/audio/haptics/VFX, production signing and release QA NOT completed.
+- **M4:** pure signed formula evaluator with real physical-face trace, D20-only advantage/disadvantage and versioned user:// history/preset store in progress; Godot QA tests first, actual multi-Jolt group orchestration, interface panels and real Android click/24fps review still OPEN. **M5–M6:** approved premium art, audio/haptics, stable device signing/release remain NOT completed.
 
 Choose one of **D4 / D6 / D8 / D10 / D12 / D20 / D100** (D100 additionally offers single physical D100 vs two physical percentile D10), throw, watch a genuine Jolt body bounce and settle on the fixed overhead table, see/copy its numeric result. Draft PR #23 now includes an experimental die-origin 3D natural-1/natural-20 D20 pulse, verified in Godot native cloud captures; production visual/phone acceptance remains OPEN. This is a developer physics testbed, not the approved final UI.
 
