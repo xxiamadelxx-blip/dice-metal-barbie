@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "repository": "xxiamadelxx-blip/dice-metal-barbie",
+  "active": {
+    "task": "Reconcile latest live Dice PR #23 with main; continue user-approved M4 mechanics and then M5/M6 in project plan (do not silently change milestone)",
+    "route": "agent-operations",
+    "status": "paused",
+    "owner": "next Dice agent",
+    "next_action": "Run python3 scripts/engineering_router.py enter --intent 'продолжай'; read AGENTS.md / docs/ENGINEERING_ROUTER.md; fetch latest main and PR #23 HEAD, CI, and current stage before selecting a new task. Prior user says previous Dice agent was stopped.",
+    "blockers": [],
+    "evidence": [
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/pull/23"
+    ],
+    "last_verified_sha": "",
+    "branch": "main",
+    "updated_at": "2026-10-11",
+    "verification_note": "Project stage/PR status needs fresh verification; nothing here proves current feature PASS. User-provided instruction: previous Dice agent stopped."
+  }
+}
