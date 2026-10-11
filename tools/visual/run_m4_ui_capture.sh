@@ -2,7 +2,7 @@
 # Genuine Godot/Mesa mobile viewport, full 24fps capture of M4 drawer click
 # and physical mixed Jolt throw, not Android or interpolated frames.
 set -euo pipefail
-OUT=qa-evidence/m4-ui-24fps
+OUT=${M4_CAPTURE_OUT:-qa-evidence/m4-ui-24fps}
 mkdir -p "$OUT"
 rm -f "$OUT"/ready "$OUT"/go "$OUT"/done "$OUT"/saved "$OUT"/summary.json
 Xvfb :99 -screen 0 720x1280x24 -nolisten tcp > "$OUT/xvfb.log" 2>&1 &

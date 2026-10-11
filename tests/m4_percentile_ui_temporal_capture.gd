@@ -2,7 +2,7 @@ extends SceneTree
 ## True 720x1280 Godot/Mesa recorder, 24 captured frames per second.
 ## Both independently numbered real physical percentile D10 bodies visibly
 ## roll TWICE; every actual old/new upper face becomes a local history entry.
-const OUT := "res://qa-evidence/m4-ui-24fps"
+const OUT := "res://qa-evidence/m4-percentile-24fps"
 func _initialize() -> void:
     call_deferred("_run")
 func _write(key: String, content: String) -> bool:

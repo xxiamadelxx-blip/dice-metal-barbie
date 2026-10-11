@@ -110,6 +110,48 @@ func _run() -> void:
             "Third independent D100 physical source pair missing from disk")
     _check(not p.reroll_one(9,9),
         "Invalid selection must not move a real D10 or fabricate a result")
+    # Stress: TWO logical D100s = FOUR actual D10s. Reroll only the
+    # SECOND pair; the first pair and the physical D4 must retain their
+    # original settled faces without source-slot confusion.
+    latest={}
+    physical_failure=""
+    _check(p.begin("2d100+1d4","normal","pair"),
+        "Five original Jolt bodies for 2d100+1d4 failed to spawn")
+    _check(await _wait(p),"The five actual Jolt source bodies did not settle")
+    _check(physical_failure.is_empty() and latest.get("ok",false),
+        "Two original real D100 percentile pairs failed")
+    if latest.get("ok",false):
+        var original_sources: Array = p.get("_active")
+        _check(original_sources.size()==5,
+            "2d100+1d4 must mean four genuine D10 + one D4")
+        var first_digit_tens: int = int(original_sources[0].get("result"))
+        var first_digit_ones: int = int(original_sources[1].get("result"))
+        var other_d4: int = int(original_sources[4].get("result"))
+        var second_old_tens: int = int(original_sources[2].get("result"))
+        var second_old_ones: int = int(original_sources[3].get("result"))
+        latest={}
+        physical_failure=""
+        _check(p.reroll_one(0,1),
+            "Cannot select second physical percentile D100 pair")
+        _check(await _wait(p),"Second genuine D100 Jolt pair failed to stop")
+        _check(physical_failure.is_empty() and latest.get("ok",false),
+            "Second percentile pair produced no valid real upper faces")
+        if latest.get("ok",false):
+            var after_sources: Array = p.get("_active")
+            _check(after_sources.size()==5 and after_sources[2]==original_sources[2] and
+                after_sources[3]==original_sources[3],
+                "Second D100 must reroll the SAME two original source rigid bodies")
+            _check(int(after_sources[0].get("result"))==first_digit_tens and
+                int(after_sources[1].get("result"))==first_digit_ones and
+                int(after_sources[4].get("result"))==other_d4,
+                "Reroll of D100 #2 modified D100 #1 or the real D4")
+            var previous_pairs: Array = latest["groups"][0]["percentile_source_d10_faces"][1]
+            _check(previous_pairs.size()==2 and
+                previous_pairs[0]==[second_old_tens,second_old_ones] and
+                previous_pairs[1]==[after_sources[2].get("result"),after_sources[3].get("result")],
+                "Wrong percentage pair slot rethrown or original digits lost")
+            _check(store.append_physical_result(latest).get("ok",false),
+                "Offline history could not preserve ONLY second logical D100 rethrow")
     if FileAccess.file_exists(FILE):
         DirAccess.remove_absolute(ProjectSettings.globalize_path(FILE))
     print("M4_GENUINE_JOLT_PERCENTILE_REROLL checks=%d failures=%d" % [
