@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 artist PBR vertical slice actual Blender D20 numbered-face UV atlas, 1024 textures and physical Cycles AO bake; preserve real physics",
+    "task": "M5 real D20 Cycles AO audit: fix falsely green uniform-black image output and enforce pixel-content acceptance",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Check NEW exact head unified Gauntlet Blender production first: D20 5x4 separate numbered-face planar UV atlas on exact Boolean cut stone + three 1024px source PBR maps + true Cycles same-mesh cavity AO PNG, inspect real bake logs and GLB UV TEXCOORD_0, generator manifest, hash evidence. Fail closed if AO missing; fix Blender UV/bake source, do not weaken test. Then inspect Godot Mesa actual 720x1280 and Android/ARM64 24fps/source results. IMPORTANT AO is artifact only, NOT runtime imported until separate glTF material Occlusion port QA, and high-to-low normal baking not done. Rest D4/D6/D8/D12 256px original pipeline maintained to limit blast radius; physical Jolt unchanged.",
+    "next_action": "Run exact-head Blender Gauntlet again. First actual #38183549384 artifact 11718920962 found 1024 D20 AO PNG entirely BLACK (all 1,048,576 pixels value 0) even though operation finished and first validator falsely passed. Updated Blender image preclear WHITE use_clear=False + stronger nonuniform min/max/std/dark fraction checks; validate new raw file via Pillow and original Cycles logs before claiming AO. If still black, instrument bake image colorspace + target and fix; do not fabricate AO. UV 5x4 atlas verified on old actual Boolean mesh and new CI. New Godot 24fps/AArch64/Avoid merging until artifacts proven.",
     "blockers": [
-      "New D20 UV atlas and true Cycles same-mesh AO bake candidate NOT VERIFIED by any real CI yet; needs headless Blender confirmation.",
-      "AO baked as standalone lookdev artifact NOT linked into glTF/Godot occlusion until compatible import tested; honest status enforced by validator.",
-      "Alpha4 UX only, production visual quality still NOT ACCEPTED; texture slice D20 alone won't fix velvet/ebony.",
-      "OnePlus Nord 3 handset, FPS and signing M6 remain NOT_VERIFIED."
+      "Real actual original Cycles AO png #38183549384 is SOLID BLACK (1024px every pixel 0); old signal cavity_pixels=1048576 bogus. Must reject and repair; no successful AO yet.",
+      "D20 separate UV atlas and 1024 base/normal/roughness were generated correctly at first pass; AO real output and Android visual approval remain OPEN.",
+      "Rest of project functionality from latest branch unverified exact full Gauntlet because new source commit reruns checks.",
+      "Nord 3 hardware FPS/signed M6 still OPEN."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -85,13 +85,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181811827",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38181811827/artifacts/11717973108",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434/artifacts/11717812770"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434/artifacts/11717812770",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384/artifacts/11718920962"
     ],
-    "last_observed_sha": "6bd605c40cad663596db366ba485551b31186683",
+    "last_observed_sha": "fa78a9d25ad5a601ac78bd0df5ba1b9b7fc00cd4",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Read canonical router and live source. Former Blender D20 texture procedural 256 with spherical UV, no bake. New D20-only 5x4 independent UV atlas with strong padding, 1024 base/roughness/normal, actual Cycles AO from exact Boolean-cut Blender visual shell, per-source manifest and CI validation; physical Jolt hull/face output unchanged. AO not yet linked into glTF runtime, no AI provider connected. Cloud Gauntlet at this new SHA pending."
+    "verification_note": "Inspected uploaded actual Blender zip with PIL: d20_cycles_baked_ao.png RGB quantiles [0,0,0,0,0], unique count 1, PNG 13922B, invalid. Generator incorrectly accepted 1048576 dark pixels as cavities. Image explicitly initialized white before real Cycles AO bake, use_clear False, checker now requires nonuniform/std>.025 and no globally black result, with manifest and stdlib validator both fail closed. Root cause not yet proven; no fake success."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

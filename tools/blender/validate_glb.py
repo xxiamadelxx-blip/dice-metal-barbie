@@ -22,6 +22,8 @@ def validate(root):
         'Do not claim an AO map is imported when its runtime hookup is untested')
     assert ao.get('cavity_pixels',0)>2000 and ao.get('cavity_min',1.0)<.88, (
         'AO bake has no significant engraved surface cavity shadow')
+    assert ao.get('luma_std',0)>.025 and ao.get('dark_fraction',1.0)<.65, (
+        'AO image uniformly black or nonphysical: fail closed')
     for name in [ao['file'],'d20_obsidian_albedo.png',
                  'd20_obsidian_roughness.png','d20_obsidian_normal.png']:
         raw=(root/name).read_bytes()

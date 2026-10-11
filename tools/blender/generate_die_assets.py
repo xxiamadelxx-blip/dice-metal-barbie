@@ -446,8 +446,14 @@ def bake_true_d20_ao(shell, out):
     scene.cycles.device='CPU'
     scene.render.bake.margin=10
     baked=bpy.data.images.new('D20_Cycles_TrueCavityAO',width=1024,
-                             height=1024,alpha=False,float_buffer=False)
-    baked.generated_color=(1.0,1.0,1.0,1.0)
+                             height=1024,alpha=True,float_buffer=False)
+    # Blender's new alpha=False BLANK image exported solid black even though
+    # bpy.ops.object.bake returned FINISHED. Explicitly create an opaque
+    # white non-image background so there is no ambiguity between unbaked
+    # pixels and true physically occluded pockets.
+    baked.pixels.foreach_set(np.ones(1024*1024*4,dtype=np.float32))
+    baked.update()
+    scene.render.bake.use_clear=False
     material=shell.data.materials[0]
     nodes=material.node_tree.nodes
     target=nodes.new('ShaderNodeTexImage')
@@ -467,15 +473,27 @@ def bake_true_d20_ao(shell, out):
     values=pixels.reshape((-1,4))[:,0]
     # Excluding untouched white atlas background: a real cavity on the
     # engraved render shell must contain occluded pixels.
-    touched=values[values<.98]
-    assert len(touched)>2000 and float(np.min(touched))<.88, (
-        'D20 AO bake missing meaningful physical cavities')
-    print('D20_CYCLES_AO_BAKED: pixels=%d min=%.4f' %
-          (len(touched),float(touched.min())),flush=True)
+    touched=values[values<.88]
+    bright=values[values>.93]
+    dark_fraction=float(len(touched))/float(len(values))
+    contrast=float(np.std(values))
+    print('D20 AO RAW pixel min/max/mean/std: %.4f %.4f %.4f %.4f dark=%.4f' %
+          (float(values.min()),float(values.max()),float(values.mean()),
+           contrast,dark_fraction),flush=True)
+    # A bake that is ALL BLACK OR ALL WHITE is INVALID even if Blender
+    # writes a PNG and reports operation FINISHED. Original first iteration
+    # was exactly 1,048,576 black pixels, previously a false CI PASS.
+    assert len(touched)>2000 and len(bright)>2000 and contrast>.025, (
+        'D20 AO bake contains uniform black/white output, not physical cavity shading')
+    assert dark_fraction<.65, 'D20 AO has implausible solid-black fill instead of localized occlusion'
+    print('D20_CYCLES_AO_BAKED: pixels=%d min=%.4f contrast=%.4f' %
+          (len(touched),float(values.min()),contrast),flush=True)
     return {'file':destination.name,'resolution':1024,
             'bake':'Blender Cycles AO from exact Boolean-cut render shell',
             'cavity_pixels':int(len(touched)),
-            'cavity_min':float(touched.min()),
+            'cavity_min':float(values.min()),
+            'luma_std':contrast,
+            'dark_fraction':dark_fraction,
             'runtime_ao': 'NOT_IN_GLTF_YET_IMPORT_TEST_REQUIRED'}
 
 def export_and_preview(sides,out,font,maps):

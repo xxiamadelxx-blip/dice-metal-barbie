@@ -17,3 +17,7 @@ User directive 2026-10-12: apply actual artist + AI-assisted texture production 
 2. Read original Cycles and actual Godot 720×1280 and D20 macro frames, compare before/after. Need balanced dark obsidian and readable numbering, not flat clay.
 3. If above real tests pass, next is separate AO source glTF import test with `glTF Material Output` or explicit supported Godot occlusion material and a **true high→low** bake; then physically scanned or AI image-to-material black velvet and lacquered ebony, licensing proofs.
 4. Full independent human aesthetic review still OPEN, no claimed AI generator until genuinely used. OnePlus Nord3 hardware still OPEN.
+
+## Cycles bake first-run false-green found from raw PNG (2026-10-12)
+
+The real Blender #38183549384 D20 AO PNG was **ALL BLACK** on every 1,048,576 pixel, though Cycles claimed the bake finished and the earlier validator counted all black pixels as 'cavities'. This is a true content failure. New bake initializes a fully white image with no bake clear, then requires **both dark and bright areas**, significant image standard deviation and fewer than 65% pixels dark. The source remains RED if true AO is not generated. This changes only the visual lookdev tool, not the app physics. No 'AI created PBR art' claims.
