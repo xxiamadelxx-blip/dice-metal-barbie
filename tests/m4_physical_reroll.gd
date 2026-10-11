@@ -93,6 +93,34 @@ func _run() -> void:
             reroll_index+2, "Physical reroll metadata inconsistent")
         print("M4_REAL_REROLL #%d true_face=%d total=%d" %
             [reroll_index+1,int(selected.get("result")),int(observed["total"])])
+    # The selected D20 can also be rerolled physically. A natural 1/20
+    # critical must refer to its NEW actual uppermost face, without creating
+    # an aura from modifier arithmetic or another body.
+    observed = {}
+    failed_message = ""
+    var first_d20 := preserved_20
+    var current_first_d6: int = int(selected.get("result"))
+    _check(pool.call("reroll_one",1,0),
+        "Cannot physically reroll selected original D20 after D6 rerolls")
+    _check(await _wait(pool),"Actual selected D20 did not settle")
+    _check(failed_message.is_empty() and bool(observed.get("ok",false)),
+        "D20 reroll failed to return genuine top-face evidence")
+    if bool(observed.get("ok",false)):
+        var d20_series: Array = observed["groups"][1]["attempts"][0]
+        _check(d20_series.size()==2 and int(d20_series[0])==first_d20,
+            "D20 reroll dropped initial real upper face")
+        var new_d20 := int(unchanged_d20.get("result"))
+        _check(int(d20_series[-1])==new_d20 and new_d20>=1 and new_d20<=20,
+            "Rerolled D20 upper face not physically valid")
+        _check(int(selected.get("result"))==current_first_d6 and
+            int(unchanged_d6.get("result"))==preserved_6,
+            "D20 reroll silently changed other real D6 source values")
+        var critical := str(observed.get("natural_d20_critical","none"))
+        var expected_critical := "success" if new_d20==20 else ("failure" if new_d20==1 else "none")
+        _check(critical==expected_critical,
+            "Selected D20 natural critical did not match its real source")
+        _check(bool(observed.get("all_source_bodies_remain_visible",false)),
+            "D20 physical reroll hid other dice from the table")
     var last_verified := observed.duplicate(true)
     _check(not pool.call("reroll_one",15,15),
         "Nonexistent die selection must not invent physical outcomes")

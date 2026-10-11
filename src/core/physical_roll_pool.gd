@@ -247,6 +247,13 @@ func _execute_physical_reroll(slot: int, group_index: int, die_index: int) -> vo
     if not bool(final.get("ok",false)):
         _abort(str(final.get("error","Неверная трасса физического переброса")))
         return
+    # D20 natural-critical aura belongs to the actually rerolled,
+    # selected D20 only. The retained nonselected bodies cannot acquire it.
+    if actual_sides == 20 and group_index == _chosen_d20:
+        var selected_faces: Array = final["groups"][group_index]["kept_faces"]
+        if selected_faces.size() == 1 and int(selected_faces[0]) == new_top and (
+                new_top == 1 or new_top == 20):
+            CriticalAura.spawn(target,20,new_top)
     final["physical_bodies"] = _active.size()
     final["all_source_bodies_remain_visible"] = true
     final["rerolled_physical_group_index"] = group_index

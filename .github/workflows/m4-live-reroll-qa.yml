@@ -51,6 +51,10 @@ jobs:
           path: qa-evidence/m4-ui-24fps/
           if-no-files-found: warn
           retention-days: 14
+      - name: Validate source scripts for Android physical selected-reroll recording
+        run: |
+          python3 -m py_compile tools/visual/audit_android_avd_sequence.py
+          bash -n tools/visual/run_android_avd_rolls.sh
       - name: Real-face formula/reroll-trace and offline storage regressions
         run: |
           godot --headless --path . --script res://tests/m4_roll_formula.gd

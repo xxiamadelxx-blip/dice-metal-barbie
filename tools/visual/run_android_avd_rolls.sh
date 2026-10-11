@@ -188,6 +188,46 @@ for attempt in $(seq 1 82); do
     break
   fi
 done
+# Open ACTUAL Android M4 drawer again and tap first real D6's reroll.
+# The coordinates are verified from original 720x1280 Android screenshot:
+# Menu x50,y97; "ПЕРЕБРОСИТЬ" just below formula button x590,y341.
+m4_reroll_completed=0
+m4_reroll_failed=0
+if test "$m4_completed" = 1; then
+  sleep 1
+  adb exec-out screencap -p > qa-evidence/android-avd/m4-before-reroll-drawer.png
+  adb shell input tap 50 97
+  sleep 1
+  adb exec-out screencap -p > qa-evidence/android-avd/m4-reroll-selector-open.png
+  python3 - <<'PY'
+from PIL import Image,ImageChops
+a=Image.open('qa-evidence/android-avd/m4-before-reroll-drawer.png').convert('RGB')
+b=Image.open('qa-evidence/android-avd/m4-reroll-selector-open.png').convert('RGB')
+assert a.size==b.size==(720,1280), 'M4 reroll Android UI viewport changed'
+diff=ImageChops.difference(a.crop((17,110,703,580)),
+                           b.crop((17,110,703,580))).convert('L')
+changed=sum(v for i,v in enumerate(diff.histogram()) if i>16)
+print('M4 Android reroll selector drawer changed pixels',changed)
+assert changed>8500,'Actual Android source-reroll drawer is not visible'
+PY
+  adb shell input tap 590 340
+  sleep 1
+  adb exec-out screencap -p > qa-evidence/android-avd/m4-after-reroll-tap.png
+  for attempt in $(seq 1 35); do
+    adb logcat -d -v time -s godot:I '*:S' > "$m4_log" || true
+    if grep -Fq 'DICE_M4_PHYSICAL_FAILED ' "$m4_log"; then
+      m4_reroll_failed=1
+      break
+    fi
+    if grep -Fq 'DICE_M4_REAL_REROLL_STARTED group=0 die=0' "$m4_log" &&
+       grep -Eq 'DICE_M4_REAL_REROLL_COMPLETED D6=[1-6] attempts=2' "$m4_log" &&
+       test "$(grep -Ec 'DICE_M4_PHYSICAL_COMPLETED 2d6\+1d20-3=-?[0-9]+' "$m4_log")" -eq 2; then
+      m4_reroll_completed=1
+      break
+    fi
+    sleep 2
+  done
+fi
 if test "$m4_completed" = 1 || test "$m4_failed" = 1; then
   sleep 1.5
   recorder_pids="$(adb shell pidof screenrecord | tr -d '\r' || true)"
@@ -203,13 +243,13 @@ ffmpeg -hide_banner -loglevel error -y \
   -i qa-evidence/android-avd/dice-M4-source.mp4 -vf fps=24 \
   -c:v libx264 -preset ultrafast -crf 20 -pix_fmt yuv420p \
   qa-evidence/android-avd/roll-M4-24fps.mp4
-if test "$m4_completed" != 1; then
-  echo "FAIL: real M4 Android mixed-physical throw did not finish by 164s"
+if test "$m4_completed" != 1 || test "$m4_reroll_completed" != 1; then
+  echo "FAIL: actual Android physical mixed-throw or player-selected D6 reroll did not complete"
   python3 tools/visual/snapshot_failed_avd_frames.py qa-evidence/android-avd M4 || true
   tail -60 "$m4_log"
   exit 16
 fi
-grep -E 'DICE_M4_PHYSICAL_(STARTED|COMPLETED)' "$m4_log" > qa-evidence/android-avd/result-M4.txt
+grep -E 'DICE_M4_PHYSICAL_(STARTED|COMPLETED)|DICE_M4_REAL_REROLL_(STARTED|COMPLETED)' "$m4_log" > qa-evidence/android-avd/result-M4.txt
 cat qa-evidence/android-avd/roll-D*-godot.log > qa-evidence/android-avd/godot-qa-events-all.log
 adb logcat -d -v time > qa-evidence/android-avd/logcat.txt || true
 if grep -Eq 'QueuePresentKHR failed|FATAL EXCEPTION.*org.dicemetalbarbie' qa-evidence/android-avd/logcat.txt; then
@@ -217,4 +257,4 @@ if grep -Eq 'QueuePresentKHR failed|FATAL EXCEPTION.*org.dicemetalbarbie' qa-evi
   grep -E 'QueuePresentKHR failed|FATAL EXCEPTION' qa-evidence/android-avd/logcat.txt | tail -12
   exit 7
 fi
-echo "PASS 8 baseline physical Android videos plus 1 real M4 advanced UI video created"
+echo "PASS 8 baseline real physical Android recordings plus real M4 formula and selected D6 reroll video"
