@@ -119,6 +119,12 @@ func _choose_visible_row(displayed_index: int) -> void:
         var attempts: Array = group.get("attempts",[])
         var chosen: Array = group.get("kept_faces",[])
         var percentile: Array = group.get("percentile_source_d10_faces",[])
+        # Advantage/disadvantage keeps only ONE of the two real D20 bodies.
+        # The kept face belongs to the ACTUAL winning source die, not the
+        # first entry of the array by accident. On a tie, keep the first.
+        var is_advantage := sides == 20 and mode != "normal" and (
+            attempts.size() == 2 and chosen.size() == 1)
+        var kept_source_marked := false
         for di in range(attempts.size()):
             var source: Variant = attempts[di]
             var source_faces: Array = source if typeof(source) == TYPE_ARRAY else [source]
@@ -126,7 +132,14 @@ func _choose_visible_row(displayed_index: int) -> void:
             for physical_face in source_faces:
                 ordered.append(str(physical_face))
             var original_text := " → ".join(ordered)
-            var selected_text := str(chosen[di]) if di < chosen.size() else "(не выбран)"
+            var selected_text := "(не выбран)"
+            if is_advantage:
+                if not kept_source_marked and not source_faces.is_empty() and (
+                        int(source_faces[-1]) == int(chosen[0])):
+                    selected_text = str(chosen[0])
+                    kept_source_marked = true
+            elif di < chosen.size():
+                selected_text = str(chosen[di])
             var content := "  Кубик %d: %s  ·  засчитано: %s" % [
                 di+1,original_text,selected_text]
             if source_faces.size()>1:
