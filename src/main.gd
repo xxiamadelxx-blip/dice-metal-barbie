@@ -4,6 +4,7 @@ extends Node3D
 
 const Premium = preload("res://src/visual/premium_finish.gd")
 const CriticalAura = preload("res://src/visual/critical_aura.gd")
+const VelvetImpact = preload("res://src/visual/velvet_impact.gd")
 const DieScript = preload("res://src/dice/d6_body.gd")
 const D20Script = preload("res://src/dice/d20_body.gd")
 const D8Script = preload("res://src/dice/d8_body.gd")
@@ -44,6 +45,7 @@ var m5_history_button: Button
 var m5_compose_button: Button
 var m5_live_formula: Label
 var history_dialog: AcceptDialog
+var velvet_impact: Node3D
 var last_advanced_formula := ""
 
 func _ready() -> void:
@@ -184,6 +186,9 @@ func _request_advanced_throw(expression: String, mode: String, d100_mode: String
     add_child(physical_pool)
     physical_pool.connect("pool_completed",Callable(self,"_m4_physical_completed"))
     physical_pool.connect("pool_failed",Callable(self,"_m4_physical_failed"))
+    # Attach to each genuine Jolt RigidBody before its launch. Rerolls reuse
+    # the same body and contact connection; no visual fake impact timer.
+    physical_pool.connect("physical_die_spawned",Callable(self,"_watch_table_contact"))
     var accepted: bool = physical_pool.call("begin",expression,mode,d100_mode)
     if not accepted:
         return
@@ -368,6 +373,15 @@ func _make_world() -> void:
 
     var velvet := Premium.velvet_material()
     _make_static_box("VelvetTable", Vector3(0, -0.24, 0), Vector3(TABLE_WIDTH, 0.4, TABLE_LENGTH), velvet)
+    # Only this VISUAL box surface sits 12mm below an independently
+    # tessellated felt skin. The true Jolt floor remains at y=-0.04.
+    var floor_visual := get_node("VelvetTable").get_node("MeshInstance3D") as MeshInstance3D
+    floor_visual.position.y = -0.012
+    velvet_impact = VelvetImpact.new()
+    velvet_impact.name = "M5VelvetContactSurface"
+    velvet_impact.call("configure",TABLE_WIDTH - 0.38,TABLE_LENGTH - 0.38,
+        velvet.albedo_texture,velvet.normal_texture)
+    add_child(velvet_impact)
 
     var rail_material := Premium.blackened_metal()
     _make_static_box("RailLeft", Vector3(-TABLE_WIDTH * 0.5, 0.34, 0), Vector3(0.35, 0.9, TABLE_LENGTH), rail_material)
@@ -727,6 +741,27 @@ func _throw_physical_d100() -> void:
     die.set("sides", 100)
     _begin_throw(die, 100)
 
+func _watch_table_contact(die: RigidBody3D) -> void:
+    # One genuine Jolt body_entered event per first contact with the felt
+    # floor. Rail and die-on-die collisions cannot animate the table.
+    if not is_instance_valid(die):
+        return
+    die.contact_monitor = true
+    die.max_contacts_reported = maxi(die.max_contacts_reported,8)
+    if not die.body_entered.is_connected(Callable(self,"_on_die_table_contact").bind(die)):
+        die.body_entered.connect(Callable(self,"_on_die_table_contact").bind(die))
+
+func _on_die_table_contact(body: Node, die: RigidBody3D) -> void:
+    if not is_instance_valid(body) or body.name != "VelvetTable":
+        return
+    if not is_instance_valid(die) or not is_instance_valid(velvet_impact):
+        return
+    var impact_speed := die.linear_velocity.length()
+    if bool(velvet_impact.call("register_impact",die.global_position,impact_speed,die.mass)):
+        if OS.is_debug_build():
+            print("DICE_M5_REAL_VELVET_IMPACT speed=%.3f x=%.3f z=%.3f" %
+                [impact_speed,die.global_position.x,die.global_position.z])
+
 func _throw_percentile_d100() -> void:
     if not throw_button or throw_button.disabled:
         return
@@ -765,6 +800,7 @@ func _throw_percentile_d100() -> void:
         die.set("sides", 10)
         die.name = "TensD10" if is_tens else "OnesD10"
         active_percentile.add_child(die)
+        _watch_table_contact(die)
         die.connect("roll_completed", Callable(self, "_on_percentile_finished").bind(is_tens))
         die.connect("roll_failed", Callable(self, "_on_die_failed"))
         die.call("throw_from_top", -1 if is_tens else 1)
@@ -822,6 +858,7 @@ func _begin_throw(die: RigidBody3D, sides: int) -> void:
         active_percentile = null
     die.name = "PhysicalD%d" % sides
     add_child(die)
+    _watch_table_contact(die)
     if sides != 10 and sides != 100:
         Premium.decorate_die(die, sides)
     active_die = die

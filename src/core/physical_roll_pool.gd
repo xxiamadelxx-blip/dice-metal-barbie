@@ -3,6 +3,7 @@ extends Node3D
 ## Actual Jolt sleeping upper faces determine EVERY value; no outcome injection.
 signal pool_completed(result: Dictionary)
 signal pool_failed(reason: String)
+signal physical_die_spawned(die: RigidBody3D)
 
 const Formula = preload("res://src/core/roll_formula.gd")
 const D4 = preload("res://src/dice/d4_body.gd")
@@ -302,6 +303,9 @@ func _start_body(sides: int, slot: int) -> RigidBody3D:
     body.name = "M4_D%d_%d" % [sides,dice_spawned]
     add_child(body)
     _active.append(body)
+    # The presentation listens for real collision signals; the pool never
+    # changes mass, face mapping, hull, orientation or evaluated value.
+    physical_die_spawned.emit(body)
     body.connect("roll_completed",Callable(self,"_on_die_completed").bind(body))
     body.connect("roll_failed",Callable(self,"_on_die_failed").bind(body))
     if sides == 10:

@@ -2,15 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 Alpha4 genuine Godot launch refinements; keep text above first D20 hero silhouette",
-    "route": "interface-accessibility",
+    "task": "M5 authentic Jolt table-contact-driven velvet microdeformation; Alpha4 soft impact feel without fake physics",
+    "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Inspect exact new PR head Gauntlet after Alpha4 visual placement correction (eyebrow y125 and live formula y148) against unmodified Godot launch screenshot. Prior #38179746009 native test PASSED but original screenshot revealed stage text covering D20 bevel at y178; source and test now correct position. Re-check actual 720x1280 screenshot, real history and composition shortcuts, seven-die dock, 8-source AVD/Jolt, 24fps and ARM64. Then tackle authentic contact-driven velvet pulse and nat20/nat1 VFX without changing result authority. Keep PR Draft, M5 art and Nord 3 NOT VERIFIED.",
+    "next_action": "Review new exact-SHA unified Gauntlet from real Jolt-contact-driven felt shader candidate. Inspect tests/m5_real_felt_contact.gd (no idle event; actual D6 impact; unmodified collision floor; 250ms recovery), Godot native Mesa visual render, full 24fps Jolt, Android AVD and ARM64. If failure root-cause log and original screen; keep stage camera static and physics result authority. Next: visually revise nat20 gold and nat1 crimson die-origin aura/flash, and source-driven impact sound/haptics; no arbitrary impact triggered by timer.",
     "blockers": [
-      "Prior #38179746009 native pass screenshot confirmed initial caption and formula occluded D20; adjusted to y125/y148, NEW full Gauntlet NOT VERIFIED.",
-      "New first-screen visible UI, real history and compose controls were exercised by Godot headless tests; still need new Android pixel/24fps acceptance.",
-      "M5 premium obsidian art, authentic velvet deformation and contact sound/haptics remain OPEN; Nord 3 handset NOT VERIFIED."
+      "M5 real-contact velvet microdeformation candidate NOT VERIFIED until new cloud Godot/Jolt/Android Gauntlet.",
+      "Whole-panel Alpha4 launch PBR/layout artistic approval still NOT VERIFIED; old run #38180115356 may be superseded.",
+      "Nat20/nat1 aura staged code exists, premium VFX still OPEN. Actual sound and handset haptics NOT VERIFIED.",
+      "Real OnePlus Nord 3 performance and M6 release signing/data-preserving upgrade OPEN."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -79,11 +80,11 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38179746009/artifacts/11716229926"
     ],
-    "last_observed_sha": "63a17890254ebee661121d9170884bb09550ef5c",
+    "last_observed_sha": "ac3258201563d710afb94bfb59bdbd830f3fe2fe",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "User wants refreshed best-of Alpha4 initial UI but existing approved Concept3 is visual authority. New candidate uses actual Godot controls and real offline M4 backend; same real Jolt physical outcomes, one dock and overhead camera preserved. Not verified until new exact-source CI. Local engineering_router.py enter unavailable, manual GitHub router used."
+    "verification_note": "Manual canonical router reconciled against live PR main+branch. New visual-only tessellated felt shader responds only to body_entered for actual VelvetTable contact; uses measured velocity and mass proxy, not solved impulse. Static collider and D20 face logic unchanged. New candidate not verified until same-SHA 24fps/Android/Jolt run."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
