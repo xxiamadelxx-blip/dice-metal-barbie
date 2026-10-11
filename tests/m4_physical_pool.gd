@@ -45,6 +45,16 @@ func _run() -> void:
             "expected_bodies":3,"expected_groups":2},
         {"formula":"1d20+2","mode":"advantage","hundred":"pair",
             "expected_bodies":2,"expected_groups":1},
+        {"formula":"3d6+1d20+2","mode":"normal","hundred":"pair",
+            "expected_bodies":4,"expected_groups":2},
+        {"formula":"2d8+1d12+1d4","mode":"normal","hundred":"pair",
+            "expected_bodies":4,"expected_groups":3},
+        {"formula":"2d6+1d20-3","mode":"normal","hundred":"pair",
+            "expected_bodies":3,"expected_groups":2},
+        {"formula":"8d6","mode":"normal","hundred":"pair",
+            "expected_bodies":8,"expected_groups":1},
+        {"formula":"2d100+1d4","mode":"normal","hundred":"pair",
+            "expected_bodies":5,"expected_groups":2},
     ]:
         completed = {}
         error = ""
@@ -81,14 +91,50 @@ func _run() -> void:
                 "M4 source-group subtotal was altered")
             if int(group["sides"]) == 100:
                 var observed_pairs: Array = group["percentile_source_d10_faces"]
-                _check(observed_pairs.size() == 1 and (observed_pairs[0] as Array).size() == 2,
-                    "M4 actual D100 pair faces were not recorded")
+                var all_sources_preserved := observed_pairs.size() == source.size()
+                for true_pair in observed_pairs:
+                    if typeof(true_pair) != TYPE_ARRAY:
+                        all_sources_preserved = false
+                        continue
+                    var digits: Array = true_pair
+                    if digits.size() != 2:
+                        all_sources_preserved = false
+                        continue
+                    if not (int(digits[0]) >= 1 and int(digits[0]) <= 10 and
+                            int(digits[1]) >= 1 and int(digits[1]) <= 10):
+                        all_sources_preserved = false
+                _check(all_sources_preserved,
+                    "M4 each physical D100 needs its OWN two real D10 top faces")
         _check(bodies_count == fixture["expected_bodies"],
             "M4 did not physically throw every requested Jolt body")
         _check(completed["total"]==physical_total,
             "M4 total diverges from actual kept physical faces")
         _check(pool.get("last_physical_error") == "",
             "M4 physical integration recorded a Jolt failure")
+        var bodies: Array = pool.get("_active")
+        _check(bodies.size()==fixture["expected_bodies"],
+            "M4 dropped earlier real Jolt dice from the visible table")
+        _check(int(pool.get("dice_spawned")) == bodies.size(),
+            "M4 actual bodies count diverges from source evidence")
+        _check(int(pool.get("physics_completed")) == bodies.size(),
+            "M4 did not receive one actual Jolt completion per physical die")
+        _check(int(pool.get("peak_simultaneously_rolling")) >= 2,
+            "M4 did not physically roll 2+ rigid bodies in the SAME physics tick")
+        _check(bool(completed.get("all_source_bodies_remain_visible",false)),
+            "M4 wrongly claimed all source dice visible")
+        var distinct: Dictionary = {}
+        for body in bodies:
+            var rigid := body as RigidBody3D
+            _check(rigid != null and is_instance_valid(rigid) and rigid.get_parent()==pool,
+                "M4 source die was removed from the table before result")
+            if rigid != null:
+                _check(rigid.sleeping and not bool(rigid.get("rolling")),
+                    "M4 presented a numeric result before all Jolt bodies slept")
+                distinct[rigid.get_instance_id()] = true
+        _check(distinct.size()==bodies.size(),
+            "M4 attached the same rigid body twice instead of unique dice")
+        _check(int(completed.get("physical_bodies",-1))==bodies.size(),
+            "Physical body count missing in recorded composite receipt")
         print("M4_REAL_JOLT %s total=%d actual_bodies=%d" %
             [fixture["formula"],int(completed["total"]),bodies_count])
         await process_frame

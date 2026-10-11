@@ -87,6 +87,9 @@ def inspect_advanced_m4(root):
     log=(root/"roll-M4-godot.log").read_text()
     assert "DICE_M4_PHYSICAL_STARTED 2d6+1d20-3" in log, (
         "Actual Android M4 formula button never started Godot/Jolt")
+    assert "DICE_M4_SIMULTANEOUS_STARTED=3" in log and (
+        "DICE_M4_SIMULTANEOUS_COMPLETED=3" in log), (
+        "Android must visibly launch and retain three actual Jolt source dice")
     matches=re.findall(r"DICE_M4_PHYSICAL_COMPLETED 2d6\+1d20-3=(-?[0-9]+)",log)
     assert len(matches)==1,"Exactly one real Android Jolt composite result required"
     assert "DICE_M4_PHYSICAL_FAILED" not in log,"Godot signaled a failed composite"
@@ -126,6 +129,7 @@ def inspect_advanced_m4(root):
     assert black==0,"M4 Android video has black game stage"
     assert motions>=8,"M4 Android UI and Jolt physical stage remain visually frozen"
     return {"capture_key":"M4_REAL_PHYSICAL_UI","real_formula":"2d6+1d20-3",
+        "true_simultaneous_Jolt_bodies":3,"real_persisting_physical_bodies":3,
         "real_Jolt_result":actual,"real_godot_start_and_completion":True,
         "frame_count_all_checked":frames,"ordered_24_frame_sheets":math.ceil(frames/24),
         "frames_with_visible_changes":motions,"duplicate_frames":duplicates,

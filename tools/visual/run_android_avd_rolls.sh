@@ -181,6 +181,8 @@ for attempt in $(seq 1 82); do
     break
   fi
   if grep -Fq 'DICE_M4_PHYSICAL_STARTED 2d6+1d20-3' "$m4_log" &&
+     grep -Fq 'DICE_M4_SIMULTANEOUS_STARTED=3' "$m4_log" &&
+     grep -Fq 'DICE_M4_SIMULTANEOUS_COMPLETED=3' "$m4_log" &&
      grep -Eq 'DICE_M4_PHYSICAL_COMPLETED 2d6\+1d20-3=-?[0-9]+' "$m4_log"; then
     m4_completed=1
     break
