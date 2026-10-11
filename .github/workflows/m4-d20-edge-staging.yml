@@ -1,0 +1,43 @@
+name: M4 physically honest D20 edge recovery (focused staging)
+on:
+  push:
+    branches: [agent/m4-d20-physical-edge-recovery-20261011]
+permissions:
+  contents: read
+jobs:
+  actual-jolt-stress:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Canonical architecture and Godot original import
+        run: |
+          python3 scripts/engineering_router.py validate
+          godot --headless --path . --editor --quit
+          godot --headless --path . --check-only --script res://src/dice/d20_body.gd
+          godot --headless --path . --check-only --script res://tests/m4_d20_edge_stress.gd
+      - name: Truthful mixed dice original Jolt edge stress, 12 actual throws
+        run: |
+          godot --headless --path . --script res://tests/m4_d20_edge_stress.gd > m4-d20-physical-edge.log 2>&1 || { tail -120 m4-d20-physical-edge.log; exit 1; }
+          grep -E 'M4_D20_REAL_EDGE_STRESS trials=12 checks=[0-9]+ failures=0' m4-d20-physical-edge.log
+      - name: Existing 8-fixture M4 Jolt mixed source regressions
+        run: |
+          godot --headless --path . --script res://tests/m4_physical_pool.gd > m4-d20-mixed-pool.log 2>&1 || { tail -120 m4-d20-mixed-pool.log; exit 1; }
+          grep -E 'M4 real physical pool: [0-9]+ checks, 0 failures' m4-d20-mixed-pool.log
+      - name: Existing natural D20 numbered upper face truth
+        run: |
+          godot --headless --path . --script res://tests/numbered_d20_physics.gd > m4-d20-original-eight.log 2>&1 || { tail -120 m4-d20-original-eight.log; exit 1; }
+          grep -E 'M3 numbered D20 physical: 8/8, [0-9]+ checks, 0 fail' m4-d20-original-eight.log
+      - name: Preserve ALL original D20 failure/success logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staged-real-d20-jolt-edge-recovery
+          path: |
+            m4-d20-physical-edge.log
+            m4-d20-mixed-pool.log
+            m4-d20-original-eight.log
+          if-no-files-found: warn
+          retention-days: 14

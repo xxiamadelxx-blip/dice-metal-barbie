@@ -9,6 +9,9 @@ const Ico = preload("res://src/core/icosahedron.gd")
 const Sculpt = preload("res://src/visual/sculpted_d20.gd")
 const DiceRng = preload("res://src/core/dice_rng.gd")
 const MAX_ROLL_SECONDS := 9.0
+# Actual Jolt recovery when sleeping on an ambiguous EDGE, never face
+# snapping or value substitution. Preserve 9s overall physics time budget.
+const MAX_EDGE_RECOVERY_ATTEMPTS := 6
 
 var rolling := false
 var result := -1
@@ -124,13 +127,28 @@ func _physics_process(delta: float) -> void:
         best_alignment = maxf(best_alignment, dot_up)
     if face < 0 or best_alignment < 0.88:
         ## Real world-frame impulse only; never twist to a selected number.
-        if edge_recovery_count < 3 and elapsed < MAX_ROLL_SECONDS - 1.5:
+        if edge_recovery_count < MAX_EDGE_RECOVERY_ATTEMPTS and elapsed < MAX_ROLL_SECONDS - 0.75:
+            # A symmetric alternating *real Jolt* nudge dislodges a
+            # multi-body D20 leaning between faces. Increasing impulse by
+            # bounded attempts is independent of the printed face label.
+            # Never rotate/freeze the body or generate a synthetic result.
             edge_recovery_count += 1
+            var phase := float(edge_recovery_count)
+            var direction := -1.0 if edge_recovery_count % 2 == 0 else 1.0
             sleeping = false
-            apply_central_impulse(Vector3(0.005, 0.007, 0.004))
-            apply_torque_impulse(Vector3(0.004, 0.003, -0.004))
+            apply_central_impulse(Vector3(
+                direction * (0.005 + 0.0015 * phase),
+                0.007 + 0.001 * phase,
+                -direction * (0.004 + 0.001 * phase)))
+            apply_torque_impulse(Vector3(
+                direction * (0.004 + 0.0014 * phase),
+                0.003,
+                -direction * (0.004 + 0.0014 * phase)))
+            if OS.is_debug_build():
+                print("DICE_D20_REAL_EDGE_RECOVERY attempt=%d alignment=%.4f elapsed=%.2f" % [
+                    edge_recovery_count,best_alignment,elapsed])
             return
-        _abort("D20 не смог устойчиво остановиться на грани")
+        _abort("D20 не смог устойчиво остановиться на грани после %d реальных импульсов" % edge_recovery_count)
         return
     rolling = false
     result = Ico.numbers()[face]
