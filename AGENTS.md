@@ -19,3 +19,5 @@ LEAD → BUILDER → INDEPENDENT CRITIC (when actually available) → COMPARISON
 Use feature branches and PRs. Do not push unreviewed work directly to `main` unless explicitly authorized. Never commit signing keys or passwords.
 
 For all new substantial candidate acceptance reviews, apply the fail-closed independent evidence contract in `docs/GAUNTLET_ACCEPTANCE_V2.md` and verify it with `scripts/gauntlet_evidence.py`. This adds to, never replaces, the existing visual/temporal/Android Gauntlet or other agents' active work.
+
+For truly autonomous two-context builder/critic iterations, read `docs/GAUNTLET_AUTOPILOT.md` and use `scripts/gauntlet_autopilot.py` with the isolated `.github/workflows/gauntlet-autopilot.yml` dispatcher only after confirming a real reviewer provider. A schema test is not proof of model execution. Existing PR #23 art/physics workflow, user-approved design and physical handset criteria remain the product truth.
