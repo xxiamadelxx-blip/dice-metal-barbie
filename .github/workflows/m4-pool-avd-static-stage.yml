@@ -1,0 +1,29 @@
+name: M4 staged Android pool editor script static preflight
+on:
+  push:
+    branches:
+      - agent/m4-pool-original-avd-qa-20261011
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Real ADB scripts have valid Bash and frame auditor has valid Python
+        run: |
+          set -euo pipefail
+          bash -n tools/visual/run_android_avd_rolls.sh
+          bash -n tools/visual/run_android_pool_editor.sh
+          bash -n tools/visual/run_android_percentile_sources.sh
+          python3 -m py_compile tools/visual/audit_android_avd_sequence.py
+          python3 -m py_compile tools/visual/audit_roll_sequence.py
+      - name: Physics first, THEN independent editor window touch
+        run: |
+          set -euo pipefail
+          grep -F 'bash tools/visual/run_android_percentile_sources.sh' tools/visual/run_android_avd_rolls.sh
+          grep -F 'bash tools/visual/run_android_pool_editor.sh' tools/visual/run_android_avd_rolls.sh
+          grep -F 'DICE_M4_POOL_EDITOR_OPEN' src/ui/m4_advanced_roll_drawer.gd
+          grep -F 'DICE_M4_POOL_EDITOR_OPEN formula=2d6+1d20-3' tools/visual/run_android_pool_editor.sh
+          grep -F 'every-avd-frame-M4-POOL.jsonl' tools/visual/audit_android_avd_sequence.py
+          echo 'PASS source preflight only; real Android AVD interaction still NOT VERIFIED'
