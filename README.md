@@ -1,5 +1,21 @@
 # D&D 3D Dice 🎲
 
+## Unified Engineering Router · mandatory agent entry
+
+The **single canonical engineering architecture** routes development across code, Godot/Jolt, 3D, materials, UI, **audio/haptics**, architecture/C4/ADR, security, performance, Android release, supply chain and agent recovery.
+
+Every new Dice agent and every **«продолжай» / «завис» / handoff** must start with [AGENTS.md](AGENTS.md) → [ENGINEERING_ROUTER.md](docs/ENGINEERING_ROUTER.md) → [engineering routes registry](config/engineering_routes.json) and [durable handoff](docs/handoff/ACTIVE_ROUTING_HANDOFF.json). An authorized terminal runs:
+
+```sh
+python3 scripts/engineering_router.py enter --intent "продолжай"
+python3 scripts/engineering_router.py enter --intent "завис"
+python3 scripts/engineering_router.py handoff
+python3 scripts/engineering_router.py audit
+python3 scripts/engineering_router.py validate
+```
+
+The router checks local git state, chooses a relevant evidence path, provides alternatives and never pretends an uninstalled tool or reviewer ran. To persist progress for another agent, create an evidence-backed `checkpoint`, **commit and push** the handoff JSON. Actual scope-specific tests and independent critique are performed through the pre-existing [Gauntlet Loop](docs/GAUNTLET_LOOP.md), not faked by the routing CLI. This infrastructure does not install every creative/security program and is not itself product feature completion.
+
 Offline Dungeons & Dragons 3D dice for Android (initial target OnePlus Nord 3). Godot 4.6.3 / Jolt Physics / GDScript.
 
 ## Current stage · 2026-10-10
