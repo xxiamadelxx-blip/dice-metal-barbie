@@ -1,0 +1,83 @@
+name: M4 staged receipt stats genuine local Qwen 7B source critic
+on:
+  push:
+    branches:
+      - agent/m4-receipt-statistics-stage-20261011
+permissions:
+  contents: read
+concurrency:
+  group: m4-stats-critic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  isolated-source-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GAUNTLET_AI_BACKEND: ollama_local
+      GAUNTLET_BUILDER_MODEL: qwen2.5-coder:1.5b
+      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:7b
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Exact repository router and narrow source contract
+        run: |
+          set -euo pipefail
+          python3 scripts/engineering_router.py validate
+          test -s src/core/roll_statistics.gd
+          test -s tests/m4_roll_statistics.gd
+      - name: Run separate local Ollama Qwen 7B, not a remote paid API
+        run: bash scripts/gauntlet_setup_local.sh
+      - name: Critic sees actual code and deterministic test, no builder narrative
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request
+          from pathlib import Path
+          out=Path(os.environ['RUNNER_TEMP'])/'m4-stats-critic'
+          out.mkdir(exist_ok=True)
+          source=Path('src/core/roll_statistics.gd').read_text()
+          cases=Path('tests/m4_roll_statistics.gd').read_text()
+          prompt=('You are an independent quality critic reviewing a READ-ONLY statistics helper for stored Godot physical dice receipts. '
+                  'No bluffing, generic summaries or fabricated tests. Show an exact literal SOURCE quote from the implementation, '
+                  'one concrete adversarial risk or correctness finding about counting signed totals/criticals/percentile rerolls, '
+                  'and ONE deterministic extra test that could prove/disprove that risk. '
+                  'Return only a JSON object with string keys: source_quote, risk, proposed_test, source_verdict, android_runtime. '
+                  'source_quote MUST be an exact, contiguous substring of SOURCE, minimum 18 characters. '
+                  'source_verdict = PASS or FAIL or NOT_VERIFIED, and android_runtime = NOT_VERIFIED, because you cannot see a device. '
+                  'Remember: rerolls appear in multiple history receipts; this is not a fair-dice chi-square study.\n\n'
+                  'SOURCE:\n'+source+'\n\nTEST-ONLY FIXTURES:\n'+cases)
+          (out/'exact-prompt.txt').write_text(prompt)
+          req=urllib.request.Request('http://127.0.0.1:11434/api/generate',
+            data=json.dumps({'model':'qwen2.5-coder:7b','prompt':prompt,'format':'json',
+              'stream':False,'options':{'temperature':0,'num_predict':900}}).encode(),
+            headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=420) as resp: raw=json.load(resp)
+          (out/'unmodified-ollama-response.json').write_text(json.dumps(raw,ensure_ascii=False,indent=2))
+          answer=raw.get('response','')
+          (out/'original-critic-text.txt').write_text(answer)
+          try:
+              data=json.loads(answer)
+              quote=data['source_quote']
+              assert isinstance(quote,str) and len(quote)>=18 and quote in source, 'Source quote not grounded'
+              assert len(str(data.get('risk','')))>=25 and len(str(data.get('proposed_test','')))>=25, 'No substantive risk or test'
+              assert data['source_verdict'] in ('PASS','FAIL','NOT_VERIFIED')
+              assert data['android_runtime']=='NOT_VERIFIED','Cannot fabricate Android pass'
+              verdict='SOURCE_EVIDENCE_REVIEW_RECEIVED'
+          except Exception as exc:
+              verdict='NOT_VERIFIED_INVALID_OR_GENERIC_CRITIC'
+              (out/'critic-contract-error.txt').write_text(repr(exc))
+          (out/'provenance.json').write_text(json.dumps({'exact_sha':os.environ['GITHUB_SHA'],
+            'local_critic':'qwen2.5-coder:7b','source_review_contract':verdict,
+            'real_godot_jolt_test':'SEPARATE_WORKFLOW','android_hardware':'NOT_VERIFIED'},indent=2))
+          print(verdict)
+          if verdict!='SOURCE_EVIDENCE_REVIEW_RECEIVED': raise SystemExit(14)
+          PY
+      - name: Preserve genuine original source prompt and verdict even on fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-stats-local-qwen7b-source-review
+          path: ${{ runner.temp }}/m4-stats-critic/
+          if-no-files-found: warn
+          retention-days: 14
