@@ -15,6 +15,7 @@ const RollFormula = preload("res://src/core/roll_formula.gd")
 const RollStore = preload("res://src/core/roll_persistence.gd")
 const PhysicalPool = preload("res://src/core/physical_roll_pool.gd")
 const AdvancedDrawer = preload("res://src/ui/m4_advanced_roll_drawer.gd")
+const HistoryBrowser = preload("res://src/ui/m4_history_dialog.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
 # Launch display only. Never scale physically simulated dice or Jolt colliders.
@@ -39,6 +40,7 @@ var advanced_panel: PanelContainer
 var physical_pool: Node3D
 var roll_store: RefCounted
 var advanced_open_button: Button
+var history_dialog: AcceptDialog
 var last_advanced_formula := ""
 
 func _ready() -> void:
@@ -67,6 +69,7 @@ func _setup_m4_local_and_drawer() -> void:
     advanced_panel.connect("preset_save_requested",Callable(self,"_save_m4_preset"))
     advanced_panel.connect("preset_delete_requested",Callable(self,"_delete_m4_preset"))
     advanced_panel.connect("history_clear_requested",Callable(self,"_confirm_m4_history_clear"))
+    advanced_panel.connect("history_open_requested",Callable(self,"_open_m4_history"))
     advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
     if not bool(loaded.get("ok",false)):
         advanced_panel.call("show_message","Локальный файл требует восстановления; запись заблокирована")
@@ -232,6 +235,16 @@ func _delete_m4_preset(title: String) -> void:
         ask.queue_free())
     ask.canceled.connect(func(): ask.queue_free())
     ask.popup_centered()
+
+func _open_m4_history() -> void:
+    if throw_button.disabled or roll_store == null:
+        return
+    if not is_instance_valid(history_dialog):
+        history_dialog = HistoryBrowser.new()
+        add_child(history_dialog)
+    var state: Dictionary = roll_store.call("snapshot")
+    history_dialog.call("set_history",state.get("history",[]))
+    history_dialog.popup_centered_ratio(0.88)
 
 func _confirm_m4_history_clear() -> void:
     var ask := ConfirmationDialog.new()

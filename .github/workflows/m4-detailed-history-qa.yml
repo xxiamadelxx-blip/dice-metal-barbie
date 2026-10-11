@@ -1,0 +1,49 @@
+name: M4 Full Offline History Real-UI Gauntlet
+on:
+  push:
+    branches: [qa/m4-detailed-history]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-history:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import actual approved production Godot/Jolt scene
+        run: godot --headless --path . --editor --quit
+      - name: Compile full history dialog, real buttons and visual source
+        run: |
+          godot --headless --path . --check-only --script res://src/ui/m4_history_dialog.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_advanced_roll_drawer.gd
+          godot --headless --path . --check-only --script res://src/main.gd
+          godot --headless --path . --check-only --script res://tests/m4_full_history_browser.gd
+          godot --headless --path . --check-only --script res://tests/m4_ui_temporal_capture.gd
+      - name: Tap actual history browser after live real Jolt cast and reroll
+        run: godot --headless --path . --script res://tests/m4_full_history_browser.gd
+      - name: Preserve Jolt selective-reroll and offline persistence regressions
+        run: |
+          godot --headless --path . --script res://tests/m4_physical_reroll.gd
+          godot --headless --path . --script res://tests/m4_roll_persistence.gd
+      - name: Install authentic FFmpeg and Mesa capture
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ffmpeg xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 \
+            libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 \
+            libxkbcommon0 libwayland-cursor0 python3-pil
+      - name: Record original formula + reroll + detailed history popup continuously
+        run: bash tools/visual/run_m4_ui_capture.sh
+      - name: Independently audit every original real-screen 24fps frame
+        run: python3 tools/visual/audit_m4_ui_frames.py qa-evidence/m4-ui-24fps
+      - name: Preserve uncropped video, per-frame JSONL and all-24-second contact sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-full-history-real-physical-ui-24fps
+          path: qa-evidence/m4-ui-24fps/
+          if-no-files-found: warn
+          retention-days: 14
