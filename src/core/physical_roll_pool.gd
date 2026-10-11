@@ -17,6 +17,7 @@ const Octa = preload("res://src/core/octahedron.gd")
 const Dodeca = preload("res://src/core/dodecahedron.gd")
 const Ico = preload("res://src/core/icosahedron.gd")
 const Kite = preload("res://src/core/trapezohedron.gd")
+const CriticalAura = preload("res://src/visual/critical_aura.gd")
 const MAX_PHYSICAL_STEPS := 2400
 const MAX_VISIBLE_BODIES := 8
 const LAUNCH_COLUMNS := 3
@@ -265,6 +266,22 @@ func _run() -> void:
     if not bool(result.get("ok",false)):
         _abort(str(result.get("error","Невозможно вычислить реальные грани")))
         return
+    # Critical effects follow only the *selected, unmodified, physically
+    # settled D20*, never a dice pool total or unchosen advantage die.
+    # This retains the approved die-origin aura rather than a fake HUD glow.
+    var critical: String = str(result.get("natural_d20_critical","none"))
+    if _chosen_d20 >= 0 and ["success","failure"].has(critical):
+        var crit_group: Dictionary = result["groups"][_chosen_d20]
+        var selected_faces: Array = crit_group.get("kept_faces",[])
+        if selected_faces.size() == 1:
+            var selected_value: int = int(selected_faces[0])
+            for slot in range(plan.size()):
+                if int(plan[slot]["group"]) != _chosen_d20 or int(plan[slot]["sides"]) != 20:
+                    continue
+                var physical_d20: RigidBody3D = _active[slot]
+                if int(physical_d20.get("result")) == selected_value:
+                    CriticalAura.spawn(physical_d20,20,selected_value)
+                    break
     result["physical_bodies"] = plan.size()
     result["peak_simultaneously_rolling"] = peak_simultaneously_rolling
     result["all_source_bodies_remain_visible"] = true

@@ -91,8 +91,20 @@ func _run() -> void:
                 "M4 source-group subtotal was altered")
             if int(group["sides"]) == 100:
                 var observed_pairs: Array = group["percentile_source_d10_faces"]
-                _check(observed_pairs.size() == 1 and (observed_pairs[0] as Array).size() == 2,
-                    "M4 actual D100 pair faces were not recorded")
+                var all_sources_preserved := observed_pairs.size() == source.size()
+                for true_pair in observed_pairs:
+                    if typeof(true_pair) != TYPE_ARRAY:
+                        all_sources_preserved = false
+                        continue
+                    var digits: Array = true_pair
+                    if digits.size() != 2:
+                        all_sources_preserved = false
+                        continue
+                    if not (int(digits[0]) >= 1 and int(digits[0]) <= 10 and
+                            int(digits[1]) >= 1 and int(digits[1]) <= 10):
+                        all_sources_preserved = false
+                _check(all_sources_preserved,
+                    "M4 each physical D100 needs its OWN two real D10 top faces")
         _check(bodies_count == fixture["expected_bodies"],
             "M4 did not physically throw every requested Jolt body")
         _check(completed["total"]==physical_total,
