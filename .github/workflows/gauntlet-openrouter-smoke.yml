@@ -45,14 +45,31 @@ jobs:
           test "$GAUNTLET_BUILDER_MODEL" != "$GAUNTLET_CRITIC_MODEL" || { echo "BLOCKED: critic model must differ"; exit 2; }
           echo "Preflight PASSED: free model IDs are distinct and key present; secret value not shown."
 
+      - name: Validate actual OpenRouter key authorization with short bounded request
+        env:
+          GAUNTLET_AI_TOKEN: ${{ secrets.GAUNTLET_AI_TOKEN }}
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --retry 0 --connect-timeout 8 --max-time 15 \
+            -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $GAUNTLET_AI_TOKEN" \
+            https://openrouter.ai/api/v1/key)
+          if [ "$status" != "200" ]; then
+            echo "BLOCKED: OpenRouter key verification HTTP $status"
+            exit 2
+          fi
+          echo "PASS: OpenRouter accepted the configured key; no secret value displayed."
+
       - name: Create disposable isolated test branch
         run: git checkout -b "gauntlet/smoke-${{ github.run_id }}"
 
       - name: Exercise real builder + independent critic using only synthetic source
         env:
           GAUNTLET_AI_URL: ${{ vars.GAUNTLET_AI_URL }}
-          GAUNTLET_BUILDER_MODEL: ${{ vars.GAUNTLET_BUILDER_MODEL }}
-          GAUNTLET_CRITIC_MODEL: ${{ vars.GAUNTLET_CRITIC_MODEL }}
+          # Isolate a different fully-free, higher-availability provider pairing
+          # for this disposable smoke only. Do not alter user's repository variables.
+          GAUNTLET_BUILDER_MODEL: google/gemma-4-26b-a4b-it:free
+          GAUNTLET_CRITIC_MODEL: google/gemma-4-31b-it:free
           GAUNTLET_AI_TOKEN: ${{ secrets.GAUNTLET_AI_TOKEN }}
         run: |
           set -euo pipefail
