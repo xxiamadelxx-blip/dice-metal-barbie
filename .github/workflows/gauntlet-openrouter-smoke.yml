@@ -1,0 +1,79 @@
+name: One-time OpenRouter Gauntlet independent critic smoke
+
+# Trigger only when this workflow is introduced/edited on main.
+# Explicit workflow_dispatch allows a manual retry after diagnosing a blocker.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gauntlet-openrouter-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gauntlet-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  independent-openrouter-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Confirm regression tests (no external API)
+        run: python3 -m unittest discover -s tests -p 'test_gauntlet_*.py' -v
+
+      - name: Check free-only model configuration, without displaying keys
+        env:
+          GAUNTLET_AI_URL: ${{ vars.GAUNTLET_AI_URL }}
+          GAUNTLET_BUILDER_MODEL: ${{ vars.GAUNTLET_BUILDER_MODEL }}
+          GAUNTLET_CRITIC_MODEL: ${{ vars.GAUNTLET_CRITIC_MODEL }}
+          GAUNTLET_AI_TOKEN: ${{ secrets.GAUNTLET_AI_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GAUNTLET_AI_TOKEN" || { echo "BLOCKED: GAUNTLET_AI_TOKEN secret missing"; exit 2; }
+          test "$GAUNTLET_AI_URL" = "https://openrouter.ai/api/v1/chat/completions" || { echo "BLOCKED: unsupported endpoint"; exit 2; }
+          [[ "$GAUNTLET_BUILDER_MODEL" == *:free && "$GAUNTLET_CRITIC_MODEL" == *:free ]] || { echo "BLOCKED: free-only models required"; exit 2; }
+          test "$GAUNTLET_BUILDER_MODEL" != "$GAUNTLET_CRITIC_MODEL" || { echo "BLOCKED: critic model must differ"; exit 2; }
+          echo "Preflight PASSED: free model IDs are distinct and key present; secret value not shown."
+
+      - name: Create disposable isolated test branch
+        run: git checkout -b "gauntlet/smoke-${{ github.run_id }}"
+
+      - name: Exercise real builder + independent critic using only synthetic source
+        env:
+          GAUNTLET_AI_URL: ${{ vars.GAUNTLET_AI_URL }}
+          GAUNTLET_BUILDER_MODEL: ${{ vars.GAUNTLET_BUILDER_MODEL }}
+          GAUNTLET_CRITIC_MODEL: ${{ vars.GAUNTLET_CRITIC_MODEL }}
+          GAUNTLET_AI_TOKEN: ${{ secrets.GAUNTLET_AI_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 scripts/gauntlet_autopilot.py \
+            --spec qa/gauntlet/tasks/openrouter_smoke.json \
+            --root . --out "$RUNNER_TEMP/openrouter-smoke"
+          python3 scripts/gauntlet_evidence.py \
+            "$RUNNER_TEMP/openrouter-smoke/gauntlet-record.json" \
+            --expected-sha "$(git rev-parse HEAD)" \
+            --repository "$GITHUB_REPOSITORY"
+
+      - name: Confirm actual separate review and no production edits
+        run: |
+          set -euo pipefail
+          python3 -c "import json,os,pathlib; d=pathlib.Path(os.environ['RUNNER_TEMP'])/'openrouter-smoke'; r=json.loads((d/'gauntlet-record.json').read_text()); assert len(r['iterations'])>=1; assert r['iterations'][-1]['critic']['verdict']=='PASS'; assert r['iterations'][-1]['critic']['reviewer_id']!=r['builder_id']; print('PASS: independent critic raw review recorded; changes remain local to CI runner')"
+          git diff --quiet
+          git diff --cached --quiet
+
+      - name: Preserve results, including blocker evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openrouter-real-critic-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}/openrouter-smoke/
+          retention-days: 3
+          if-no-files-found: warn
