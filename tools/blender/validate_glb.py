@@ -67,6 +67,33 @@ def validate(root):
                        if m.get('normalTexture') and m.get('pbrMetallicRoughness',{}).get('baseColorTexture')
                        and m.get('pbrMetallicRoughness',{}).get('metallicRoughnessTexture')]
         assert len(pbr_materials)>=1, f'D{sides} GLB missing albedo/roughness/normal surface contract'
+        if sides==20:
+            # Verify REAL UV0 binary float coordinates, not just manifest
+            # text. Old export had all (0,1) UV0 for the first primitive and
+            # the correct 20 face atlas silently in TEXCOORD_1.
+            source_material=pbr_materials[0]
+            pbr=source_material['pbrMetallicRoughness']
+            for slot in (pbr['baseColorTexture'],
+                         pbr['metallicRoughnessTexture'],
+                         source_material['normalTexture']):
+                assert slot.get('texCoord',0)==0, 'D20 material samples non-primary UV'
+            atlas_cells=set()
+            glb_buffer_start=20+chunk_bytes+8
+            for prim in scene['meshes'][0]['primitives']:
+                uv_id=prim['attributes']['TEXCOORD_0']
+                acc=scene['accessors'][uv_id]
+                assert acc['type']=='VEC2' and acc['componentType']==5126
+                view=scene['bufferViews'][acc['bufferView']]
+                pos=glb_buffer_start+view.get('byteOffset',0)+acc.get('byteOffset',0)
+                coords=memoryview(blob)[pos:pos+acc['count']*8]
+                assert len(coords)==acc['count']*8
+                for u,v in struct.iter_unpack('<ff',coords):
+                    if 0<=u<1 and 0<=v<1:
+                        atlas_cells.add((min(4,int(u*5)),min(3,int(v*4))))
+            assert len(atlas_cells)==20, (
+                'D20 PRIMARY UV0 missing 5x4 face atlas, cells=%s'
+                % sorted(atlas_cells))
+            print('PASS primary glTF D20 UV0 all 20 atlas cells and PBR maps')
         for mesh in scene['meshes']:
             assert mesh['primitives'], f'D{sides} missing render primitives'
             for primitive in mesh['primitives']:

@@ -51,6 +51,9 @@ jobs:
         if: steps.art_source.outputs.run == 'true'
         run: |
           python3 tools/blender/validate_glb.py build/premium-glb
+      - name: Verify actual D20 Cycles AO has 2D cavity gradients, not fake binary stripes
+        if: steps.art_source.outputs.run == 'true'
+        run: python3 tools/materials/check_cycles_ao_content.py build/premium-glb/d20_cycles_baked_ao.png
       - name: M5 AI-texture material adapter geometry-safety regression (synthetic, no external GPU/API)
         run: |
           set -euo pipefail

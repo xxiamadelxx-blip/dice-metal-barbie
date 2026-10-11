@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 AI D20 basecolor image-to-real-GLB experiment and optional material adapter QA",
+    "task": "M5 approved zero-budget premium D20 + velvet research: repair primary UV0 and false binary Cycles AO",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Check latest exact-source Blender Gauntlet new synthetic A/B material adapter test. Real AI-generated image was applied locally to genuine D20 GLB: only glTF base-color source changed; geometry/accessors/number faces/bronze/normal/roughness conserved. Candidate GLB in user artifact, NOT pinned Godot or Android before real visual approval. Audit Dream Textures requires GPU and manual Linux installation; Meshy/Tripo optional paid APIs, not invoked. Existing Cycles AO image remains near-binary, needs real gradation fixes. Preserve M4 Jolt and 24fps, Qwen and Nord3 gates.",
+    "next_action": "Examine exact source unified Gauntlet after correcting D20 Blender face UV to glTF TEXCOORD_0, enforcing all 20 5x4 UV0 cells, and rejecting Cycles AO 1024x1024 horizontal black/white stripes with pixel spatial gradients. Original GLB actual atlas was second UV1, while baseColor/metallicRoughness/normal sampled UV0 placeholder. Actual AO had 443392 white + 604160 black + 1024 gray pixels and exactly ZERO horizontal gradients; previous image histogram falsely passed. New CI may legitimately be RED; inspect Blender logs, repair UV and true AO, do not disable checks. Then compare SAME 720x1280 Godot D20+velvet source A/B, 24fps and Android. User uploaded full no-cost research plan now stored in docs/research. Alpha4 UX only. Preserve Jolt/face outcomes.",
     "blockers": [
-      "Real AI image-to-D20 GLB experiment succeeded mechanically, but NO original Godot/Android screenshot acceptance yet.",
-      "Dream Textures inference cannot be assumed available on CPU-only GitHub runner; paid Meshy/Tripo calls not used.",
-      "CI adapter fixture is synthetic; it does not prove neural generation or artistic quality.",
-      "Current D20 Cycles AO still nearly binary, visual art and Nord3 QA unverified."
+      "New exact-SHA D20 UV0 fix / Cycles 2D AO check NOT VERIFIED by CI; actual AO still unacceptable until new genuine gradients.",
+      "Prior exact #38184950122 native pixel and Android emulator RED, physical 24fps and Blender PASS; diagnose separate original failures after asset slice.",
+      "Real AI material candidate not visually accepted, source AO not wired into runtime glTF occlusion, user artistic approval OPEN.",
+      "Real OnePlus Nord3 FPS and signed release M6 NOT VERIFIED; no paid dependencies."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -87,13 +87,14 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434/artifacts/11717812770",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384/artifacts/11718920962"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384/artifacts/11718920962",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38184950122"
     ],
-    "last_observed_sha": "cf3558664defbb075ac00b3d22fec5649e130199",
+    "last_observed_sha": "906f7c5684234fbe5e0d3186d0472ab6b222b59b",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Actual generated AI image and canonical GLB were combined offline with geometry and numbered source untouched. Original GLB sha256 788aad2e9188; AI candidate GLB sha256 47486f693b02. Optional adapter and synthetic regression committed; see docs/M5_AI_TEXTURE_AUDIT_2026.md. User-visible experimental GLB separate from main; no runtime changes."
+    "verification_note": "User-provided premium-art research specification read verbatim and staged as docs/research. Grounded old glb glTF UV0 constant and 5x4 face atlas TEXCOORD_1, with material slots default texCoord0, real geometry 5,244 triangles. Old AO PIL exact band split and 0 horizontal gradient. New code fixes UV0 on only D20, extra GLB/real AO acceptance; no current Blender checkout executable, exact pipeline via Actions. NOT VERIFIED."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

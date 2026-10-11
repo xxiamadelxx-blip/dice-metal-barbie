@@ -207,8 +207,16 @@ def stone_uv(mesh, sides):
     # running through numerals. Every Boolean-cut/edge polygon inherits its
     # nearest original numbered face; each face gets isolated 12% padding.
     # This operates on the FINAL engraved render mesh, never the Jolt hull.
+    # Previous exported GLB had its actual D20 face atlas in TEXCOORD_1,
+    # while PBR texture slots sampled the placeholder TEXCOORD_0. Remove
+    # legacy UV maps on D20 ONLY and make face atlas UV0 active/render.
+    if sides==20:
+        while len(mesh.uv_layers):
+            mesh.uv_layers.remove(mesh.uv_layers[0])
     uv=mesh.uv_layers.new(name='D20FaceAtlas' if sides==20 else 'StoneUV')
     if sides==20:
+        mesh.uv_layers.active_index=0
+        uv.active_render=True
         vertices,faces,_=model(20)
         atlas=[]
         for face in faces:
@@ -454,6 +462,8 @@ def bake_true_d20_ao(shell, out):
     baked.pixels.foreach_set(np.ones(1024*1024*4,dtype=np.float32))
     baked.update()
     scene.render.bake.use_clear=False
+    assert len(shell.data.uv_layers)==1 and shell.data.uv_layers.active_index==0, (
+        'D20 real Cycles AO must bake to the one true render UV0 atlas')
     material=shell.data.materials[0]
     nodes=material.node_tree.nodes
     target=nodes.new('ShaderNodeTexImage')
