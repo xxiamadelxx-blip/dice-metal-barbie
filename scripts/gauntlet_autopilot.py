@@ -81,6 +81,9 @@ def validate_spec(spec: dict[str, Any], root: Path) -> tuple[list[str], list[str
     if not isinstance(tests, list) or not (1 <= len(tests) <= 18) or not all(
             isinstance(s, str) and s and "\x00" not in s for s in tests):
         raise ValueError("test_command must be argv list (no shell)")
+    timeout_value = spec.get("test_timeout_seconds", 180)
+    if type(timeout_value) is not int or not 10 <= timeout_value <= 600:
+        raise ValueError("test_timeout_seconds must be 10..600")
     if spec.get("max_iterations", 2) not in (1, 2, 3):
         raise ValueError("max_iterations must be 1, 2, or 3")
     if not isinstance(spec.get("acceptance"), list) or not spec["acceptance"] or not all(
@@ -206,6 +209,9 @@ def execute(spec: dict[str, Any], root: Path, out: Path, actor: Any) -> dict[str
             check_code, check_text = check.returncode, check.stdout[-45000:]
         except subprocess.TimeoutExpired:
             check_code, check_text = 124, "TEST TIMEOUT"
+        after_test = git(root, "status", "--porcelain", "--untracked-files=all")
+        if after_test:
+            raise RuntimeError("test mutated tracked/untracked checkout outside accepted candidate: " + after_test[:450])
         test_ref = write_json(out, f"tests/iteration-{number}.json",
                               {"argv": tests, "exit": check_code, "raw_output": check_text,
                                "candidate_sha": candidate})
