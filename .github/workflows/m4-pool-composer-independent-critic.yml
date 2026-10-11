@@ -1,0 +1,86 @@
+name: M4 independent local Qwen 7B source critique: physical composition
+on:
+  push:
+    branches:
+      - agent/m4-pool-composer-focused-20261011
+permissions:
+  contents: read
+concurrency:
+  group: m4-composer-actual-critic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  independent-source-critic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Enforce engineering router and exact committed inputs
+        run: |
+          set -eu
+          python3 scripts/engineering_router.py validate
+          test -s src/core/roll_pool_builder.gd
+          test -s src/ui/m4_pool_composer.gd
+          test -s tests/m4_pool_composer_jolt.gd
+      - name: Start distinct local Ollama Qwen 7B (no external paid token)
+        run: bash scripts/gauntlet_setup_local.sh
+      - name: Challenge real code source, enforce grounded critique
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          from pathlib import Path
+          out=Path(os.environ['RUNNER_TEMP'])/'m4-composition-critic'
+          out.mkdir(exist_ok=True)
+          core=Path('src/core/roll_pool_builder.gd').read_text()
+          ui=Path('src/ui/m4_pool_composer.gd').read_text()
+          test=Path('tests/m4_pool_composer_jolt.gd').read_text()
+          source=core+'\n'+ui
+          prompt=('You are an independent code critic. Review actual Godot 4.6.3/GDScript code and existing test fixtures. '
+             'Do not trust the builder. No Android emulator or phone has been run by you. '
+             'Focus on physical dice-group composition, valid formula limits, cancel/apply semantics, real Godot signal layout, '
+             'and avoiding fabricated dice faces. '
+             'Return EXACTLY three short prose lines, no code block, JSON or markdown explanation. '
+             'QUOTE: exact 18+ character contiguous SOURCE code excerpt. '
+             'RISK: one concrete defect hypothesis or boundary case in 20-30 words. '
+             'TEST: one deterministic adversarial Godot test that checks the risk in 20-30 words. '
+             'Do NOT repeat instructions or claim PASS for unexecuted tests.\nSOURCE:\n'+source+
+             '\nEXISTING TEST FIXTURES:\n'+test)
+          (out/'exact-prompt.txt').write_text(prompt)
+          req=urllib.request.Request('http://127.0.0.1:11434/api/generate',
+              data=json.dumps({'model':'qwen2.5-coder:7b','prompt':prompt,
+                  'stream':False,'options':{'temperature':0,'num_predict':520}}).encode(),
+              headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=420) as response: raw=json.load(response)
+          (out/'raw-ollama-response.json').write_text(json.dumps(raw,ensure_ascii=False,indent=2))
+          answer=raw.get('response','')
+          (out/'unedited-critic-report.txt').write_text(answer)
+          verdict='NOT_VERIFIED_INDEPENDENT_CRITIC_FORMAT'
+          try:
+              lines=[s.strip() for s in answer.splitlines() if s.strip()]
+              assert len(lines)==3,'Expected exactly 3 grounded lines'
+              assert all(lines[i].startswith(x) for i,x in enumerate(('QUOTE:','RISK:','TEST:')))
+              snippet=lines[0].split(':',1)[1].strip().strip('`')
+              assert len(snippet)>=18 and snippet in source,'Quote absent from real source'
+              risk=lines[1].split(':',1)[1].strip()
+              proposed=lines[2].split(':',1)[1].strip()
+              assert len(risk)>=22 and len(proposed)>=22,'Missing adversarial hypothesis'
+              verdict='INDEPENDENT_SOURCE_HYPOTHESIS_RECEIVED_REQUIRES_HUMAN_TRIAGE'
+          except Exception as err:
+              (out/'critic-contract-error.txt').write_text(repr(err))
+          (out/'evidence.json').write_text(json.dumps({
+              'git_sha':os.environ['GITHUB_SHA'],'reviewer':'local ollama qwen2.5-coder:7b',
+              'review_input':'actual builder + modal + physical Jolt test',
+              'model_response_contract':verdict,'Android_device':'NOT_VERIFIED',
+              'test_runtime':'SEPARATE_REAL_GODOT_WORKFLOW'},indent=2))
+          print(verdict)
+          if not verdict.startswith('INDEPENDENT_SOURCE'): raise SystemExit(14)
+          PY
+      - name: Keep unmodified reviewer evidence even if critic fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-original-pool-composer-independent-qwen
+          path: ${{ runner.temp }}/m4-composition-critic
+          retention-days: 14
+          if-no-files-found: warn
