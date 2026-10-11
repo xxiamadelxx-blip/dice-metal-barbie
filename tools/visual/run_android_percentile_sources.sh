@@ -73,21 +73,38 @@ adb shell screenrecord --size 720x1280 --bit-rate 4500000 \
   --time-limit 175 "$device" &
 pid=$!
 sleep 1
+# Real 38151700973 AVD proved Android/Godot input-to-render latency:
+# the first screenshot after this exact tap remained byte-for-byte unchanged,
+# while trap's final original screenshot already contained the REAL open drawer.
+# Send ONE tap, wait for a visibly new rendered HUD. Never double-tap a still
+# loading screen (which could toggle the correctly opened drawer closed).
 adb shell input tap 50 97
-sleep 1
-adb exec-out screencap -p > "$out/m4-pair-formula-drawer.png"
-# Authentic Android UI must have visibly opened (not splash/stale overlay).
-python3 - "$out/m4-pair-before-drawer.png" "$out/m4-pair-formula-drawer.png" <<'PY'
+drawer_open=0
+for attempt in $(seq 1 15); do
+  sleep .8
+  adb exec-out screencap -p > "$out/m4-pair-formula-drawer.png"
+  if python3 - "$out/m4-pair-before-drawer.png" "$out/m4-pair-formula-drawer.png" <<'PY'
 import sys
 from PIL import Image, ImageChops
 before=Image.open(sys.argv[1]).convert('RGB')
 after=Image.open(sys.argv[2]).convert('RGB')
 assert before.size==after.size==(720,1280), 'D100 pair drawer viewport mismatch'
-d=ImageChops.difference(before.crop((17,110,703,580)),after.crop((17,110,703,580))).convert('L')
+d=ImageChops.difference(before.crop((17,110,703,580)),
+                        after.crop((17,110,703,580))).convert('L')
 changed=sum(n for v,n in enumerate(d.histogram()) if v>16)
-print('M4 Android pair ACTUAL drawer opened, changed pixels:',changed)
-assert changed>8500, 'No visible player drawer after real Android tap'
+print('M4 Android pair ACTUAL drawer changed pixels:',changed)
+assert changed>8500, 'Awaiting actually rendered advanced drawer'
 PY
+  then
+    drawer_open=1
+    break
+  fi
+  cp "$out/m4-pair-formula-drawer.png" "$out/m4-pair-drawer-pending-$attempt.png"
+done
+if test "$drawer_open" != 1; then
+  echo 'FAIL: real Godot advanced drawer did not become visually available after one Android tap'
+  exit 28
+fi
 # From genuine prior Android screenshot: formula input x32..688 y154..198.
 adb shell input tap 250 175
 adb shell input keyevent KEYCODE_MOVE_END

@@ -2,15 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 Android chosen paired D100: verify real popup, select physical ones D10 instead of repeating tens",
+    "task": "M4 Android paired D100 source: wait for actual delayed drawer frame after one real tap, preserve physical source gates",
     "route": "interface-accessibility",
     "status": "in_progress",
-    "owner": "Dice engineering agent via canonical router",
-    "next_action": "On current PR commit run full Gauntlet: assert real Android popup pixels, source-selected digit=ones and actual source Jolt attempts=3, history and 24fps frame QA. If green, merge staged M4 receipt statistics from SHA 614e112 (omit staging-only CI workflows), rerun exact combined Gauntlet. Then progress approved M4 composition UX.",
+    "owner": "Dice engineering via canonical router",
+    "next_action": "Inspect next full exact-source Android Gauntlet including all eight original physical modes, actual paired D100 tens+ones chosen rerolls, full history and frame-source timeline. Repair any real failure from original evidence; then merge staged statistics WITHOUT staging-only CI workflows and re-run combined full Gauntlet.",
     "blockers": [
-      "#38150379151 Android AVD selected FIRST (tens) again due wrong item Y coordinate 383 plus early popup timing. New y405, popup pixel gate and actual Godot selection event not yet verified.",
-      "M4 staged stats native Gauntlet #38150741182 passed but still separate from PR; local Qwen stage review in progress.",
-      "Real OnePlus Nord 3 FPS/install/upgrade and M5 arts/sound/haptics NOT_VERIFIED."
+      "#38151700973 failed at immediate pixel diff=0 after one ADB drawer tap; ORIGINAL cleanup screenshot shows drawer actually opened later. New single-tap wait-until-pixel-visible gate not yet verified.",
+      "M4 offline statistics separate staging branch #38152226270 real Godot PASS; Qwen review quality still NOT_VERIFIED, no integration to PR yet.",
+      "Actual Nord 3 APK installation/FPS/upgrade and M5 visual/art/audio NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -25,13 +25,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38150379151",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38150379151/artifacts/11705564419",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38150741182",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/614e1122739b2efdccd91bb984611435f21e067a"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/614e1122739b2efdccd91bb984611435f21e067a",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38151700973",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38151700973/artifacts/11706758093",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38152226270"
     ],
-    "last_observed_sha": "1683dc46ebb01aa0a7d40b7eb56044771b8a2b66",
+    "last_observed_sha": "43364ece4e4ad97dd8db73c73f207f8037a9cf3e",
     "last_verified_sha": "d2e5ddc7509a52bd31cb7ddd61c3ca1ea9ce1c0f",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Grounded original Android popup screenshot proves second source center y405; old tap y383 hit tens. New UI-selected debug event is tied to actual OptionButton selection. Same-source full Android and local critic review pending."
+    "verification_note": "Inspected original AVD 720x1280 before/instant/final PNG: instant drawer 0 diff vs before, final drawer actually open. Single tap + bounded wait for rendered pixels, fail closed. Same-source Android retest mandatory."
   },
   "incidents": {}
 }
