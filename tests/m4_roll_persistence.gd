@@ -29,6 +29,14 @@ func _run() -> void:
     var observed := Formula.evaluate(Formula.parse("2d6+1d20-3"),
         [[6,2],[20]])
     _assert(observed.get("ok",false),"Physical trace fixture invalid")
+    var forged := observed.duplicate(true)
+    forged["total"] = 999
+    _assert(not first.append_physical_result(forged).get("ok",false),
+        "Tampered nonphysical sum must never be persisted")
+    var altered_face := observed.duplicate(true)
+    altered_face["groups"][0]["attempts"][0] = [42]
+    _assert(not first.append_physical_result(altered_face).get("ok",false),
+        "Physically impossible face must never be persisted")
     _assert(first.append_physical_result(observed).get("ok",false),
         "Actual physical trace failed to persist")
     _assert(first.upsert_preset("Атака босса","2d6+1d20-3").get("ok",false),

@@ -73,6 +73,30 @@ func _commit(next: Dictionary) -> Dictionary:
 func append_physical_result(outcome: Dictionary) -> Dictionary:
     if not bool(outcome.get("ok",false)) or int(outcome.get("schema_version",-1)) != 1 or str(outcome.get("source","")) != "actual_physical_faces_required" or typeof(outcome.get("groups")) != TYPE_ARRAY:
         return _error("В историю нельзя записать непроверенный или придуманный бросок")
+    # A string claiming physical provenance is not an integrity check.
+    # Recompute the *entire* result from its stored face/reroll trace and
+    # reject tampered totals, invalid D20 mode/crit or altered group records.
+    var spec: Dictionary = Formula.parse(str(outcome.get("formula","")))
+    if not bool(spec.get("ok",false)):
+        return _error("Невозможно восстановить формулу записываемого броска")
+    var observed: Array = []
+    var selected_group := -1
+    var output_groups: Array = outcome["groups"]
+    for index in range(output_groups.size()):
+        if typeof(output_groups[index]) != TYPE_DICTIONARY:
+            return _error("Повреждённая трасса физического броска")
+        var group: Dictionary = output_groups[index]
+        if bool(group.get("selected_d20",false)):
+            if selected_group >= 0:
+                return _error("Несколько выбранных критических D20")
+            selected_group = index
+        if typeof(group.get("attempts")) != TYPE_ARRAY:
+            return _error("Нет последовательности реальных граней")
+        observed.append(group["attempts"])
+    var verified: Dictionary = Formula.evaluate(spec, observed,
+        str(outcome.get("d20_mode","normal")), selected_group)
+    if not bool(verified.get("ok",false)) or verified.get("total") != outcome.get("total") or verified.get("natural_d20_critical") != outcome.get("natural_d20_critical") or verified.get("groups") != outcome.get("groups") or verified.get("modifier") != outcome.get("modifier"):
+        return _error("Расчёт не совпадает с сохранёнными физическими гранями")
     var next := snapshot()
     var row := outcome.duplicate(true)
     row["timestamp_unix"] = Time.get_unix_time_from_system()
