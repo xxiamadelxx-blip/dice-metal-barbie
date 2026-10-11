@@ -1,0 +1,90 @@
+name: M4 staged genuine physical pool editor independent Qwen 7B
+on:
+  push:
+    branches:
+      - agent/m4-editable-physical-pool-20261011
+permissions:
+  contents: read
+concurrency:
+  group: m4-pool-critic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  isolated-source-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GAUNTLET_AI_BACKEND: ollama_local
+      GAUNTLET_BUILDER_MODEL: qwen2.5-coder:1.5b
+      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:7b
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Exact repository router and narrow source contract
+        run: |
+          set -euo pipefail
+          python3 scripts/engineering_router.py validate
+          test -s src/ui/m4_pool_editor_dialog.gd
+          test -s tests/m4_pool_editor_ui.gd
+      - name: Run separate local Ollama Qwen 7B, not a remote paid API
+        run: bash scripts/gauntlet_setup_local.sh
+      - name: Critic sees actual code and deterministic test, no builder narrative
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request
+          from pathlib import Path
+          out=Path(os.environ['RUNNER_TEMP'])/'m4-pool-critic'
+          out.mkdir(exist_ok=True)
+          source=Path('src/ui/m4_pool_editor_dialog.gd').read_text()
+          cases=Path('tests/m4_pool_editor_ui.gd').read_text()
+          prompt=('Review the following ACTUAL user-facing Godot dice-pool editor code as an adversarial independent QA critic. Consider signed group arithmetic, cancellation, count/group limits and physics locking. '
+                  'Answer with EXACTLY THREE lines. No JSON, markdown, code fences, or copied test code. '
+                  'Every RISK and TEST must be one plain-English sentence, maximum 25 words. '
+                  'LINE 1: QUOTE: followed by exact 18+ character substring of SOURCE. '
+                  'LINE 2: RISK: concrete risk or plausible edge case using that SOURCE line. '
+                  'LINE 3: TEST: a deterministic test described in ordinary English (no code). '
+                  'No device validation is possible. Never invent a run result. '
+                  'Every dice value must come from settled real Godot/Jolt bodies, not from dialog edits. The actual Android source touch is outside this source-only review.\n\n'
+                  'SOURCE:\n'+source+'\nTEST CASES (do not copy code):\n'+cases)
+          (out/'exact-prompt.txt').write_text(prompt)
+          print('Independent critic inputs ready: exact source + test fixtures')
+          req=urllib.request.Request('http://127.0.0.1:11434/api/generate',
+            data=json.dumps({'model':'qwen2.5-coder:7b','prompt':prompt,'stream':False,'options':{'temperature':0,'num_predict':320}}).encode(),
+            headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=420) as resp: raw=json.load(resp)
+          (out/'unmodified-ollama-response.json').write_text(json.dumps(raw,ensure_ascii=False,indent=2))
+          answer=raw.get('response','')
+          (out/'original-critic-text.txt').write_text(answer)
+          try:
+              lines=[x.strip() for x in answer.splitlines() if x.strip()]
+              assert len(lines)==3, 'Expected exactly three critic evidence lines'
+              assert lines[0].startswith('QUOTE: ') and lines[1].startswith('RISK: ') and lines[2].startswith('TEST: '), 'Missing structured lines'
+              # Qwen 7B emitted an *exact* source quote inside ordinary
+              # markdown backticks, without violating provenance. Strip only
+              # decorative delimiters; keep exact substring grounding strict.
+              quote=lines[0][7:].strip().strip('`').strip()
+              risk=lines[1][6:].strip()
+              proposed=lines[2][6:].strip()
+              assert len(quote)>=18 and quote in source, 'Critic quote not actually in source'
+              assert len(risk)>=25 and len(proposed)>=25, 'No material hypothesis and test'
+              assert len(risk.split())<=30 and len(proposed.split())<=30, 'Review not concise'
+              assert not any(x in proposed for x in ['{','}', 'var ', 'func ', 'append(']), 'Need prose test, not injected source'
+              verdict='SOURCE_EVIDENCE_REVIEW_RECEIVED'
+          except Exception as exc:
+              verdict='NOT_VERIFIED_INVALID_OR_GENERIC_CRITIC'
+              (out/'critic-contract-error.txt').write_text(repr(exc))
+          (out/'provenance.json').write_text(json.dumps({'exact_sha':os.environ['GITHUB_SHA'],
+            'local_critic':'qwen2.5-coder:7b','source_review_contract':verdict,
+            'real_godot_jolt_test':'SEPARATE_WORKFLOW','android_hardware':'NOT_VERIFIED'},indent=2))
+          print(verdict)
+          if verdict!='SOURCE_EVIDENCE_REVIEW_RECEIVED': raise SystemExit(14)
+          PY
+      - name: Preserve genuine original source prompt and verdict even on fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-pool-local-qwen7b-source-review
+          path: ${{ runner.temp }}/m4-pool-critic/
+          if-no-files-found: warn
+          retention-days: 14
