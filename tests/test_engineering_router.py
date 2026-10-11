@@ -8,6 +8,7 @@ import unittest
 
 from scripts.engineering_router import (
     EXPECTED_REPO, ROOT, RouterError, checkpoint, git_info, load_registry,
+    record_incident,
     main, parse_mode, probe_tools, read_json, report, route_for,
     validate_registry, validate_state,
 )
@@ -119,6 +120,30 @@ class EngineeringRouterTests(unittest.TestCase):
             self.assertEqual(done["checkpoint"]["evidence"], [])
             self.assertEqual(updated["active"]["last_verified_sha"], "")
             self.assertEqual([], validate_state(updated, self.reg))
+
+
+    def test_identical_failed_approach_budget_across_agent_sessions(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "docs/handoff").mkdir(parents=True)
+            path = root / "docs/handoff/ACTIVE_ROUTING_HANDOFF.json"
+            path.write_text(json.dumps(self.saved), encoding="utf-8")
+            from argparse import Namespace
+            args = Namespace(route="code", fingerprint="CI timeout unchanged / same command",
+                             outcome="failed", evidence="artifact://ci-error-log",
+                             classification="transient timeout")
+            self.assertEqual(record_incident(root, self.reg, args)["same_approach_failures"], 1)
+            second = record_incident(root, self.reg, args)
+            self.assertEqual(second["same_approach_failures"], 2)
+            self.assertTrue(second["do_not_retry"])
+            recovered = read_json(path)
+            self.assertEqual(recovered["active"]["status"], "blocked")
+            self.assertTrue(any("DO NOT RETRY" in b for b in recovered["active"]["blockers"]))
+            self.assertEqual([], validate_state(recovered, self.reg))
+            with self.assertRaisesRegex(RouterError, "DO NOT RETRY"):
+                record_incident(root, self.reg, args)
+            report_data = report("завис", self.reg, recovered, root, "code")
+            self.assertTrue(report_data["route_exhausted_fingerprints"])
 
     def test_documentation_hooks_prevent_bypassing_router(self):
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
