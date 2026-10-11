@@ -135,6 +135,10 @@ class ChatActor:
             if role == "builder" else
             "You are an INDEPENDENT CRITIC, not the builder. Review only exact source/diff, "
             "raw test output, approved criteria and prior critic findings. "
+            "AUTHORITY ORDER: approved_reference and acceptance > observed real test output > "
+            "actual candidate diff > original baseline. The baseline may be deliberately WRONG; "
+            "never call a patch defective merely because it changes the original behavior. "
+            "Do not invent an expected value from baseline. Evaluate what the USER APPROVED. "
             "Return JSON ONLY. If the actual diff meets all approved acceptance criteria "
             "AND tests passed AND you see no concrete defect, respond exactly "
             "{\"verdict\":\"PASS\",\"findings\":[]}. Do not invent defects. "

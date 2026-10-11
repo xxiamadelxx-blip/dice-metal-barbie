@@ -23,7 +23,7 @@ jobs:
       PYTHONDONTWRITEBYTECODE: "1"
       GAUNTLET_AI_BACKEND: ollama_local
       GAUNTLET_BUILDER_MODEL: qwen2.5-coder:1.5b
-      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:3b
+      GAUNTLET_CRITIC_MODEL: qwen2.5-coder:7b
     steps:
       - uses: actions/checkout@v4
         with:
