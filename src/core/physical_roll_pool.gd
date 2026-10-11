@@ -37,6 +37,8 @@ var _chosen_d20 := -1
 var _active: Array[RigidBody3D] = []
 var _values: Dictionary = {}
 var _failed_message := ""
+var _last_plan: Array[Dictionary] = []
+var _last_observed: Array = []
 
 func begin(expression: String, mode: String = "normal",
         percentile_mode: String = "pair", selected_d20_group: int = -1) -> bool:
@@ -78,6 +80,8 @@ func begin(expression: String, mode: String = "normal",
         pool_failed.emit("Для броска необходим хотя бы один физический кубик")
         return false
     _spec = spec
+    _last_plan.clear()
+    _last_observed.clear()
     _mode = mode
     _percentile_mode = percentile_mode
     _chosen_d20 = chosen
@@ -152,8 +156,109 @@ func _abort(reason: String) -> void:
         return
     last_physical_error = reason
     busy = false
+    last_result = {}
     _remove_active()
     pool_failed.emit(reason)
+
+func reroll_one(group_index: int, die_index: int) -> bool:
+    # A concrete face *already on the table* is the only source that can be
+    # rerolled. No hidden number generator, no arbitrary total edits.
+    if busy or not bool(last_result.get("ok",false)):
+        last_physical_error = "Сначала завершите обычный физический бросок"
+        return false
+    var slot := -1
+    for i in range(_last_plan.size()):
+        var source: Dictionary = _last_plan[i]
+        if int(source["group"]) == group_index and int(source["index"]) == die_index:
+            # Two separate D10 comprise a percentile pair; implementing
+            # a partial digit reroll requires extra D100 trace semantics.
+            if not str(source["digit"]).is_empty():
+                last_physical_error = "Отдельный процентный D10 пока нельзя перебросить"
+                return false
+            slot = i
+            break
+    if slot < 0 or slot >= _active.size():
+        last_physical_error = "Не удалось найти выбранный физический кубик"
+        return false
+    if not is_instance_valid(_active[slot]):
+        last_physical_error = "Выбранный физический кубик недоступен"
+        return false
+    last_physical_error = ""
+    _failed_message = ""
+    busy = true
+    call_deferred("_execute_physical_reroll",slot,group_index,die_index)
+    return true
+
+func _execute_physical_reroll(slot: int, group_index: int, die_index: int) -> void:
+    var target: RigidBody3D = _active[slot]
+    # Kept original results are held in-place (frozen) during the requested
+    # replay, but remain visually present with their true physical faces.
+    # The selected source remains fully dynamic and collides against them.
+    for i in range(_active.size()):
+        var body: RigidBody3D = _active[i]
+        body.freeze = i != slot
+    var old_aura := target.get_node_or_null("CriticalDiceAura") as Node3D
+    if old_aura != null:
+        target.remove_child(old_aura)
+        old_aura.queue_free()
+    _values.erase(target.get_instance_id())
+    var actual_sides: int = int(_last_plan[slot]["sides"])
+    if actual_sides == 10:
+        target.call("throw_from_top",0)
+    else:
+        target.call("throw_from_top")
+    # Only reset the throw's initial POSITION, not its sampled orientation or
+    # physical torque/impulse. Other dice remain where they genuinely landed.
+    var lane := _launch_position(slot)
+    target.position = Vector3(lane.x,target.position.y,lane.y)
+    var settled := false
+    for tick in range(MAX_PHYSICAL_STEPS):
+        await get_tree().physics_frame
+        if not _failed_message.is_empty():
+            _abort(_failed_message)
+            return
+        if _values.has(target.get_instance_id()) and target.sleeping:
+            settled = true
+            break
+    if not settled:
+        _abort("Выбранный кубик не остановился после физического переброса")
+        return
+    var new_top: int = _actual_top(target,actual_sides)
+    if new_top < 1 or new_top != int(_values.get(target.get_instance_id(),-1)) or new_top != int(target.get("result")):
+        _abort("Переброшенная грань не совпала с настоящим физическим результатом")
+        return
+    # Check every retained source face did not change while a different die
+    # was rerolled. If it did, invalidate instead of silently trusting it.
+    for i in range(_active.size()):
+        if i == slot:
+            continue
+        var kept: RigidBody3D = _active[i]
+        var kept_top := _actual_top(kept,int(_last_plan[i]["sides"]))
+        if kept_top < 1 or kept_top != int(_values.get(kept.get_instance_id(),-1)):
+            _abort("Сохранённый кубик изменился во время чужого переброса")
+            return
+    var observed: Array = _last_observed.duplicate(true)
+    var group_sources: Array = observed[group_index]
+    var previous: Variant = group_sources[die_index]
+    var attempts: Array = previous.duplicate(true) if typeof(previous) == TYPE_ARRAY else [previous]
+    attempts.append(new_top)
+    group_sources[die_index] = attempts
+    var final: Dictionary = Formula.evaluate(_spec,observed,_mode,_chosen_d20)
+    if not bool(final.get("ok",false)):
+        _abort(str(final.get("error","Неверная трасса физического переброса")))
+        return
+    final["physical_bodies"] = _active.size()
+    final["all_source_bodies_remain_visible"] = true
+    final["rerolled_physical_group_index"] = group_index
+    final["rerolled_physical_die_index"] = die_index
+    final["reroll_attempts_on_selected_die"] = attempts.size()
+    _last_observed = observed.duplicate(true)
+    last_result = final
+    busy = false
+    if OS.is_debug_build():
+        print("DICE_M4_REAL_REROLL_COMPLETED D%d=%d attempts=%d" %
+            [actual_sides,new_top,attempts.size()])
+    pool_completed.emit(final)
 
 func _launch_position(slot: int) -> Vector2:
     # 3 columns * up to 3 rows. Adjacent convex bodies are separated at
@@ -287,6 +392,8 @@ func _run() -> void:
     result["all_source_bodies_remain_visible"] = true
     # Keep all REAL settled rigid bodies visible, with their original Jolt
     # collision hulls, poses, and recorded result, until the next cast.
+    _last_plan = plan.duplicate(true)
+    _last_observed = observed.duplicate(true)
     last_result = result
     busy = false
     if OS.is_debug_build():

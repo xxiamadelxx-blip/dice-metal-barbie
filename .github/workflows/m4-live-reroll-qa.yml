@@ -1,0 +1,29 @@
+name: M4 Real Selective Reroll QA
+on:
+  push:
+    branches: [qa/m4-live-reroll]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-physical-reroll:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import exact Godot/Jolt 4.6.3 production models
+        run: godot --headless --path . --editor --quit
+      - name: Validate physical selective-reroll source and genuine tests
+        run: |
+          godot --headless --path . --check-only --script res://src/core/physical_roll_pool.gd
+          godot --headless --path . --check-only --script res://tests/m4_physical_reroll.gd
+      - name: Throw genuinely selected Jolt source twice while keeping others on table
+        run: godot --headless --path . --script res://tests/m4_physical_reroll.gd
+      - name: Do not regress original eight-concurrent-dice and percentiles
+        run: godot --headless --path . --script res://tests/m4_physical_pool.gd
+      - name: Real-face formula/reroll-trace and offline storage regressions
+        run: |
+          godot --headless --path . --script res://tests/m4_roll_formula.gd
+          godot --headless --path . --script res://tests/m4_roll_persistence.gd
