@@ -6,12 +6,14 @@
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Run exact-source full Gauntlet from new atomic M5 dock commit. Inspect 7 actual Godot buttons from native frames, compile/run tests/m5_compact_dock.gd, AVD real D4/D6/D8/D10/D12/D20/D100/D100_PAIR taps and dynamic on-dock D100 mode touch via debug RECT, source completion and full frame auditer. If RED use source original screenshots/logs to fix; never relax tests or fake physical results. PBR candidate native screenshot showed sharper white bevels, premium obsidian artistic signoff still OPEN. Resume M5 true Blender-to-Godot polished stone, contact audio/haptics after this.",
+    "next_action": "First inspect exact-source M5 seven-dice dock Gauntlet after Alpha4 reference documentation commits, fix any real Godot/AVD layout failure. Use newly audited older favorite Alpha 4 Obsidian Studio design as M5 UX/VFX reference: docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md. Its luxurious warm brass / dark jade style, backstage modal sheets, quick presets, results, natural 20/1 and minimal 1.5px tray impact are useful; DO NOT import prechosen/forced HTML dice outcomes into Jolt, do not add Supabase live. Then implement local physical-hit velvet response, actual settled-D20 VFX and sound/haptics with original 24fps screenshots. Real Alpha4 browser interaction was NOT VERIFIED (browser service out of wallet funds); do not misstate that screenshots/touches happened.",
     "blockers": [
       "M5 unified seven-chip dock candidate NOT_VERIFIED until fresh Godot/Jolt/Android CI.",
       "M5 PBR native screenshot sharper facet reflection but still grayish; artistic Concept 3 approval NOT_VERIFIED.",
       "M5 physical-contact audio/haptics and real OnePlus Nord 3 phone QA remain OPEN.",
-      "Local engineering_router.py CLI NOT_VERIFIED: no checked-out repo/Godot binary in assistant runtime; GitHub connector used for preflight."
+      "Local engineering_router.py CLI NOT_VERIFIED: no checked-out repo/Godot binary in assistant runtime; GitHub connector used for preflight.",
+      "Alpha 4 live site HTML and linked source audited, but actual browser click/screenshot/video could not run: TinyFish wallet out of funds. Physical rendering/tactile animation observed in code, not verified live. Do not pretend visual acceptance.",
+      "Approved Concept 3 is still styling/camera authority; Alpha4 is strong inspiration but its preselected result guided to face conflicts with Jolt physical output."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -70,13 +72,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38174391709/artifacts/11715486450",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38174391709/artifacts/11714694965",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38176763640",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38176798218"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38176798218",
+      "https://adel-dice-roll.vercel.app/",
+      "https://github.com/xxiamadelxx-blip/Dmmaster/tree/8692a682fe34ccc855a0550bf7747eff8846ed29",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/feat/m5-approved-minimal-premium-visual-pass-1/docs/references/ALPHA4_LIVE_OBSIDIAN_STUDIO_AUDIT.md"
     ],
-    "last_observed_sha": "49252548dc8a0d75b07502ace1d07440c40a8fcd",
+    "last_observed_sha": "2a8524b4aecb85aff58cc18e6720b94160436d07",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "M5 PBR source already modified at exact branch HEAD. New seven-die dock atomic candidate + test/Android dynamic source-rect touch committed in one tree; NOT VERIFIED until complete exact-run Gauntlet. Physical source calculation not altered. Prior run #38176798218 still being evaluated at authoring. Current HEAD recorded before this new commit: 49252548dc8a0d75b07502ace1d07440c40a8fcd"
+    "verification_note": "Alpha4 reference audit source HTTP200 and original Vercel served 16.65MB HTML, Dmmaster exact source revision 8692a68, readable CSS/crit plan/docs. UI screenshot/browser execution NOT VERIFIED due TinyFish insufficient wallet; zero fabricated images. This commit only adds design reference+handoff, no Godot code changes. Last observed SHA is pre-checkpoint source."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
