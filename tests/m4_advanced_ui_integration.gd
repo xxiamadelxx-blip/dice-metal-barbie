@@ -63,6 +63,8 @@ func _run() -> void:
     var pool := scene.get("physical_pool") as Node3D
     _check(pool != null and bool(pool.get("busy")),
         "UI click must launch real Jolt physical pool")
+    _check(not panel.visible and open.disabled,
+        "During active Jolt animation the advanced drawer must close and lock")
     if pool == null:
         quit(1)
         return
@@ -85,6 +87,15 @@ func _run() -> void:
             "Visible UI result differs from real Jolt sum")
         _check(not submit.disabled,
             "Advanced UI must re-enable after physical settlement")
+    _check(not open.disabled and not submit.disabled,
+        "After completed Jolt roll advanced controls must unlock")
+    open.pressed.emit()
+    _check(panel.visible, "Saved history drawer must reopen after physics")
+    var previous_result := int(scene.get("last_result"))
+    formula.text = "broken+d37"
+    submit.pressed.emit()
+    _check(int(scene.get("last_result")) == previous_result and panel.visible,
+        "Invalid advanced formula erased previous true physical result/table")
     var after: Array = store.call("snapshot")["history"]
     _check(after.size() == mini(before+1,200),
         "Actual real-body user throw was not persisted in history")

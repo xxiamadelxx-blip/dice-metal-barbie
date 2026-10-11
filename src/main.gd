@@ -71,7 +71,7 @@ func _setup_m4_local_and_drawer() -> void:
         advanced_panel.call("show_message","Локальный файл требует восстановления; запись заблокирована")
 
 func _toggle_advanced_rules() -> void:
-    if advanced_panel == null:
+    if advanced_panel == null or throw_button.disabled:
         return
     advanced_panel.visible = not advanced_panel.visible
 
@@ -98,6 +98,22 @@ func _request_advanced_throw(expression: String, mode: String, d100_mode: String
         return
     if is_instance_valid(physical_pool) and bool(physical_pool.get("busy")):
         return
+    # Validate BEFORE clearing the existing physical scene or result.
+    var parsed: Dictionary = RollFormula.parse(expression)
+    if not bool(parsed.get("ok",false)):
+        advanced_panel.call("show_message",str(parsed.get("error","Неверная формула")))
+        return
+    if int(parsed.get("physical_dice",0)) > 8:
+        advanced_panel.call("show_message","Для стола доступно до восьми физических кубиков")
+        return
+    if mode != "normal":
+        var qualified := 0
+        for group in parsed["groups"]:
+            if int(group["sides"]) == 20 and int(group["count"]) == 1:
+                qualified += 1
+        if qualified != 1:
+            advanced_panel.call("show_message","Преимущество требует ровно один выбранный D20")
+            return
     _clear_pool_for_basic_throw()
     if is_instance_valid(active_die):
         if active_die.get_parent() == self:
@@ -131,6 +147,10 @@ func _request_advanced_throw(expression: String, mode: String, d100_mode: String
     copy_button.disabled = true
     advanced_panel.call("set_roll_locked",true)
     advanced_panel.call("show_message","Jolt: выполняются реальные физические броски")
+    # Return the table to full visibility and lock the drawer while physics
+    # runs. The user can reopen history after the genuine settled result.
+    advanced_panel.visible = false
+    advanced_open_button.disabled = true
 
 func _m4_physical_completed(result: Dictionary) -> void:
     if not bool(result.get("ok",false)):
@@ -145,6 +165,7 @@ func _m4_physical_completed(result: Dictionary) -> void:
     throw_button.disabled = false
     selected_chooser.disabled = false
     advanced_panel.call("set_roll_locked",false)
+    advanced_open_button.disabled = false
     advanced_panel.call("show_message","Итог по настоящим физическим граням: %d" % last_result)
     _record_m4_result(result)
     if OS.is_debug_build():
@@ -158,6 +179,7 @@ func _m4_physical_failed(message: String) -> void:
     copy_button.disabled = true
     if advanced_panel != null:
         advanced_panel.call("set_roll_locked",false)
+        advanced_open_button.disabled = false
         advanced_panel.call("show_message",message)
     if OS.is_debug_build():
         print("DICE_M4_PHYSICAL_FAILED "+message)
