@@ -20,3 +20,4 @@ LEAD → BUILDER → INDEPENDENT CRITIC (when actually available) → COMPARISON
 - No paid tools, cloud runtime, account flows, or third-party assets without approval/license.
 
 Use feature branches and PRs. Do not push unreviewed work directly to `main` unless explicitly authorized. Never commit signing keys or passwords.
+
