@@ -29,6 +29,7 @@ def valid_record():
             ],
             "critic": {
                 "mode": "independent",
+                "reviewed_sha": B,
                 "reviewer_id": "reviewer-other-session",
                 "isolated_run_ref": "https://github.com/owner/repo/issues/42",
                 "raw_artifact_review_ref": "artifact://critic-report",
@@ -52,6 +53,11 @@ class GauntletEvidenceTests(unittest.TestCase):
         r = valid_record()
         r["iterations"][0]["critic"]["reviewer_id"] = r["builder_id"]
         self.assertTrue(any("identity" in e for e in evaluate(r)))
+
+    def test_rejects_stale_reviewer_sha(self):
+        r = valid_record()
+        r["iterations"][0]["critic"]["reviewed_sha"] = A
+        self.assertTrue(any("exact candidate_sha" in e for e in evaluate(r)))
 
     def test_rejects_missing_raw_review(self):
         r = valid_record()
@@ -91,12 +97,34 @@ class GauntletEvidenceTests(unittest.TestCase):
         old["critic"]["verdict"] = "FAIL"
         old["checks"][0]["status"] = "FAIL"
         old["candidate_sha"] = A
+        old["critic"]["reviewed_sha"] = A
         r["iterations"].insert(0, old)
         r["iterations"][1]["index"] = 2
         r["iterations"][1]["change_ref"] = "https://github.com/owner/repo/commit/" + B
         self.assertEqual(evaluate(r), [])
         del r["iterations"][1]["change_ref"]
         self.assertTrue(any("change_ref" in e for e in evaluate(r)))
+
+    def test_does_not_drop_previous_critical_findings(self):
+        r = valid_record()
+        old = copy.deepcopy(r["iterations"][0])
+        old["candidate_sha"] = A
+        old["critic"]["reviewed_sha"] = A
+        old["critic"]["verdict"] = "FAIL"
+        old["critic"]["findings"] = [{
+            "id": "still-broken", "severity": "major", "disposition": "open",
+            "evidence_ref": "artifact://real-failure",
+        }]
+        r["iterations"].insert(0, old)
+        r["iterations"][1]["index"] = 2
+        r["iterations"][1]["change_ref"] = "artifact://retest-fix"
+        self.assertTrue(any("carried across iterations" in e for e in evaluate(r)))
+        r["iterations"][1]["critic"]["findings"] = [{
+            "id": "still-broken", "severity": "major", "disposition": "resolved",
+            "evidence_ref": "artifact://original-failure",
+            "retest_ref": "artifact://passing-retest",
+        }]
+        self.assertEqual(evaluate(r), [])
 
     def test_rejects_empty_record(self):
         self.assertTrue(evaluate({}))
