@@ -14,7 +14,8 @@
     "last_verified_sha": "",
     "branch": "main",
     "updated_at": "2026-10-11",
-    "verification_note": "Project stage/PR status needs fresh verification; nothing here proves current feature PASS. User-provided instruction: previous Dice agent stopped."
+    "verification_note": "Project stage/PR status needs fresh verification; nothing here proves current feature PASS. User-provided instruction: previous Dice agent stopped.",
+    "last_observed_sha": ""
   },
   "incidents": {}
 }
