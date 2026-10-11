@@ -2,14 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4: merge offline saved-receipt statistics into physical D100 Android-verified draft PR while preserving all approved dice visual/game mechanics",
-    "route": "reliability-persistence",
+    "task": "M4 hidden composition editor: grouped signed dice and modifier with unchanged Godot/Jolt source of truth",
+    "route": "interface-accessibility",
     "status": "in_progress",
-    "owner": "Dice engineering via canonical router",
-    "next_action": "Run and review full unified same-new-SHA Gauntlet for merged M4 history receipt statistics: Android real selected tens+ones source controls/history, native all frames, genuine Jolt, ARM64 APK. Then continue approved M4 pool editing controls if green.",
+    "owner": "Dice engineering agent via canonical router",
+    "next_action": "Read exact-SHA full Gauntlet source/compiler results: new GDScript composer, genuine 4-body mixed signed physical pool, newly extended actual 24fps UI capture, Android existing D100 tens/ones regression. Fix any original errors and rerun. Continue M4 UX only after gate passes.",
     "blockers": [
-      "Merged local statistics feature has separate PASS (#38155000941 and Qwen #38155000883) but full combined HEAD Gauntlet NOT_VERIFIED until new CI.",
-      "Actual OnePlus Nord 3 hardware FPS/install/upgrade, M5 visual/audio/haptics artistic acceptance and M6 production release remain OPEN."
+      "New M4 composer/Godot player interaction and native 24fps capture candidate has NOT yet run same-source CI.",
+      "Independent Qwen model critique for new pool editor NOT_VERIFIED before new source CI.",
+      "OnePlus Nord3 physical APK install/upgrade/FPS, M5 art/sound/haptics and M6 release remain OPEN."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -32,13 +33,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38154867996/artifacts/11708636499",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38155000941",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38155000883",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38155000883/artifacts/11708307037"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38155000883/artifacts/11708307037",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38156059963",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38156059709"
     ],
-    "last_observed_sha": "a00855230f4dddd11f0f5d13f0df164e7af890f0",
-    "last_verified_sha": "b422eca1196e24716a4e9aa55e4d1dd6ed526206",
+    "last_observed_sha": "16164b16f398ea95a7a2b30b9ecc3a7caea6d307",
+    "last_verified_sha": "035adac823621b5feb35564f8d1d97120fac64e6",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Full original b422 source Gauntlet SUCCESS and original Android D100 42→82→88 real tens/ones Jolt gestures & 13-record history; separate stage statistics 11/11+30/30 Godot and independent local 7B reviewed source. Combined merge still requires exact-SHA full Gauntlet."
+    "verification_note": "Full #38156059963 successful on prior merge, original AVD 8 types and selected tens/ones + offline stats 11/11 30/30; new visual pool composer candidate guarded by Formula.parse and genuine Jolt tests NOT_VERIFIED."
   },
   "incidents": {}
 }

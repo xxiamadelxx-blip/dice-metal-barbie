@@ -63,6 +63,8 @@ jobs:
         run: godot --headless --path . --script res://tests/m4_physical_pool.gd
       - name: M4 actual drawer click plus genuine mixed Jolt and offline history
         run: godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd
+      - name: M4 real pool composer buttons, guarded expression and Jolt history
+        run: godot --headless --path . --script res://tests/m4_pool_composer_jolt.gd
       - name: M4 selectively reroll actual Jolt body and retain all untouched real faces
         run: godot --headless --path . --script res://tests/m4_physical_reroll.gd
       - name: M4 click physical source picker, reroll and audit local history

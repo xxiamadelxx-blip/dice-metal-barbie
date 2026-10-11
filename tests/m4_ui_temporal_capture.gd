@@ -48,10 +48,41 @@ func _run() -> void:
         push_error("Actual advanced drawer click failed")
         quit(33)
         return
-    await create_timer(1.25).timeout
+    await create_timer(0.5).timeout
     var formula := panel.get("formula_input") as LineEdit
     var send := panel.get("roll_button") as Button
+    # This segment of the SAME original 24fps recording includes the new
+    # hidden-by-default physically correct pool composer, not a screenshot mock.
     formula.text = "1d6+1d4-3"
+    var edit_pool := panel.find_child("OpenPhysicalPoolComposer",true,false) as Button
+    var editor := panel.get("pool_composer") as ConfirmationDialog
+    if edit_pool==null or editor==null:
+        push_error("Actual pool composer missing from native visual capture")
+        quit(60)
+        return
+    edit_pool.pressed.emit()
+    await process_frame
+    if not editor.visible:
+        push_error("User pool composition modal not actually opened")
+        quit(61)
+        return
+    await create_timer(1.0).timeout
+    var increment := editor.find_child("IncreaseGroupCount",true,false) as Button
+    var decrement := editor.find_child("DecreaseGroupCount",true,false) as Button
+    if increment==null or decrement==null:
+        push_error("Real group count stepper missing from pool composer")
+        quit(62)
+        return
+    increment.pressed.emit()
+    await create_timer(0.6).timeout
+    decrement.pressed.emit()
+    await create_timer(0.4).timeout
+    editor.get_ok_button().pressed.emit()
+    if formula.text != "1d6+1d4-3":
+        push_error("Composition round-trip changed accepted Jolt fixture")
+        quit(63)
+        return
+    await create_timer(0.3).timeout
     send.pressed.emit()
     var pool := scene.get("physical_pool") as Node3D
     if pool == null or not bool(pool.get("busy")):

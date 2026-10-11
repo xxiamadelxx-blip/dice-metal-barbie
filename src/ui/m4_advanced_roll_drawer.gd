@@ -1,4 +1,5 @@
 extends PanelContainer
+const PoolComposer = preload("res://src/ui/m4_pool_composer.gd")
 ## M4 minimal WORKING advanced drawer. Approved Concept 3 remains authority;
 ## this is functional UX only, not final M5 typography/art.
 signal physical_roll_requested(expression: String, mode: String, d100_mode: String)
@@ -9,6 +10,7 @@ signal history_open_requested
 signal physical_reroll_requested(group_index: int, die_index: int, digit: String)
 
 var formula_input: LineEdit
+var pool_composer: ConfirmationDialog
 var name_input: LineEdit
 var modes: OptionButton
 var hundred_modes: OptionButton
@@ -44,12 +46,28 @@ func _ready() -> void:
     caption.text = "СОСТАВНОЙ БРОСОК"
     caption.add_theme_font_size_override("font_size",17)
     content.add_child(caption)
+    # One compact real action beside the existing formula field. Keep its
+    # actual AVD input bounds/row unchanged, not another crowded drawer row.
+    var formula_row := HBoxContainer.new()
+    formula_row.add_theme_constant_override("separation",6)
+    content.add_child(formula_row)
     formula_input = LineEdit.new()
     formula_input.name = "PhysicalFormulaInput"
     formula_input.placeholder_text = "Например: 2d6+1d20-3"
     formula_input.text = "2d6+1d20-3"
+    formula_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     formula_input.custom_minimum_size.y = 46
-    content.add_child(formula_input)
+    formula_row.add_child(formula_input)
+    var edit_pool := Button.new()
+    edit_pool.name = "OpenPhysicalPoolComposer"
+    edit_pool.text = "НАБОР"
+    edit_pool.tooltip_text = "Добавить, убрать, изменить кубики и модификатор"
+    edit_pool.custom_minimum_size = Vector2(88,46)
+    edit_pool.pressed.connect(_open_pool_composer)
+    formula_row.add_child(edit_pool)
+    pool_composer = PoolComposer.new()
+    add_child(pool_composer)
+    pool_composer.connect("formula_applied",_on_pool_formula_applied)
     var modes_row := HBoxContainer.new()
     modes_row.add_theme_constant_override("separation",8)
     content.add_child(modes_row)
@@ -153,6 +171,14 @@ func _ready() -> void:
     feedback.text = "Числа берутся только с остановившихся физических граней."
     feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     content.add_child(feedback)
+
+func _open_pool_composer() -> void:
+    if not bool(pool_composer.call("open_formula",formula_input.text)):
+        feedback.text = "Набор: "+str((pool_composer.get("builder") as RefCounted).get("error_text"))
+
+func _on_pool_formula_applied(expression: String) -> void:
+    formula_input.text = expression
+    feedback.text = "Набор собран. Нажмите «БРОСИТЬ ФОРМУЛУ»."
 
 func _selected_mode() -> String:
     match modes.selected:
