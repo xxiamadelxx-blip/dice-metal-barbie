@@ -7,6 +7,7 @@ Entrypoint: python3 scripts/engineering_router.py enter --intent "продолж
 from __future__ import annotations
 
 import argparse
+import hashlib
 from datetime import datetime, timezone
 import json
 import os
@@ -129,6 +130,8 @@ def validate_state(state: dict[str, Any], registry: dict[str, Any]) -> list[str]
             errors.append("invalid handoff " + key)
     if active.get("status") == "blocked" and not active.get("blockers"):
         errors.append("blocked task without specific blocker")
+    if "incidents" in state and not isinstance(state["incidents"], dict):
+        errors.append("incident ledger must be object")
     return errors
 
 
@@ -228,10 +231,16 @@ def report(intent: str, registry: dict[str, Any], state: dict[str, Any],
         warnings.append("HANDOFF: re-read approved design/current PR and capture exact SHA before trusting saved claims")
     if not state["active"]["evidence"]:
         warnings.append("No verified evidence linked in handoff; test/release status is NOT VERIFIED")
+    incidents = state.get("incidents", {})
+    repeats = [v for v in incidents.values() if isinstance(v, dict) and
+               v.get("route") == chosen["id"] and v.get("failed_count", 0) >= 2]
+    if repeats:
+        warnings.append("DO NOT RETRY: same-route failure budget exhausted; choose fresh hypothesis/fingerprint or checkpoint blocker")
     return {
         "project": EXPECTED_REPO, "mode": mode, "entrypoint": registry["entrypoint"],
         "route": chosen["id"], "route_title": chosen["title"],
         "current": git, "saved": state["active"], "handoff_stale": stale,
+        "route_exhausted_fingerprints": [v.get("fingerprint") for v in repeats],
         "tools": chosen["tools"], "checks": chosen["checks"],
         "required_artifacts": chosen["artifacts"], "constraints": chosen["requires"],
         "fallback": chosen["fallback"], "warnings": warnings,
@@ -264,7 +273,8 @@ def checkpoint(root: Path, registry: dict[str, Any], args: argparse.Namespace) -
         "branch": g["branch"], "updated_at": now(),
         "verification_note": args.verification_note or "NOT_VERIFIED until external evidence is reviewed",
     }
-    next_state = {"schema_version": 1, "repository": EXPECTED_REPO, "active": entry}
+    next_state = {"schema_version": 1, "repository": EXPECTED_REPO, "active": entry,
+                  "incidents": current.get("incidents", {})}
     errors = validate_state(next_state, registry)
     if errors:
         raise RouterError("; ".join(errors))
@@ -272,6 +282,55 @@ def checkpoint(root: Path, registry: dict[str, Any], args: argparse.Namespace) -
     return {
         "message": "Checkpoint written locally. Commit the handoff file to persist it for the next agent.",
         "checkpoint": entry,
+    }
+
+
+
+def record_incident(root: Path, registry: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+    """Persistent anti-stall ledger: two identical failed attempts then DO NOT RETRY."""
+    route_ids = {r["id"] for r in registry["routes"]}
+    if args.route not in route_ids or not text(args.fingerprint) or not text(args.evidence):
+        raise RouterError("route, fingerprint and real evidence reference required")
+    if len(args.fingerprint) > 300 or len(args.evidence) > 1600:
+        raise RouterError("fingerprint or evidence reference too long")
+    state_path = root / "docs/handoff/ACTIVE_ROUTING_HANDOFF.json"
+    state = read_json(state_path)
+    problems = validate_state(state, registry)
+    if problems:
+        raise RouterError("; ".join(problems))
+    records = state.setdefault("incidents", {})
+    fingerprint = args.fingerprint.strip()
+    key = hashlib.sha256((args.route + "\\n" + fingerprint).encode("utf-8")).hexdigest()
+    entry = records.get(key, {
+        "route": args.route, "fingerprint": fingerprint,
+        "failed_count": 0, "resolved_count": 0, "last_evidence": "",
+        "last_classification": "", "updated_at": "",
+    })
+    if args.outcome == "failed" and entry["failed_count"] >= 2:
+        raise RouterError("DO NOT RETRY: identical route/hypothesis exhausted; change the route or fingerprint with new evidence")
+    if args.outcome == "failed":
+        entry["failed_count"] += 1
+    else:
+        entry["resolved_count"] += 1
+        entry["failed_count"] = 0
+    entry["last_evidence"] = args.evidence
+    entry["last_classification"] = args.classification
+    entry["updated_at"] = now()
+    records[key] = entry
+    if entry["failed_count"] >= 2:
+        active = state["active"]
+        active["status"] = "blocked"
+        active["route"] = args.route
+        marker = "DO NOT RETRY " + fingerprint
+        if marker not in active["blockers"]:
+            active["blockers"].append(marker)
+        active["next_action"] = "Change hypothesis/route with new source evidence; do not repeat exhausted attempt"
+    write_atomic(state_path, state)
+    return {
+        "message": "Incident recorded locally; commit/push handoff for future agent",
+        "route": args.route, "fingerprint": fingerprint,
+        "same_approach_failures": entry["failed_count"],
+        "do_not_retry": entry["failed_count"] >= 2,
     }
 
 
@@ -284,6 +343,13 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
     sub.add_parser("audit", help="probe actual binary presence without inventing installations")
     sub.add_parser("validate", help="validate registry and handoff contract")
     sub.add_parser("handoff", help="recover and print canonical next agent briefing")
+    incident = sub.add_parser("incident", help="record bounded failed approach and require a changed hypothesis")
+    incident.add_argument("--route", required=True)
+    incident.add_argument("--fingerprint", required=True,
+                          help="short stable description of SAME input, route and hypothesis")
+    incident.add_argument("--outcome", choices=["failed", "resolved"], required=True)
+    incident.add_argument("--evidence", required=True, help="real CI/log/source evidence reference")
+    incident.add_argument("--classification", default="unclassified")
     cp = sub.add_parser("checkpoint", help="write atomic trackable handoff state (no commit)")
     cp.add_argument("--task", required=True)
     cp.add_argument("--route", required=True)
@@ -308,6 +374,8 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
                       "warning": "binary-found is not runtime/export/device verification; plugins not discoverable from CLI"}
         elif args.command == "checkpoint":
             output = checkpoint(root, reg, args)
+        elif args.command == "incident":
+            output = record_incident(root, reg, args)
         else:
             output = report(args.intent if args.command == "enter" else "передача новому агенту",
                             reg, state, root, getattr(args, "route", None))
