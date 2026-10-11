@@ -6,9 +6,9 @@ var failed := 0
 
 func _initialize() -> void:
     call_deferred("_run")
-func _check(pass: bool, message: String) -> void:
+func _check(valid: bool, message: String) -> void:
     checks += 1
-    if not pass:
+    if not valid:
         failed += 1
         push_error(message)
 func _wait(roll_pool: Node3D) -> bool:
