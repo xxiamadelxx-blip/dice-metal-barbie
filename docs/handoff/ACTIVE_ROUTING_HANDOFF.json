@@ -2,15 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 Android full pool editor player touch PASS on prior source; integrate real-D20 edge stability into unified Gauntlet",
-    "route": "reliability-persistence",
+    "task": "M4 original Android AVD pool-editor pixel readiness after real player taps; preserve native physics and strict Gauntlet",
+    "route": "interface-accessibility",
     "status": "in_progress",
-    "owner": "Dice engineering via canonical router",
-    "next_action": "Run combined exact SHA unified Blender+native real 24fps+12 signed Jolt stress+Android all pool source touch+ARM64 and Qwen; inspect original logs/captures, do not advance until complete. Only then assess M4 milestone closure.",
+    "owner": "Dice engineering via canonical router (connected GitHub, no local repository shell)",
+    "next_action": "Inspect newly triggered combined PR #23 exact-SHA Gauntlet and uploaded original Android screenshots/frame JSONLs. Confirm D4 add/remove, D20 sign/restore, Cancel/reopen, quantity/modifier each had matching Godot telemetry AND >75 true original changed pixels. Check eight baseline physical Android rolls, 12 signed Jolt trials, full native 24fps, ARM64, and actual independent local Qwen 7B evidence. If AVD FAIL, use the newly logged measured changed-pixel counts to fix capture/render cause, not relax thresholds. Do not start M5 or merge.",
     "blockers": [
-      "Previous full #38167166110 RED due real D20 edge ambiguity; isolated focused #38167813941 PASS (12+8+8) but new combined HEAD requires rerun.",
-      "Previous Android extra Add/Remove/Sign/Cancel + four Jolt bodies total 10 and 14 history rows PASS on source 859eec. New source regression NOT_VERIFIED.",
-      "Actual Nord 3 hardware FPS/update, M5 premium art/audio and M6 release remain OPEN."
+      "Prior exact-source unified #38168476227 native+Jolt+ARM64 PASS; AVD full original-pixel frame audit FAIL at D4 add (screenshot captured before visible Android redraw).",
+      "Driver now waits for BOTH per-action log event and >75 original editor changed pixels; scripted and unit-test candidate committed; NEW exact-source Android/Gauntlet result NOT_VERIFIED.",
+      "OnePlus Nord 3 real handset screenshots/FPS and M5 premium artistic/audio/M6 release remain NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -54,13 +54,28 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38167166110",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38167166110/artifacts/11712588825",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38167813941",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38167813941/artifacts/11712059312"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38167813941/artifacts/11712059312",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38168476227",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38168476227/artifacts/11714155595",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/16cfc76d591e88d0d8e47197823ed87f62bc0154",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/6152235b3d8fead79ac15c26a35d9a856c66472c",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/6300d13d2e2b29686a48de8045a64e59876c976a"
     ],
-    "last_observed_sha": "859eec6482388f91c99d5b95edb260e1224c5693",
+    "last_observed_sha": "6300d13d2e2b29686a48de8045a64e59876c976a",
     "last_verified_sha": "859eec6482388f91c99d5b95edb260e1224c5693",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Real Android editor fully touched on prior source; full gate RED on D20. Independent D20 Jolt focus PASS with actual recovery; pending exact combined Gauntlet. Qwen stricter review formatting corrected, subject to rerun."
+    "verification_note": "Connected GitHub live HEAD inspected at 6300d13; latest preceding AVD red root pinpointed by job 114556546988. New GUI pixel synchronization, synthetic regression test and governance docs pushed, but NEW Godot/AVD/Android/independent Qwen result remains NOT_VERIFIED. Canonical router CLI NOT_VERIFIED: no local checkout/network in this runtime; GitHub-only equivalent inspection/checkpoint used. Recorded last_observed_sha is pre-checkpoint commit, reconcile new HEAD on enter."
   },
-  "incidents": {}
+  "incidents": {
+    "m4-avd-first-frame-stale-after-godot-log": {
+      "route": "interface-accessibility",
+      "fingerprint": "Android AVD m4-pool touch event observed but first screencap has 0 original pixels before asynchronous GPU redraw",
+      "failed_count": 1,
+      "classification": "screenshot-frame-readiness-race",
+      "evidence": "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38168476227",
+      "last_outcome": "failed; source fix candidate pending full exact-SHA CI",
+      "next_hypothesis": "Poll same crop and >75 original pixels after each logged Android touch; preserve strict gate"
+    }
+  }
 }
