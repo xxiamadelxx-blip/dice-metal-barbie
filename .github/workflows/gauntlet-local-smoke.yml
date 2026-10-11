@@ -1,4 +1,5 @@
 name: Local independent code critic (Ollama / no API key)
+# Rerun after tightening semantic critic verdict and preserving invalid raw review.
 
 # A tiny, bounded live test. No external AI provider and no production edits.
 on:
