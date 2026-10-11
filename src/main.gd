@@ -245,9 +245,6 @@ func _open_m4_history() -> void:
     var state: Dictionary = roll_store.call("snapshot")
     history_dialog.call("set_history",state.get("history",[]))
     history_dialog.popup_centered_ratio(0.88)
-    if OS.is_debug_build():
-        var count: Array = state.get("history",[])
-        print("DICE_M4_HISTORY_OPEN records=%d" % count.size())
 
 func _confirm_m4_history_clear() -> void:
     var ask := ConfirmationDialog.new()

@@ -1,4 +1,5 @@
 extends SceneTree
+const Formula = preload("res://src/core/roll_formula.gd")
 ## Real Godot scene and real Jolt physical roll drive fully scrollable,
 ## offline detailed history. No fabricated player outcomes are inserted.
 var checks := 0
@@ -109,6 +110,41 @@ func _run() -> void:
     search.text_changed.emit(search.text)
     _check(int(dialog.call("visible_record_count"))>=1,
         "History search failed to find the source formula")
+    # UI-only oracle: no fabricated roll is saved or portrayed as real.
+    # Check the selected *physical D20 source*, not simply first D20 item.
+    var advantage: Dictionary = Formula.evaluate(
+        Formula.parse("1d20+2"),[[3,18]],"advantage")
+    _check(bool(advantage.get("ok",false)),
+        "Deterministic history-display oracle for D20 advantage failed")
+    # The preceding positive search filtered by a different formula.
+    # Clear that filter before switching to explicit display-only oracles.
+    search.text = ""
+    search.text_changed.emit(search.text)
+    dialog.call("set_history",[advantage])
+    _check(detail.text.contains("Кубик 1: 3  ·  засчитано: (не выбран)") and
+        detail.text.contains("Кубик 2: 18  ·  засчитано: 18"),
+        "History wrong: must mark actually kept advantage D20 die #2: "+detail.text)
+    var disadvantage: Dictionary = Formula.evaluate(
+        Formula.parse("1d20+2"),[[3,18]],"disadvantage")
+    dialog.call("set_history",[disadvantage])
+    _check(detail.text.contains("Кубик 1: 3  ·  засчитано: 3") and
+        detail.text.contains("Кубик 2: 18  ·  засчитано: (не выбран)"),
+        "History wrong: must mark kept disadvantage D20 die #1: "+detail.text)
+    # Screen-render load test: repeat a COPY of an actually tested source
+    # record to reach 200 rows. This only stress-tests the UI; these are NOT
+    # 200 claimed independent physical throws and are NEVER persisted.
+    var stress_rows: Array = []
+    for i in range(200):
+        stress_rows.append(saved[0].duplicate(true))
+    search.text = ""
+    dialog.call("set_history",stress_rows)
+    _check(int(dialog.call("visible_record_count"))==200 and list.item_count==200,
+        "History cannot display all 200 allowed records")
+    list.select(199)
+    dialog.call("_choose_visible_row",199)
+    _check(int(dialog.call("selected_record_index"))==199,
+        "History cannot inspect the oldest retained record #200")
+    dialog.call("set_history",saved)
     var reread: Dictionary = store.call("snapshot")
     _check((reread["history"] as Array).size()==saved.size(),
         "Readonly history browsing/search accidentally modified stored data")
