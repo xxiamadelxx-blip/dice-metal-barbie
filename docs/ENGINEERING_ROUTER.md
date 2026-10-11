@@ -129,3 +129,22 @@ These are **router/contract tests**, not proof that Godot/Android/SFX specialist
 - `scripts/gauntlet_autopilot.py`, `scripts/gauntlet_evidence.py`: independent model execution and acceptance contract.
 - `docs/GAUNTLET_LOOP.md`: product-agnostic acceptance loop; native Blender/Godot/Jolt/Android workflows own their domain results.
 - `.github/workflows/engineering-router-contract.yml`: inexpensive stdlib CI test, no provider access/no source modification.
+
+## Executable offline specialty audits (no paid services)
+
+The initial install includes `scripts/engineering_checks.py`, four concrete engineering analyzers beyond the dispatch catalogue:
+
+```bash
+python3 scripts/engineering_checks.py architecture
+python3 scripts/engineering_checks.py security
+python3 scripts/engineering_checks.py audio --file path/to/authorized.wav
+python3 scripts/engineering_checks.py performance --input path/to/raw-measured-frame-timings.json
+python3 -m unittest discover -s tests -p 'test_engineering_checks.py' -v
+```
+
+- **Architecture** scans only literal GDScript `preload/load` edges; missing source, dependency cycles and forbidden `src/core → src/ui/visual` or `src/dice → src/ui` fail. It does not understand reflection/dynamic loads or every Godot dependency.
+- **Security** checks for likely private key blocks and several token patterns under source/scripts/workflow paths; output contains only file + line + rule, never matched key bytes. Gitleaks/Trivy/Semgrep are optional deeper scanners when installed.
+- **Audio** examines real PCM16 WAV header, signal peak, excessive near-clipping, silence, DC offset and length; cannot prove aesthetic quality, contact synchronization, OGG export or playback on OnePlus.
+- **Performance** consumes *actual* input telemetry JSON such as `{"device_kind":"phone","device_model":"OnePlus Nord 3","target_fps":60,"frame_ms":[12.3,15.2,...]}` with 30+ real frame durations. A Mesa or emulator result **never** becomes phone PASS; source telemetry itself must still be authenticated by the agent. Never invent measurements to pass this test.
+
+These are specialized **static/signal checks**, not a substitute for a separately authorized Gauntlet critic, Godot full-frame capture or Android user-device validation. No audio effects or actual phone profiling is claimed completed by creating these scripts. The canonical router picks domain(s); the agent executes the relevant checks with real input and attaches outputs to the feature PR.
