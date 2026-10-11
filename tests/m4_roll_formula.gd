@@ -68,7 +68,20 @@ func _run() -> void:
         "Reroll history must keep every actually supplied face")
     var hundred := Formula.evaluate(Formula.parse("1d100"),[[100]])
     check(hundred.get("ok",false) and hundred["total"] == 100,
-        "Physical D100 value 100 must not be turned into 0")
+        "Physical single D100 value 100 must not be turned into 0")
+    var pair := Formula.evaluate(Formula.parse("1d100"),
+        [[{"tens":10,"ones":10}]])
+    check(pair.get("ok",false) and pair["total"] == 100,
+        "Two genuinely observed D10 zero digits must produce percentile 100")
+    check(pair["groups"][0]["percentile_source_d10_faces"] == [[10,10]],
+        "Percentile outcome must preserve both independent actual D10 faces")
+    var pair_61 := Formula.evaluate(Formula.parse("1d100"),
+        [[{"tens":6,"ones":1}]])
+    check(pair_61.get("ok",false) and pair_61["total"] == 61,
+        "6 tens + 1 ones must produce physical percentile 61")
+    check(not Formula.evaluate(Formula.parse("1d100"),
+        [[{"tens":0,"ones":1}]]).get("ok",false),
+        "Physical D10 face zero is invalid: printed zero is face 10")
     for bad in ["","1d20+","2d6++3","2d37","0d20","65d6","3d7",
         "1d20 1d6","d0","d6-99999","1d6+hello"]:
         check(not Formula.parse(bad).get("ok",false),

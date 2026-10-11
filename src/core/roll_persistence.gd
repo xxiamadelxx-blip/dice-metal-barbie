@@ -92,7 +92,22 @@ func append_physical_result(outcome: Dictionary) -> Dictionary:
             selected_group = index
         if typeof(group.get("attempts")) != TYPE_ARRAY:
             return _error("Нет последовательности реальных граней")
-        observed.append(group["attempts"])
+        var saved_traces: Array = group["attempts"]
+        var sources: Variant = group.get("percentile_source_d10_faces")
+        if typeof(sources) != TYPE_ARRAY or sources.size() != saved_traces.size():
+            return _error("Исходные грани процентного D100 не сохранены")
+        var actual_group: Array = []
+        for source_index in range(saved_traces.size()):
+            var pair: Variant = sources[source_index]
+            if typeof(pair) != TYPE_ARRAY:
+                return _error("Повреждённая трасса исходных D10")
+            if pair.size() == 2:
+                actual_group.append({"tens":pair[0],"ones":pair[1]})
+            elif pair.is_empty():
+                actual_group.append(saved_traces[source_index])
+            else:
+                return _error("Повреждённая пара процентных граней")
+        observed.append(actual_group)
     var verified: Dictionary = Formula.evaluate(spec, observed,
         str(outcome.get("d20_mode","normal")), selected_group)
     if not bool(verified.get("ok",false)) or verified.get("total") != outcome.get("total") or verified.get("natural_d20_critical") != outcome.get("natural_d20_critical") or verified.get("groups") != outcome.get("groups") or verified.get("modifier") != outcome.get("modifier"):

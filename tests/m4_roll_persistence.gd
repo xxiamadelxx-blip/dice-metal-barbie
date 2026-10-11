@@ -39,6 +39,14 @@ func _run() -> void:
         "Physically impossible face must never be persisted")
     _assert(first.append_physical_result(observed).get("ok",false),
         "Actual physical trace failed to persist")
+    var pair := Formula.evaluate(Formula.parse("1d100"),
+        [[{"tens":10,"ones":10}]])
+    _assert(first.append_physical_result(pair).get("ok",false),
+        "Real paired-percentile source faces were not saved offline")
+    var altered_digits := pair.duplicate(true)
+    altered_digits["groups"][0]["percentile_source_d10_faces"][0] = [2,1]
+    _assert(not first.append_physical_result(altered_digits).get("ok",false),
+        "Tampered D100 pair digits must not survive storage integrity recheck")
     _assert(first.upsert_preset("Атака босса","2d6+1d20-3").get("ok",false),
         "Named offline preset failed")
     _assert(first.upsert_preset("Атака босса","1d20+7","advantage").get("ok",false),
@@ -51,10 +59,13 @@ func _run() -> void:
     _assert(restarted.load_state().get("ok",false),
         "Versioned offline data failed to reload after relaunch")
     var saved := restarted.snapshot()
-    _assert((saved["history"] as Array).size() == 1,
-        "Physical roll history was lost after relaunch")
-    _assert(saved["history"][0]["total"] == 25,
-        "Saved Jolt-derived total was altered")
+    _assert((saved["history"] as Array).size() == 2,
+        "Physical and percentile history entries were lost after relaunch")
+    _assert(saved["history"][0]["total"] == 100 and
+        saved["history"][0]["groups"][0]["percentile_source_d10_faces"] == [[10,10]],
+        "Saved physical percentile D10 source faces were altered")
+    _assert(saved["history"][1]["total"] == 25,
+        "Saved Jolt-derived mixed-pool result was altered")
     _assert(saved["presets"]["Атака босса"]["formula"] == "1d20+7",
         "Edited named preset not persisted")
     _assert(not restarted.delete_preset("Атака босса").get("ok",false),
