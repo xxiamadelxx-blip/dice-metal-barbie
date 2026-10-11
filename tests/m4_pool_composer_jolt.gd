@@ -57,6 +57,18 @@ func _run() -> void:
     _check(bool(source.call("load_formula","1d100+1d6")) and
         str(source.call("current_formula"))=="1d100+1d6",
         "Both approved physical D100 modes need untouched expression syntax")
+    # Qwen's independent concern about repeated groups is checked against
+    # D&D semantics: another 1d6 is ANOTHER actual physical source die.
+    _check(bool(source.call("load_formula","1d6")) and
+        bool(source.call("add_group",6)) and
+        str(source.call("current_formula"))=="1d6+1d6" and
+        int(source.call("physical_dice_count"))==2,
+        "Identical D6 group must add a distinct real physical source")
+    var duplicate_spec: Dictionary = Formula.parse("1d6+1d6")
+    var duplicate_oracle: Dictionary = Formula.evaluate(duplicate_spec,[[2],[5]])
+    _check(bool(duplicate_oracle.get("ok",false)) and
+        int(duplicate_oracle.get("total",0))==7,
+        "Pure arithmetic oracle must not coalesce two physical D6 groups")
 
     root.size=Vector2i(720,1280)
     var scene := load("res://src/main.tscn").instantiate() as Node3D
@@ -126,10 +138,17 @@ func _run() -> void:
     var pool := scene.get("physical_pool") as Node3D
     _check(pool!=null and bool(pool.get("busy")) and not panel.visible,
         "Actual assembled pool must start real locked Jolt throw")
+    _check(trigger.disabled,
+        "During active Jolt physics the pool editor touch must be disabled")
+    trigger.pressed.emit()
+    _check(not dialog.visible,
+        "Signal sent to physically locked editor reopened modal during cast")
     if pool==null:
         quit(1)
         return
     _check(await _wait(pool),"Four real signed-group rigid bodies never settled")
+    _check(not trigger.disabled,
+        "After settled Jolt throw the pool edit touch must unlock")
     var result: Dictionary = pool.get("last_result")
     _check(bool(result.get("ok",false)) and
         str(result.get("formula",""))=="2d6-1d4+1d20-1",

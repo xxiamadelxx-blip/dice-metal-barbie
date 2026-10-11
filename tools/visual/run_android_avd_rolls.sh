@@ -312,3 +312,9 @@ fi
 # after preserving all prior eight baseline + M4 D6/full-history checks.
 bash tools/visual/run_android_percentile_sources.sh
 echo "PASS 8 baseline Jolt videos, real M4 D6 history, AND physical D100 tens/ones Android touches"
+
+# Additional ORIGINAL Android user tap into M4 editable physical pool.
+# Existing eight dice, selective D100 physical rerolls and history MUST pass
+# FIRST. Each opened popup has original ADB frames and 24fps chronology.
+bash tools/visual/run_android_pool_editor.sh
+echo "PASS real Android player opened M4 signed physical pool editor"
