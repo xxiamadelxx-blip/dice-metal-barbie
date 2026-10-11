@@ -30,6 +30,25 @@ jobs:
           godot --headless --path . --check-only --script res://tests/m4_advanced_ui_integration.gd
       - name: Test real UI clicks and physical Jolt mixed results persisted offline
         run: godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd
+      - name: Install authentic video capture, Xvfb and Pillow
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ffmpeg xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 \
+            libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 \
+            libxkbcommon0 libwayland-cursor0 python3-pil
+      - name: Record user-visible M4 drawer, live Jolt mixed dice, and settled total
+        run: bash tools/visual/run_m4_ui_capture.sh
+      - name: Inspect each real video screenshot and publish 24-frame sheets
+        run: python3 tools/visual/audit_m4_ui_frames.py qa-evidence/m4-ui-24fps
+      - name: Preserve M4 visual evidence even on failed video/frame QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-ui-real-jolt-24fps-every-frame
+          path: qa-evidence/m4-ui-24fps/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Formula parser regression
         run: godot --headless --path . --script res://tests/m4_roll_formula.gd
       - name: Percentile input authenticity regression

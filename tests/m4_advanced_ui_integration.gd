@@ -73,7 +73,7 @@ func _run() -> void:
     var result: Dictionary = pool.get("last_result")
     _check(bool(result.get("ok",false)),"Mixed UI produced no real face result")
     if bool(result.get("ok",false)):
-        var actual_faces := result["groups"]
+        var actual_faces: Array = result["groups"]
         var calculated := int(result["modifier"])
         for group in actual_faces:
             calculated += int(group["subtotal"])
