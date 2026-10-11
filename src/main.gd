@@ -243,8 +243,18 @@ func _open_m4_history() -> void:
         history_dialog = HistoryBrowser.new()
         add_child(history_dialog)
     var state: Dictionary = roll_store.call("snapshot")
-    history_dialog.call("set_history",state.get("history",[]))
+    var entries: Array = state.get("history",[])
+    history_dialog.call("set_history",entries)
     history_dialog.popup_centered_ratio(0.88)
+    # Emit a PROVENANCE marker only AFTER the real modal is visible and its
+    # on-screen rows match the offline store. Android ADB frame QA requires
+    # BOTH this live Godot event and actual before/after screenshot pixels.
+    if history_dialog.visible and (
+            int(history_dialog.call("visible_record_count")) == entries.size()):
+        if OS.is_debug_build():
+            print("DICE_M4_HISTORY_OPEN records=%d" % entries.size())
+    else:
+        push_error("M4 full history popup did not display every saved physical result")
 
 func _confirm_m4_history_clear() -> void:
     var ask := ConfirmationDialog.new()

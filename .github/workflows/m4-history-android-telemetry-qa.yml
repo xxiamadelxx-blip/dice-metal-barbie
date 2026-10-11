@@ -1,0 +1,36 @@
+name: M4 Android History Telemetry QA
+on:
+  push:
+    branches: [qa/m4-history-android-telemetry]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  genuine-history-marker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import real production dice scene and source meshes
+        run: godot --headless --path . --editor --quit
+      - name: Compile actual history and Android source click scripts
+        run: |
+          godot --headless --path . --check-only --script res://src/main.gd
+          godot --headless --path . --check-only --script res://tests/m4_full_history_browser.gd
+          python3 -m py_compile tools/visual/audit_android_avd_sequence.py
+          bash -n tools/visual/run_android_avd_rolls.sh
+      - name: Physically cast + reroll, click real history popup and prove telemetry
+        run: |
+          godot --headless --path . --script res://tests/m4_full_history_browser.gd > actual-history-qa.log 2>&1 || { tail -150 actual-history-qa.log; exit 1; }
+          grep -F 'M4_REAL_UI_ALL_HISTORY checks=' actual-history-qa.log
+          grep -E 'DICE_M4_HISTORY_OPEN records=([2-9]|[1-9][0-9]+)' actual-history-qa.log
+      - name: Preserve actual live Jolt and history log on failures too
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-android-history-real-modal-telemetry
+          path: actual-history-qa.log
+          if-no-files-found: warn
+          retention-days: 14
