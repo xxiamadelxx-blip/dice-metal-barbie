@@ -40,6 +40,9 @@ var advanced_panel: PanelContainer
 var physical_pool: Node3D
 var roll_store: RefCounted
 var advanced_open_button: Button
+var m5_history_button: Button
+var m5_compose_button: Button
+var m5_live_formula: Label
 var history_dialog: AcceptDialog
 var last_advanced_formula := ""
 
@@ -66,6 +69,26 @@ func _setup_m4_local_and_drawer() -> void:
     advanced_open_button.custom_minimum_size = Vector2(51, 48)
     advanced_open_button.pressed.connect(_toggle_advanced_rules)
     overlay.add_child(advanced_open_button)
+    # The user's live Alpha 4.0.0 hero UX: actual history and pool entry,
+    # not static decorations. All are disabled through existing roll guards.
+    m5_history_button = Button.new()
+    m5_history_button.name = "M5HistoryShortcut"
+    m5_history_button.text = "◷"
+    m5_history_button.tooltip_text = "Журнал физических бросков"
+    m5_history_button.position = Vector2(637, 73)
+    m5_history_button.custom_minimum_size = Vector2(58, 48)
+    m5_history_button.add_theme_font_size_override("font_size", 25)
+    m5_history_button.pressed.connect(_open_m4_history)
+    overlay.add_child(m5_history_button)
+    m5_compose_button = Button.new()
+    m5_compose_button.name = "M5ComposeShortcut"
+    m5_compose_button.text = "+ СОСТАВ"
+    m5_compose_button.tooltip_text = "Собрать физические кубики в один бросок"
+    m5_compose_button.position = Vector2(441, 73)
+    m5_compose_button.custom_minimum_size = Vector2(164, 48)
+    m5_compose_button.add_theme_font_size_override("font_size", 15)
+    m5_compose_button.pressed.connect(_open_m5_composer)
+    overlay.add_child(m5_compose_button)
     advanced_panel = AdvancedDrawer.new()
     overlay.add_child(advanced_panel)
     advanced_panel.connect("physical_roll_requested",Callable(self,"_request_advanced_throw"))
@@ -82,6 +105,22 @@ func _toggle_advanced_rules() -> void:
     if advanced_panel == null or throw_button.disabled:
         return
     advanced_panel.visible = not advanced_panel.visible
+
+func _open_m5_composer() -> void:
+    if advanced_panel == null or throw_button.disabled:
+        return
+    advanced_panel.visible = true
+    advanced_panel.call("_open_pool_composer")
+
+func _update_m5_live_formula(expression: String = "") -> void:
+    if not is_instance_valid(m5_live_formula):
+        return
+    if expression != "":
+        m5_live_formula.text = expression
+    elif selected_die == 100:
+        m5_live_formula.text = "1d100 · 2 × D10" if percentile_pair_enabled else "1d100 · 1 × D100"
+    else:
+        m5_live_formula.text = "1d%d · обычный" % selected_die
 
 func _record_m4_result(result: Dictionary) -> void:
     if roll_store == null or not bool(result.get("ok",false)):
@@ -150,6 +189,7 @@ func _request_advanced_throw(expression: String, mode: String, d100_mode: String
         return
     last_result = -1
     last_advanced_formula = expression
+    _update_m5_live_formula(expression)
     status_label.text = "СОСТАВНОЙ БРОСОК…"
     throw_button.disabled = true
     selected_chooser.disabled = true
@@ -194,6 +234,7 @@ func _m4_physical_completed(result: Dictionary) -> void:
     last_result = int(result.get("total",0))
     active_sides = 0
     last_advanced_formula = str(result.get("formula",""))
+    _update_m5_live_formula(last_advanced_formula)
     status_label.text = "%s = %d" % [last_advanced_formula,last_result]
     copy_button.visible = true
     copy_button.disabled = false
@@ -381,8 +422,8 @@ func _make_static_box(node_name: String, origin: Vector3, dimensions: Vector3, m
 
 func _chip_style(selected: bool) -> StyleBoxFlat:
     var box_style := StyleBoxFlat.new()
-    box_style.bg_color = Color(0.12, 0.105, 0.085, 0.98) if selected else Color(0.035, 0.043, 0.056, 0.96)
-    box_style.border_color = Color(0.88, 0.65, 0.32) if selected else Color(0.15, 0.17, 0.20)
+    box_style.bg_color = Color(0.12, 0.11, 0.075, 0.98) if selected else Color(0.032, 0.053, 0.048, 0.96)
+    box_style.border_color = Color(0.77, 0.63, 0.39) if selected else Color(0.16, 0.24, 0.21)
     box_style.set_border_width_all(1)
     box_style.set_corner_radius_all(13)
     box_style.content_margin_left = 5
@@ -433,11 +474,32 @@ func _make_overlay() -> void:
 
     var brand := Label.new()
     brand.name = "AppTitle"
-    brand.text = "D&D  /  DICE"
-    brand.position = Vector2(26, 28)
-    brand.add_theme_font_size_override("font_size", 19)
-    brand.add_theme_color_override("font_color", Color(0.94, 0.89, 0.77))
+    brand.text = "ADEL DICE ROLL"
+    brand.position = Vector2(88, 29)
+    brand.add_theme_font_size_override("font_size", 20)
+    brand.add_theme_color_override("font_color", Color(0.92, 0.84, 0.65))
     root.add_child(brand)
+    var studio := Label.new()
+    studio.name = "M5OfflineStudioCaption"
+    studio.text = "OBSIDIAN STUDIO  /  OFFLINE"
+    studio.position = Vector2(88, 56)
+    studio.add_theme_font_size_override("font_size", 12)
+    studio.add_theme_color_override("font_color", Color(0.48, 0.64, 0.58))
+    root.add_child(studio)
+    var tray_caption := Label.new()
+    tray_caption.name = "M5PhysicalTrayCaption"
+    tray_caption.text = "ФИЗИЧЕСКИЙ ЛОТОК"
+    tray_caption.position = Vector2(48, 158)
+    tray_caption.add_theme_font_size_override("font_size", 13)
+    tray_caption.add_theme_color_override("font_color", Color(0.70, 0.65, 0.54))
+    root.add_child(tray_caption)
+    m5_live_formula = Label.new()
+    m5_live_formula.name = "M5LivePhysicalFormula"
+    m5_live_formula.text = "1d6 · обычный"
+    m5_live_formula.position = Vector2(48, 183)
+    m5_live_formula.add_theme_font_size_override("font_size", 18)
+    m5_live_formula.add_theme_color_override("font_color", Color(0.92, 0.84, 0.66))
+    root.add_child(m5_live_formula)
 
     # This is a genuinely minimalist single-screen control dock, not a Godot
     # prototype form. Unsupported dice are not presented as dead controls.
@@ -446,8 +508,8 @@ func _make_overlay() -> void:
     panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
     panel.offset_top = -236.0
     var surface := StyleBoxFlat.new()
-    surface.bg_color = Color(0.023, 0.031, 0.043, 1.0)
-    surface.border_color = Color(0.19, 0.22, 0.27)
+    surface.bg_color = Color(0.028, 0.040, 0.036, 1.0)
+    surface.border_color = Color(0.23, 0.28, 0.22)
     surface.border_width_top = 1
     surface.corner_radius_top_left = 22
     surface.corner_radius_top_right = 22
@@ -577,6 +639,7 @@ func _make_overlay() -> void:
 func _toggle_d100_mode() -> void:
     percentile_pair_enabled = not percentile_pair_enabled
     d100_mode_button.text = "2 × D10" if percentile_pair_enabled else "1 × D100"
+    _update_m5_live_formula()
 
 func _select_die_type(sides: int) -> void:
     for index in range(selected_chooser.item_count):
@@ -595,6 +658,7 @@ func _copy_result() -> void:
 
 func _on_type_selected(index: int) -> void:
     selected_die = selected_chooser.get_item_id(index)
+    _update_m5_live_formula()
     throw_button.tooltip_text = "Бросить D%d" % selected_die
     if d100_mode_button != null:
         d100_mode_button.visible = selected_die == 100
