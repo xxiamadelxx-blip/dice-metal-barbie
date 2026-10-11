@@ -125,6 +125,8 @@ func _refresh() -> void:
 func _after_edit(result: bool) -> void:
     if result:
         _refresh()
+        if OS.is_debug_build():
+            print("DICE_M4_POOL_EDIT formula="+str(builder.call("current_formula")))
     else:
         notice.text = str(builder.get("error_text"))
 
@@ -148,3 +150,5 @@ func _accept_formula() -> void:
     var normalized := str(builder.call("current_formula"))
     # Validation also occurs on every edit, and again on submit in Main.
     formula_applied.emit(normalized)
+    if OS.is_debug_build():
+        print("DICE_M4_POOL_APPLIED formula="+normalized)
