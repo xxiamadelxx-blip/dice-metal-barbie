@@ -46,7 +46,7 @@ def git(root: Path, *args: str) -> str:
     result = command(["git", *args], root, 45)
     if result.returncode:
         raise RuntimeError(f"git {args[0]} failed: {result.stdout[-1500:]}")
-    return result.stdout.strip()
+    return result.stdout.rstrip("\\n")
 
 
 def safe_path(root: Path, name: str) -> Path:
