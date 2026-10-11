@@ -79,6 +79,23 @@ func _run() -> void:
         [[{"tens":6,"ones":1}]])
     check(pair_61.get("ok",false) and pair_61["total"] == 61,
         "6 tens + 1 ones must produce physical percentile 61")
+    var repeat_pair := Formula.evaluate(Formula.parse("1d100"),
+        [[{"pairs":[[6,1],[10,10]]}]])
+    check(repeat_pair.get("ok",false) and repeat_pair["total"] == 100,
+        "True pairs 6/1 then 10/10 must give physical percentile 100")
+    check(repeat_pair["groups"][0]["attempts"][0] == [61,100] and
+        repeat_pair["groups"][0]["percentile_source_d10_attempts"][0] ==
+        [[6,1],[10,10]],"Both real tens/ones pairs must survive result arithmetic")
+    var double_percentile := Formula.evaluate(Formula.parse("2d100"),
+        [[{"pairs":[[10,10],[1,4]]},{"tens":10,"ones":10}]])
+    check(double_percentile.get("ok",false) and double_percentile["total"] == 114,
+        "Two independent physical D100, one rerolled, must sum 14+100")
+    check(not Formula.evaluate(Formula.parse("1d100"),
+        [[{"pairs":[[6,1],[0,1]]}]]).get("ok",false),
+        "Invalid physical D10 source face in a later reroll must fail")
+    check(not Formula.evaluate(Formula.parse("1d100"),
+        [[{"pairs":[[6,1],[10]]}]]).get("ok",false),
+        "Incomplete physical percentile pair cannot create a fake D100")
     check(not Formula.evaluate(Formula.parse("1d100"),
         [[{"tens":0,"ones":1}]]).get("ok",false),
         "Physical D10 face zero is invalid: printed zero is face 10")

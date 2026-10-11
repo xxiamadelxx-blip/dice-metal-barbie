@@ -1,0 +1,38 @@
+name: M4 True Paired D100 Physical Reroll QA
+on:
+  push:
+    branches: [qa/m4-percentile-whole-reroll]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-paired-d10:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import actual production Jolt/Godot table and meshes
+        run: godot --headless --path . --editor --quit
+      - name: Compile physical D100 pair, history and actual UI
+        run: |
+          godot --headless --path . --check-only --script res://src/core/roll_formula.gd
+          godot --headless --path . --check-only --script res://src/core/roll_persistence.gd
+          godot --headless --path . --check-only --script res://src/core/physical_roll_pool.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_advanced_roll_drawer.gd
+          godot --headless --path . --check-only --script res://src/ui/m4_history_dialog.gd
+          godot --headless --path . --check-only --script res://tests/m4_real_percentile_pair_reroll.gd
+          godot --headless --path . --check-only --script res://tests/m4_percentile_pair_ui.gd
+      - name: Reject invented physical percentile source digits and persistent tampering
+        run: |
+          godot --headless --path . --script res://tests/m4_roll_formula.gd
+          godot --headless --path . --script res://tests/m4_roll_persistence.gd
+      - name: Actually throw BOTH Jolt D10 sources twice, preserving every prior face
+        run: godot --headless --path . --script res://tests/m4_real_percentile_pair_reroll.gd
+      - name: Player click to reroll paired D100 and preserve unrelated real D4
+        run: godot --headless --path . --script res://tests/m4_percentile_pair_ui.gd
+      - name: Protect existing single-die rerolls and real multi-die pools
+        run: |
+          godot --headless --path . --script res://tests/m4_physical_reroll.gd
+          godot --headless --path . --script res://tests/m4_physical_pool.gd

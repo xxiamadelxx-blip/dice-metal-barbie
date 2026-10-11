@@ -47,6 +47,19 @@ func _run() -> void:
     altered_digits["groups"][0]["percentile_source_d10_faces"][0] = [2,1]
     _assert(not first.append_physical_result(altered_digits).get("ok",false),
         "Tampered D100 pair digits must not survive storage integrity recheck")
+    var genuine_percentile_chain := Formula.evaluate(Formula.parse("1d100"),
+        [[{"pairs":[[6,1],[10,10]]}]])
+    _assert(genuine_percentile_chain.get("ok",false) and
+        first.append_physical_result(genuine_percentile_chain).get("ok",false),
+        "Versioned history must save both actual physical D100 D10 pairs")
+    var forged_first_digit := genuine_percentile_chain.duplicate(true)
+    forged_first_digit["groups"][0]["percentile_source_d10_attempts"][0][0] = [7,1]
+    _assert(not first.append_physical_result(forged_first_digit).get("ok",false),
+        "Forged earlier D10 percentile face must not be accepted")
+    var forged_last_digit := genuine_percentile_chain.duplicate(true)
+    forged_last_digit["groups"][0]["percentile_source_d10_attempts"][0][-1] = [8,1]
+    _assert(not first.append_physical_result(forged_last_digit).get("ok",false),
+        "Tampered final true D10 source pair must never be stored")
     _assert(first.upsert_preset("Атака босса","2d6+1d20-3").get("ok",false),
         "Named offline preset failed")
     _assert(first.upsert_preset("Атака босса","1d20+7","advantage").get("ok",false),
@@ -59,18 +72,23 @@ func _run() -> void:
     _assert(restarted.load_state().get("ok",false),
         "Versioned offline data failed to reload after relaunch")
     var saved := restarted.snapshot()
-    _assert((saved["history"] as Array).size() == 2,
-        "Physical and percentile history entries were lost after relaunch")
+    _assert((saved["history"] as Array).size() == 3,
+        "Physical, percentile, and true percentile-reroll entries missing")
     # JSON.parse_string restores untyped nested arrays; check the actual
     # numeric physical face values, not Array[T] identity/equality semantics.
-    var loaded_pairs: Array = saved["history"][0]["groups"][0]["percentile_source_d10_faces"]
+    var preserved_reroll_pairs: Array = saved["history"][0]["groups"][0][
+        "percentile_source_d10_attempts"][0]
+    _assert(preserved_reroll_pairs.size() == 2 and
+        preserved_reroll_pairs[0] == [6,1] and preserved_reroll_pairs[1] == [10,10],
+        "Offline reload must keep BOTH physical percentile pair attempts")
+    var loaded_pairs: Array = saved["history"][1]["groups"][0]["percentile_source_d10_faces"]
     var source_digits_preserved := false
     if loaded_pairs.size() == 1 and typeof(loaded_pairs[0]) == TYPE_ARRAY:
         var digits: Array = loaded_pairs[0]
         source_digits_preserved = digits.size() == 2 and int(digits[0]) == 10 and int(digits[1]) == 10
-    _assert(int(saved["history"][0]["total"]) == 100 and source_digits_preserved,
+    _assert(int(saved["history"][1]["total"]) == 100 and source_digits_preserved,
         "Persisted D100 raw faces wrong: " + JSON.stringify(saved["history"][0]))
-    _assert(saved["history"][1]["total"] == 25,
+    _assert(saved["history"][2]["total"] == 25,
         "Saved Jolt-derived mixed-pool result was altered")
     _assert(saved["presets"]["Атака босса"]["formula"] == "1d20+7",
         "Edited named preset not persisted")

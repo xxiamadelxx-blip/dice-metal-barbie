@@ -161,110 +161,154 @@ func _abort(reason: String) -> void:
     pool_failed.emit(reason)
 
 func reroll_one(group_index: int, die_index: int) -> bool:
-    # A concrete face *already on the table* is the only source that can be
-    # rerolled. No hidden number generator, no arbitrary total edits.
+    # One logical source is one real rigid body, except paired D100:
+    # it is ALWAYS two actual D10 bodies together, never one fake digit.
     if busy or not bool(last_result.get("ok",false)):
-        last_physical_error = "Сначала завершите обычный физический бросок"
+        last_physical_error = "Сначала завершите физический бросок"
         return false
-    var slot := -1
+    var slots: Array[int] = []
+    var pair_sides: Array[String] = []
     for i in range(_last_plan.size()):
         var source: Dictionary = _last_plan[i]
-        if int(source["group"]) == group_index and int(source["index"]) == die_index:
-            # Two separate D10 comprise a percentile pair; implementing
-            # a partial digit reroll requires extra D100 trace semantics.
-            if not str(source["digit"]).is_empty():
-                last_physical_error = "Отдельный процентный D10 пока нельзя перебросить"
-                return false
-            slot = i
-            break
-    if slot < 0 or slot >= _active.size():
-        last_physical_error = "Не удалось найти выбранный физический кубик"
+        if int(source["group"]) != group_index or int(source["index"]) != die_index:
+            continue
+        if i >= _active.size() or not is_instance_valid(_active[i]):
+            last_physical_error = "Физический кубик больше недоступен"
+            return false
+        slots.append(i)
+        pair_sides.append(str(source["digit"]))
+    if slots.is_empty():
+        last_physical_error = "Выбранный физический кубик не найден"
         return false
-    if not is_instance_valid(_active[slot]):
-        last_physical_error = "Выбранный физический кубик недоступен"
+    if slots.size() == 2:
+        if pair_sides != ["tens","ones"]:
+            last_physical_error = "Парный D100 должен содержать два настоящих D10"
+            return false
+    elif slots.size() != 1 or not pair_sides[0].is_empty():
+        last_physical_error = "Некорректная физическая группа для переброса"
         return false
     last_physical_error = ""
     _failed_message = ""
     busy = true
-    call_deferred("_execute_physical_reroll",slot,group_index,die_index)
+    call_deferred("_execute_physical_reroll_slots",slots,group_index,die_index)
     return true
 
-func _execute_physical_reroll(slot: int, group_index: int, die_index: int) -> void:
-    var target: RigidBody3D = _active[slot]
-    # Kept original results are held in-place (frozen) during the requested
-    # replay, but remain visually present with their true physical faces.
-    # The selected source remains fully dynamic and collides against them.
+func _execute_physical_reroll_slots(slots: Array[int],
+        group_index: int, die_index: int) -> void:
+    # All other real bodies stay at their actual resting poses, physically
+    # frozen for this user-requested redo. ONLY target bodies are relaunched.
     for i in range(_active.size()):
         var body: RigidBody3D = _active[i]
-        body.freeze = i != slot
-    var old_aura := target.get_node_or_null("CriticalDiceAura") as Node3D
-    if old_aura != null:
-        target.remove_child(old_aura)
-        old_aura.queue_free()
-    _values.erase(target.get_instance_id())
-    var actual_sides: int = int(_last_plan[slot]["sides"])
-    if actual_sides == 10:
-        target.call("throw_from_top",0)
-    else:
-        target.call("throw_from_top")
-    # Only reset the throw's initial POSITION, not its sampled orientation or
-    # physical torque/impulse. Other dice remain where they genuinely landed.
-    var lane := _launch_position(slot)
-    target.position = Vector3(lane.x,target.position.y,lane.y)
+        body.freeze = not slots.has(i)
+    for slot in slots:
+        var target: RigidBody3D = _active[slot]
+        var old_aura := target.get_node_or_null("CriticalDiceAura") as Node3D
+        if old_aura != null:
+            target.remove_child(old_aura)
+            old_aura.queue_free()
+        _values.erase(target.get_instance_id())
+        var actual_sides: int = int(_last_plan[slot]["sides"])
+        if actual_sides == 10:
+            target.call("throw_from_top",0)
+        else:
+            target.call("throw_from_top")
+        var lane := _launch_position(slot)
+        target.position = Vector3(lane.x,target.position.y,lane.y)
     var settled := false
     for tick in range(MAX_PHYSICAL_STEPS):
         await get_tree().physics_frame
         if not _failed_message.is_empty():
             _abort(_failed_message)
             return
-        if _values.has(target.get_instance_id()) and target.sleeping:
+        var all_settled := true
+        for slot in slots:
+            var target: RigidBody3D = _active[slot]
+            if not is_instance_valid(target) or not _values.has(
+                    target.get_instance_id()) or not target.sleeping:
+                all_settled = false
+                break
+        if all_settled:
             settled = true
             break
     if not settled:
-        _abort("Выбранный кубик не остановился после физического переброса")
+        _abort("Физические кубики не остановились после переброса")
         return
-    var new_top: int = _actual_top(target,actual_sides)
-    if new_top < 1 or new_top != int(_values.get(target.get_instance_id(),-1)) or new_top != int(target.get("result")):
-        _abort("Переброшенная грань не совпала с настоящим физическим результатом")
-        return
-    # Check every retained source face did not change while a different die
-    # was rerolled. If it did, invalidate instead of silently trusting it.
+    var actual_faces: Array[int] = []
+    for slot in slots:
+        var target: RigidBody3D = _active[slot]
+        var sides: int = int(_last_plan[slot]["sides"])
+        var upper := _actual_top(target,sides)
+        if upper < 1 or upper != int(_values.get(target.get_instance_id(),-1)) or (
+                upper != int(target.get("result"))):
+            _abort("Новый результат не совпал с настоящей верхней гранью Jolt")
+            return
+        actual_faces.append(upper)
     for i in range(_active.size()):
-        if i == slot:
+        if slots.has(i):
             continue
         var kept: RigidBody3D = _active[i]
-        var kept_top := _actual_top(kept,int(_last_plan[i]["sides"]))
-        if kept_top < 1 or kept_top != int(_values.get(kept.get_instance_id(),-1)):
-            _abort("Сохранённый кубик изменился во время чужого переброса")
+        if not is_instance_valid(kept) or not kept.sleeping or (
+                _actual_top(kept,int(_last_plan[i]["sides"])) != int(
+                _values.get(kept.get_instance_id(),-1))):
+            _abort("Чужой физический кубик изменился при перебросе")
             return
     var observed: Array = _last_observed.duplicate(true)
-    var group_sources: Array = observed[group_index]
-    var previous: Variant = group_sources[die_index]
-    var attempts: Array = previous.duplicate(true) if typeof(previous) == TYPE_ARRAY else [previous]
-    attempts.append(new_top)
-    group_sources[die_index] = attempts
+    var grouped: Array = observed[group_index]
+    var previous: Variant = grouped[die_index]
+    var attempts_count := 0
+    var newly_mapped := -1
+    if slots.size() == 2:
+        if typeof(previous) != TYPE_DICTIONARY:
+            _abort("У процентного D100 отсутствуют две реальные исходные грани")
+            return
+        var saved_pair: Dictionary = previous
+        var pairs: Array = []
+        if saved_pair.has("pairs"):
+            pairs = (saved_pair["pairs"] as Array).duplicate(true)
+        else:
+            pairs = [[saved_pair.get("tens"),saved_pair.get("ones")]]
+        pairs.append([actual_faces[0],actual_faces[1]])
+        grouped[die_index] = {"pairs":pairs}
+        attempts_count = pairs.size()
+    else:
+        var attempts: Array = previous.duplicate(true) if typeof(
+            previous) == TYPE_ARRAY else [previous]
+        attempts.append(actual_faces[0])
+        grouped[die_index] = attempts
+        attempts_count = attempts.size()
     var final: Dictionary = Formula.evaluate(_spec,observed,_mode,_chosen_d20)
     if not bool(final.get("ok",false)):
-        _abort(str(final.get("error","Неверная трасса физического переброса")))
+        _abort(str(final.get("error","Недействительная трасса физических граней")))
         return
-    # D20 natural-critical aura belongs to the actually rerolled,
-    # selected D20 only. The retained nonselected bodies cannot acquire it.
-    if actual_sides == 20 and group_index == _chosen_d20:
-        var selected_faces: Array = final["groups"][group_index]["kept_faces"]
-        if selected_faces.size() == 1 and int(selected_faces[0]) == new_top and (
-                new_top == 1 or new_top == 20):
-            CriticalAura.spawn(target,20,new_top)
+    if slots.size() == 2:
+        newly_mapped = int(final["groups"][group_index]["kept_faces"][die_index])
+        if newly_mapped < 1 or newly_mapped > 100:
+            _abort("Результат физической пары D10 вне диапазона D100")
+            return
+    else:
+        newly_mapped = actual_faces[0]
+    if slots.size() == 1 and int(_last_plan[slots[0]]["sides"]) == 20 and (
+            group_index == _chosen_d20):
+        var selected: Array = final["groups"][group_index]["kept_faces"]
+        if selected.size() == 1 and int(selected[0]) == newly_mapped and (
+                newly_mapped == 1 or newly_mapped == 20):
+            CriticalAura.spawn(_active[slots[0]],20,newly_mapped)
     final["physical_bodies"] = _active.size()
     final["all_source_bodies_remain_visible"] = true
     final["rerolled_physical_group_index"] = group_index
     final["rerolled_physical_die_index"] = die_index
-    final["reroll_attempts_on_selected_die"] = attempts.size()
+    final["reroll_attempts_on_selected_die"] = attempts_count
+    final["reroll_source_body_count"] = slots.size()
     _last_observed = observed.duplicate(true)
     last_result = final
     busy = false
     if OS.is_debug_build():
-        print("DICE_M4_REAL_REROLL_COMPLETED D%d=%d attempts=%d" %
-            [actual_sides,new_top,attempts.size()])
+        if slots.size() == 2:
+            print("DICE_M4_REAL_PERCENTILE_REROLL_COMPLETED D100=%d attempts=%d sources=2" %
+                [newly_mapped,attempts_count])
+        else:
+            print("DICE_M4_REAL_REROLL_COMPLETED D%d=%d attempts=%d" %
+                [int(_last_plan[slots[0]]["sides"]),newly_mapped,attempts_count])
     pool_completed.emit(final)
 
 func _launch_position(slot: int) -> Vector2:

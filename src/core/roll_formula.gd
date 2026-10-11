@@ -96,25 +96,41 @@ static func evaluate(spec: Dictionary, observed: Array, mode: String = "normal",
         var final_faces: Array[int] = []
         var traces: Array = []
         var percentile_sources: Array = []
+        var percentile_source_attempts: Array = []
         for item in die_records:
             var attempts: Array = []
             var source_faces: Array = []
+            var paired_attempts: Array = []
             if typeof(item) == TYPE_DICTIONARY:
                 if sides != 100:
                     return _error("Процентные исходные D10 допустимы только для D100")
                 var raw_pair: Dictionary = item
-                var ten: Variant = raw_pair.get("tens")
-                var one: Variant = raw_pair.get("ones")
-                if typeof(ten) != TYPE_INT or typeof(one) != TYPE_INT:
-                    return _error("Грани процентных кубиков должны быть целыми")
-                if int(ten) < 1 or int(ten) > 10 or int(one) < 1 or int(one) > 10:
-                    return _error("Невозможная физическая грань процентного D10")
-                var mapped: int = Rules.percentile((int(ten) % 10) * 10, int(one) % 10)
-                attempts = [mapped]
-                source_faces = [int(ten),int(one)]
+                var sequences: Array = []
+                if raw_pair.has("pairs"):
+                    var supplied: Variant = raw_pair["pairs"]
+                    if typeof(supplied) != TYPE_ARRAY:
+                        return _error("Трасса парных D10 должна быть массивом")
+                    sequences = supplied
+                else:
+                    sequences = [[raw_pair.get("tens"),raw_pair.get("ones")]]
+                if sequences.is_empty() or sequences.size() > 12:
+                    return _error("Недопустимая длина физической трассы процентного D100")
+                for actual_pair in sequences:
+                    if typeof(actual_pair) != TYPE_ARRAY or actual_pair.size() != 2:
+                        return _error("Каждый физический процентный бросок требует два D10")
+                    var ten: Variant = actual_pair[0]
+                    var one: Variant = actual_pair[1]
+                    if typeof(ten) != TYPE_INT or typeof(one) != TYPE_INT:
+                        return _error("Грани процентных кубиков должны быть целыми")
+                    if int(ten) < 1 or int(ten) > 10 or int(one) < 1 or int(one) > 10:
+                        return _error("Невозможная физическая грань процентного D10")
+                    attempts.append(Rules.percentile((int(ten)%10)*10,int(one)%10))
+                    paired_attempts.append([int(ten),int(one)])
+                source_faces = paired_attempts[-1]
             else:
                 attempts = item if typeof(item) == TYPE_ARRAY else [item]
             percentile_sources.append(source_faces)
+            percentile_source_attempts.append(paired_attempts)
             if attempts.is_empty() or attempts.size() > 12:
                 return _error("Неверная последовательность перебросов")
             var sequence: Array[int] = []
@@ -138,6 +154,7 @@ static func evaluate(spec: Dictionary, observed: Array, mode: String = "normal",
             natural_crit = Rules.critical_d20(selected[0])
         detailed.append({"sides":sides,"sign":sign,"count":n,"attempts":traces,
             "percentile_source_d10_faces":percentile_sources,
+            "percentile_source_d10_attempts":percentile_source_attempts,
             "observed_faces":final_faces,"kept_faces":selected,
             "subtotal":sign*partial,"selected_d20":i==d20_selected})
     return {"ok":true,"schema_version":1,"formula":spec["formula"],

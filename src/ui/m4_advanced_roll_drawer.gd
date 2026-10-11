@@ -183,17 +183,19 @@ func set_real_roll_result(outcome: Dictionary) -> void:
             var faces: Array = group.get("observed_faces",[])
             var percentiles: Array = group.get("percentile_source_d10_faces",[])
             for di in range(attempts.size()):
-                # A paired D100 cannot be partially rerolled without
-                # corrupting both preserved physical tens/ones sources.
+                # A paired D100 is ONE logical die formed by TWO actual D10.
+                # Select the pair together, never reroll a fake scalar digit.
                 var is_pair := false
                 if di < percentiles.size() and typeof(percentiles[di]) == TYPE_ARRAY:
                     is_pair = (percentiles[di] as Array).size() == 2
-                if is_pair:
-                    continue
                 var face: int = int(faces[di]) if di < faces.size() else -1
                 reroll_slots.append({"group":gi,"die":di})
-                reroll_picker.add_item("D%d · №%d · выпало %d" %
-                    [int(group["sides"]),di+1,face])
+                if is_pair:
+                    reroll_picker.add_item("D100 (2×D10) · №%d · %d" % [
+                        di+1,face])
+                else:
+                    reroll_picker.add_item("D%d · №%d · выпало %d" % [
+                        int(group["sides"]),di+1,face])
     if reroll_slots.is_empty():
         reroll_picker.add_item("Нет доступных кубиков для переброса")
     reroll_picker.disabled = reroll_slots.is_empty()
