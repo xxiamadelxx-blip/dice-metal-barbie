@@ -90,6 +90,12 @@ func _run() -> void:
     if failed>0:
         quit(1)
         return
+    var stats_label := dialog.find_child("OfflineReceiptStatistics",true,false) as Label
+    _check(stats_label != null,"Read-only history receipt statistics missing")
+    if stats_label != null:
+        _check(stats_label.text.contains("Записей: %d" % saved.size()) and
+            stats_label.text.contains("не проверка равномерности"),
+            "Jolt history summary mismatch or misleading fairness claim")
     _check(list.item_count==saved.size(),
         "Actual 200-entry-compatible history list lost offline records")
     _check(dialog.call("selected_record_index")==0,
@@ -106,6 +112,9 @@ func _run() -> void:
     search.text_changed.emit(search.text)
     _check(int(dialog.call("visible_record_count"))==0,
         "History search does not narrow to zero matches")
+    if stats_label != null:
+        _check(stats_label.text.contains("нет сохранённых"),
+            "Search filter did not recompute stats")
     search.text=newest
     search.text_changed.emit(search.text)
     _check(int(dialog.call("visible_record_count"))>=1,

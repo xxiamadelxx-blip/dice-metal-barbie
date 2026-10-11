@@ -1,4 +1,5 @@
 extends AcceptDialog
+const ReceiptStats = preload("res://src/core/roll_statistics.gd")
 ## M4 complete local read-only history browser. No server, no invented rolls.
 ## Source entries are the previously persisted and revalidated real Jolt faces.
 var stored_history: Array = []
@@ -7,6 +8,7 @@ var search_field: LineEdit
 var rows: ItemList
 var details: RichTextLabel
 var header: Label
+var statistics_line: Label
 
 func _ready() -> void:
     name = "M4PhysicalRollHistory"
@@ -26,6 +28,11 @@ func _ready() -> void:
     header.name = "HistoryRollCount"
     header.text = "История ещё пуста"
     root_col.add_child(header)
+    statistics_line = Label.new()
+    statistics_line.name = "OfflineReceiptStatistics"
+    statistics_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    statistics_line.add_theme_font_size_override("font_size",13)
+    root_col.add_child(statistics_line)
     search_field = LineEdit.new()
     search_field.name = "SearchPhysicalRollHistory"
     search_field.placeholder_text = "Найти по формуле, числу, кубику или криту"
@@ -85,6 +92,11 @@ func _filter_history(query: String) -> void:
             rows.add_item(_display_line(row,i))
     header.text = "Всего записей: %d · найдено: %d" % [
         stored_history.size(),displayed_indices.size()]
+    var visible_receipts: Array = []
+    for i in displayed_indices:
+        visible_receipts.append(stored_history[i])
+    statistics_line.text = ReceiptStats.describe(
+        ReceiptStats.summarize(visible_receipts))
     if not displayed_indices.is_empty():
         rows.select(0)
         _choose_visible_row(0)

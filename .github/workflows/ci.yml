@@ -57,6 +57,8 @@ jobs:
         run: godot --headless --path . --script res://tests/m4_roll_formula.gd
       - name: M4 offline versioned results/presets with integrity and corruption QA
         run: godot --headless --path . --script res://tests/m4_roll_persistence.gd
+      - name: M4 offline history receipt statistics do not claim physical fairness
+        run: godot --headless --path . --script res://tests/m4_roll_statistics.gd
       - name: M4 genuine Jolt mixed physical dice and paired percentile
         run: godot --headless --path . --script res://tests/m4_physical_pool.gd
       - name: M4 actual drawer click plus genuine mixed Jolt and offline history
