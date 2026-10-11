@@ -2,7 +2,7 @@ name: Gauntlet evidence contract regression (not independent artistic QA)
 on:
   pull_request:
     paths:
-      - 'scripts/gauntlet_evidence.py'
+      - 'scripts/gauntlet_evidence.py'\n      - 'scripts/gauntlet_autopilot.py'\n      - 'tests/test_gauntlet_autopilot.py'
       - 'tests/test_gauntlet_evidence.py'
       - 'docs/GAUNTLET_ACCEPTANCE_V2.md'
       - '.github/workflows/gauntlet-contract.yml'
@@ -22,8 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify validator syntax
-        run: python3 -m py_compile scripts/gauntlet_evidence.py tests/test_gauntlet_evidence.py
+        run: python3 -m py_compile scripts/gauntlet_evidence.py scripts/gauntlet_autopilot.py tests/test_gauntlet_evidence.py tests/test_gauntlet_autopilot.py
       - name: Validate positive and fail-closed negative evidence
-        run: python3 -m unittest discover -s tests -p 'test_gauntlet_evidence.py' -v
+        run: python3 -m unittest discover -s tests -p 'test_gauntlet_*.py' -v
       - name: Clarify CI scope
         run: echo "PASS here checks schema-validation software only. Independent critic, visual/physics/artistic QA and physical Android are separate gates."
