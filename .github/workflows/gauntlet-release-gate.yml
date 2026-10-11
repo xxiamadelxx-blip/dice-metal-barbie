@@ -56,11 +56,11 @@ jobs:
       contents: read
 
   pin:
-    name: 3 - Pin only GLBs already tested by all three consumers
+    name: 3 - Pin only GLBs accepted by ALL source consumers, including AVD
     needs: [assets, native, temporal, android, avd]
     # Do not pin/push fresh assets until real Android screenshots and videos
     # have finished, preserving their evidence from concurrency cancellation.
-    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.assets.result == 'success' && needs.native.result == 'success' && needs.temporal.result == 'success' && needs.android.result == 'success' }}
+    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.assets.result == 'success' && needs.native.result == 'success' && needs.temporal.result == 'success' && needs.android.result == 'success' && needs.avd.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write

@@ -2,15 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 real Android editor coverage: add/remove D4, flip D20 sign, Cancel/reopen, then real four-body Jolt",
-    "route": "interface-accessibility",
+    "task": "M4 Android all pool controls: isolate unrelated Messages ANR at baseline D6 and preserve strict editor touch QA",
+    "route": "reliability-persistence",
     "status": "in_progress",
-    "owner": "Dice engineering agent via canonical router",
-    "next_action": "Run current exact-SHA Gauntlet for new expanded 10-step Android player editor; inspect original ADB source video/screens and event order. On red, correct real hitbox/timing only after original visual evidence. On pass update M4 checkpoint; then address explicit selected D20 group semantics if needed.",
+    "owner": "Dice engineering via canonical router",
+    "next_action": "Inspect next exact-source full unified Gauntlet: Android baseline D6 must be truly touched/completed after isolated Messages is disabled; then add/remove D4, sign flip D20, cancel/reopen, quantity/modifier, four genuine Jolt, saved history. On red use ORIGINAL Android source screenshots/logs; do NOT mark editor accepted.",
     "blockers": [
-      "Expanded Android real-touch ADD/REMOVE/SIGN/CANCEL scenario NOT_VERIFIED on new commit. Prior #38164276191 count/modifier/four-Jolt/history PASS remains evidence for earlier exact SHA.",
-      "Local Qwen prior critic was historical and generic; substantive source-adversarial review of expanded editor NOT_VERIFIED.",
-      "Real OnePlus Nord3 FPS/install/upgrade and M5 aesthetics/audio NOT_VERIFIED."
+      "#38165752886 unified RED before editor: original completed-D6.png shows Android Messages 'isn't responding' system ANR sheet, D6 log empty and 2,133 frozen frames. New AVD-only Messages disable and system overlay detection not yet real-run tested.",
+      "Independent stricter Qwen critic #38165752768 failed source contract; meaningful 7B critique remains NOT_VERIFIED even though existing first-party Qwen #38165752722 executed.",
+      "OnePlus Nord3 physical device FPS/install/upgrade and M5 art/sound are NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -47,13 +47,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164276191",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164276191/artifacts/11712245326",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164275943",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164275943/artifacts/11711522933"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38164275943/artifacts/11711522933",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38165752886",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38165752886/artifacts/11711733429",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38165752768"
     ],
-    "last_observed_sha": "4db968c3feacb99f0dead996e3e27bd4a119d117",
+    "last_observed_sha": "1e7d96669c4bafb33abffa32c76e36f6ae9fe845",
     "last_verified_sha": "7ab524091748142b033bceafbdfe89c30e061f38",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Full prior exact source Jolt/Android pool count+modifier+apply 23 PASS. Extended actual Add/Remove/Sign/Cancel ADB test to be run; no result claimed."
+    "verification_note": "Original Android screenshot proves unrelated Google Messages pale ANR occluded actual D6 stage. Emulator-only disable + system overlay trap and exact actual AVD acceptance required. Pin no longer permitted after failed AVD. Retain all old evidence."
   },
   "incidents": {}
 }

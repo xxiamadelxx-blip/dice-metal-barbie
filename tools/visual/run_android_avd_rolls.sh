@@ -5,6 +5,21 @@
 set -euo pipefail
 mkdir -p qa-evidence/android-avd
 adb wait-for-device
+# The last Android failure #38165752886 was NOT D6 physics. Actual
+# completed-D6.png shows an Android 35 SYSTEM "Messages isn't responding"
+# ANR sheet covering the already rendered dice table. Disable ONLY the
+# unrelated Messages background service on this disposable x86 emulator;
+# never modify production ARM64 APK or the user's phone. If the package
+# cannot be disabled, fail closed instead of testing through an overlay.
+if adb shell pm list packages | tr -d '\r' | grep -Fxq 'package:com.google.android.apps.messaging'; then
+  adb shell am force-stop com.google.android.apps.messaging || true
+  adb shell pm disable-user --user 0 com.google.android.apps.messaging
+  if ! adb shell pm list packages -d | tr -d '\r' | grep -Fxq 'package:com.google.android.apps.messaging'; then
+    echo 'FAIL: Android emulator Google Messages could not be disabled before actual Jolt tests'
+    exit 47
+  fi
+  echo 'AVD only: disabled unrelated Google Messages (original system ANR blocker)'
+fi
 adb shell wm size 720x1280
 adb shell wm density 320
 adb install -r dice-emulator-x86-debug.apk
@@ -53,6 +68,22 @@ dismiss_launcher_anr() {
   fi
 }
 dismiss_launcher_anr qa-evidence/android-avd/launch-after-system-consent.png
+# A pale Android system ANR sheet can appear AFTER initial readiness. The
+# detector reads original Android pixel geometry only, never OCRs or invents
+# which process failed. Keep raw PNG and ActivityManager diagnostics. Never
+# tap an unknown system dialog and never count an occluded cast as a PASS.
+system_anr_sheet_present() {
+  local png="$1"
+  local observed
+  observed="$(python3 tools/visual/detect_android_system_anr.py "$png")" || return 1
+  if test "$observed" = SYSTEM_ANR_SHEET; then
+    adb logcat -d -v time -s ActivityManager:E WindowManager:I '*:S' \
+      > qa-evidence/android-avd/system-anr-activitymanager.log || true
+    echo "FAIL: verified pale Android SYSTEM ANR card occludes the actual game: $png"
+    return 0
+  fi
+  return 1
+}
 # SwiftShader may require >10 s to compile the first 3D scene on Android 35.
 # Review genuine ADB screenshots every 5 s; reject Android pop-ups, black
 # screens and the Godot splash. Never start recording until the game draws.
@@ -63,6 +94,9 @@ for attempt in $(seq 1 20); do
   # on every readiness iteration. The resulting frame is not falsely PASS.
   dismiss_immersive_tutorial qa-evidence/android-avd/launch-after-immersive-dismiss.png
   dismiss_launcher_anr qa-evidence/android-avd/launch-after-immersive-dismiss.png
+  if system_anr_sheet_present qa-evidence/android-avd/launch-after-immersive-dismiss.png; then
+    exit 48
+  fi
   if python3 - <<'PY'
 from PIL import Image,ImageStat
 im=Image.open('qa-evidence/android-avd/launch-after-immersive-dismiss.png').convert('RGB')
@@ -122,6 +156,15 @@ for spec in '4 85 1115 0' '6 220 1115 0' '8 355 1115 0' '12 490 1115 0' '20 625 
   for attempt in $(seq 1 41); do
     sleep 2
     adb logcat -d -v time -s godot:I '*:S' > "$roll_log" || true
+    if test $((attempt % 4)) -eq 0; then
+      # Only capture a failure candidate; original full 24fps screenrecord
+      # remains authoritative and is preserved before a RED exit.
+      adb exec-out screencap -p > "qa-evidence/android-avd/system-guard-D$sides-attempt-$attempt.png"
+      if system_anr_sheet_present "qa-evidence/android-avd/system-guard-D$sides-attempt-$attempt.png"; then
+        failed=1
+        break
+      fi
+    fi
     if grep -Fq "DICE_QA_FAILED D$sides=" "$roll_log"; then
       failed=1
       echo "FAIL: real Godot/Jolt reported physically invalid D$sides roll"
