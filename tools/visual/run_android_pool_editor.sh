@@ -116,40 +116,60 @@ fi
 # twice, CANCEL pending draft, reopen original persistent valid expression.
 # Coordinates derived from exact original successful AVD full-height screenshot
 # #38164276191, not a programmatically emitted pressed() signal or a mock.
+# Both conditions MUST hold for each click: Godot emitted the exact edit AND
+# a later ADB screenshot contains distinct rendered pixels versus the prior
+# accepted state. ADB/Godot logcat can precede GPU framebuffer presentation.
+# Use the IDENTICAL full-resolution ROI/threshold as the offline frame auditor.
+pool_pixels_changed() {
+  python3 tools/visual/check_pool_editor_pixels.py "$out/$1" "$out/$2" --minimum 75
+}
 touch_pool_event() {
-  local wanted="$1" occurrences="$2" filename="$3" failure="$4" found=0
-  for attempt in $(seq 1 14); do
+  local wanted="$1" occurrences="$2" filename="$3" failure="$4" previous="$5" found=0
+  for attempt in $(seq 1 20); do
     sleep .65
     adb logcat -d -v time -s godot:I '*:S' > "$log" || true
     adb exec-out screencap -p > "$out/$filename"
     found="$(grep -Fc "$wanted" "$log" || true)"
-    if test "$found" -ge "$occurrences"; then return 0; fi
+    if test "$found" -ge "$occurrences" &&
+       pool_pixels_changed "$previous" "$filename"; then
+      echo "PASS Android rendered editor change after actual touch: $wanted"
+      return 0
+    fi
   done
-  echo "FAIL: real Android pool control did not modify active source: $wanted"
+  echo "FAIL: Android touch event and distinct pixels were not both observed: $wanted"
   exit "$failure"
 }
 # D4 is the genuine initial OptionButton group die type. Add third PHYSICAL D4.
 adb shell input tap 524 514
 touch_pool_event 'DICE_M4_POOL_EDIT formula=2d6+1d20+1d4-3' 1 \
-  m4-pool-original-added-d4.png 62
+  m4-pool-original-added-d4.png 62 m4-pool-original-dialog.png
 # The added third group is selected. Remove it with the real row hitbox.
 adb shell input tap 601 566
 touch_pool_event 'DICE_M4_POOL_EDIT formula=2d6+1d20-3' 1 \
-  m4-pool-original-removed-d4.png 63
+  m4-pool-original-removed-d4.png 63 m4-pool-original-added-d4.png
 # Select the second ORIGINAL D20 group and flip its signed contribution.
 adb shell input tap 135 340
 sleep .6
 adb shell input tap 437 565
 touch_pool_event 'DICE_M4_POOL_EDIT formula=2d6-1d20-3' 1 \
-  m4-pool-original-negative-d20.png 64
+  m4-pool-original-negative-d20.png 64 m4-pool-original-removed-d4.png
 # Undo the negative sign with ANOTHER real touch; this is not a saved roll.
 adb shell input tap 437 565
 touch_pool_event 'DICE_M4_POOL_EDIT formula=2d6+1d20-3' 2 \
-  m4-pool-original-restored-d20.png 65
+  m4-pool-original-restored-d20.png 65 m4-pool-original-negative-d20.png
 # Real Cancel must discard the modal and leave the underlying formula alone.
 adb shell input tap 200 1000
-sleep 1
-adb exec-out screencap -p > "$out/m4-pool-original-after-cancel.png"
+cancel_rendered=0
+for attempt in $(seq 1 20); do
+  sleep .65
+  adb exec-out screencap -p > "$out/m4-pool-original-after-cancel.png"
+  if pool_pixels_changed m4-pool-original-restored-d20.png m4-pool-original-after-cancel.png; then
+    cancel_rendered=1; break
+  fi
+done
+if test "$cancel_rendered" != 1; then
+  echo 'FAIL: Cancel has not visibly dismissed Android editor'; exit 66
+fi
 adb logcat -d -v time -s godot:I '*:S' > "$log" || true
 if grep -Eq 'DICE_M4_POOL_APPLIED|DICE_M4_PHYSICAL_STARTED' "$log"; then
   echo 'FAIL: Android Cancel applied draft or launched Jolt'
@@ -164,7 +184,10 @@ for attempt in $(seq 1 14); do
   adb logcat -d -v time -s godot:I '*:S' > "$log" || true
   adb exec-out screencap -p > "$out/m4-pool-original-reopened-after-cancel.png"
   opens="$(grep -Fc 'DICE_M4_POOL_EDITOR_OPEN formula=2d6+1d20-3' "$log" || true)"
-  if test "$opens" -ge 2; then reopened=1; break; fi
+  if test "$opens" -ge 2 &&
+     pool_pixels_changed m4-pool-original-after-cancel.png m4-pool-original-reopened-after-cancel.png; then
+    reopened=1; break
+  fi
 done
 if test "$reopened" != 1; then
   echo 'FAIL: real Android Cancel did not preserve original formula on reopen'
@@ -180,7 +203,10 @@ for attempt in $(seq 1 12); do
   sleep .65
   adb logcat -d -v time -s godot:I '*:S' > "$log" || true
   adb exec-out screencap -p > "$out/m4-pool-original-count-changed.png"
-  if grep -Fq 'DICE_M4_POOL_EDIT formula=3d6+1d20-3' "$log"; then count_ok=1; break; fi
+  if grep -Fq 'DICE_M4_POOL_EDIT formula=3d6+1d20-3' "$log" &&
+     pool_pixels_changed m4-pool-original-reopened-after-cancel.png m4-pool-original-count-changed.png; then
+    count_ok=1; break
+  fi
 done
 if test "$count_ok" != 1; then echo 'FAIL: Android did not increment physical D6 source count'; exit 55; fi
 adb shell input tap 573 618
@@ -189,7 +215,10 @@ for attempt in $(seq 1 12); do
   sleep .65
   adb logcat -d -v time -s godot:I '*:S' > "$log" || true
   adb exec-out screencap -p > "$out/m4-pool-original-modifier-changed.png"
-  if grep -Fq 'DICE_M4_POOL_EDIT formula=3d6+1d20-2' "$log"; then mod_ok=1; break; fi
+  if grep -Fq 'DICE_M4_POOL_EDIT formula=3d6+1d20-2' "$log" &&
+     pool_pixels_changed m4-pool-original-count-changed.png m4-pool-original-modifier-changed.png; then
+    mod_ok=1; break
+  fi
 done
 if test "$mod_ok" != 1; then echo 'FAIL: Android modifier button not touched'; exit 56; fi
 # Bottom native dialog is ACTUALLY visible after wrap_controls=false.
