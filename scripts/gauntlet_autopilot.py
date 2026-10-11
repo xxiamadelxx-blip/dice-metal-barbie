@@ -19,7 +19,10 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from gauntlet_evidence import evaluate
+if __package__:
+    from .gauntlet_evidence import evaluate
+else:
+    from gauntlet_evidence import evaluate
 
 BLOCKED_PARTS = {".git", ".github", ".circleci", ".agent", ".env", "secrets"}
 BLOCKED_FILES = {"AGENTS.md", "gauntlet_autopilot.py", "gauntlet_evidence.py"}
