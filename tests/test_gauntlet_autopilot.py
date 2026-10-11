@@ -55,7 +55,8 @@ class AutoLoopTests(unittest.TestCase):
         run(self.root, "config", "user.name", "Unit Tester")
         (self.root / "sample.py").write_text("print('INITIAL')\n")
         run(self.root, "add", "sample.py")
-        run(self.root, "commit", "-qm", "base")\n        run(self.root, "branch", "-M", "main")
+        run(self.root, "commit", "-qm", "base")
+        run(self.root, "branch", "-M", "main")
         run(self.root, "checkout", "-qb", "gauntlet/autofix-testing")
         self.out = Path(self.temp.name) / "out"
         self.plan = {"repository": "owner/repo", "task": "Ensure GOOD output",
