@@ -288,7 +288,7 @@
     {
       "id": "audio-haptics",
       "title": "Physical audio, SFX mixing & haptics",
-      "priority": 75,
+      "priority": 95,
       "triggers": [
         "sound",
         "audio",
