@@ -59,7 +59,32 @@ func _run() -> void:
             return
     await _capture("native-01-launch")
     scene.call("_throw_physical_d6")
-    await create_timer(0.7).timeout
+    # User-requested soft table response: an ORIGINAL frame exactly after
+    # the first REAL Jolt contact, then one after felt recovery. Never call
+    # register_impact here; art QA must not manufacture the trigger.
+    var felt := scene.get_node_or_null("M5VelvetContactSurface") as Node3D
+    if felt == null:
+        push_error("M5 real-contact felt is not present in real scene")
+        quit(19)
+        return
+    var saw_real_contact := false
+    for frame in range(230):
+        await process_frame
+        if int(felt.get("impact_count")) > 0 and bool(felt.get("active")):
+            saw_real_contact = true
+            break
+    if not saw_real_contact:
+        push_error("Real physical D6 did not actually impact the felt floor")
+        quit(20)
+        return
+    await _capture("native-17-jolt-contact-felt")
+    await create_timer(0.35).timeout
+    if bool(felt.get("active")):
+        push_error("Visual-only felt did not recover after physical impact")
+        quit(21)
+        return
+    await _capture("native-18-recovered-felt")
+    await create_timer(0.15).timeout
     await _capture("native-02-moving")
     await create_timer(5.0).timeout
     await _capture("native-03-after")

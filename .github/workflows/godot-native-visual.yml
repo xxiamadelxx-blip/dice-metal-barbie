@@ -62,7 +62,7 @@ jobs:
             grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call' qa-evidence/native-godot.log
             exit 3
           fi
-          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png qa-evidence/native-09-d8-detail.png qa-evidence/native-10-d12-detail.png qa-evidence/native-11-d4-apex-detail.png qa-evidence/native-12-d8-normal.png qa-evidence/native-13-d12-normal.png qa-evidence/native-14-d4-normal.png qa-evidence/native-15-staged-d20-six-underbar.png qa-evidence/native-16-staged-d20-nine-underbar.png; do
+          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png qa-evidence/native-09-d8-detail.png qa-evidence/native-10-d12-detail.png qa-evidence/native-11-d4-apex-detail.png qa-evidence/native-12-d8-normal.png qa-evidence/native-13-d12-normal.png qa-evidence/native-14-d4-normal.png qa-evidence/native-15-staged-d20-six-underbar.png qa-evidence/native-16-staged-d20-nine-underbar.png qa-evidence/native-17-jolt-contact-felt.png qa-evidence/native-18-recovered-felt.png; do
             test -s "$file"
             test "$(stat -c%s "$file")" -ge 10000
           done
@@ -90,6 +90,13 @@ jobs:
             echo "FAIL: staged engraved six and nine Godot frames identical"
             exit 7
           fi
+          if cmp -s qa-evidence/native-17-jolt-contact-felt.png qa-evidence/native-18-recovered-felt.png; then
+            echo "FAIL: real-contact felt and recovered frame identical"
+            exit 8
+          fi
+          grep -Fq 'DICE_M5_REAL_VELVET_IMPACT speed=' qa-evidence/native-godot.log || {
+            echo "FAIL: screenshot response did not originate from Jolt contact"; exit 9;
+          }
           ls -lh qa-evidence/native-*.png
       - name: Run autonomous native-frame pixel critic
         run: python3 tools/visual/critique_native.py qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png qa-evidence/native-11-d4-apex-detail.png qa-evidence/native-01-launch.png
