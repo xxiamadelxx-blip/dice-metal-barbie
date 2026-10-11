@@ -68,7 +68,7 @@ class AutoLoopTests(unittest.TestCase):
     def test_real_two_role_two_iteration_feedback(self):
         # Output assertion executes actual candidate source on disposable checkout.
         self.plan["test_command"] = ["python", "-c",
-                                     "import subprocess; s=subprocess.check_output(['python','sample.py']).decode(); assert s=='GOOD\n',s"]
+                                     "import subprocess; s=subprocess.check_output(['python','sample.py']).decode(); assert s==bytes.fromhex('474f4f440a').decode(),s"]
         actor = Actor()
         record = execute(self.plan, self.root, self.out, actor)
         self.assertEqual(actor.roles, ["builder", "critic", "builder", "critic"])
