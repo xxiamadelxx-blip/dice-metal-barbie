@@ -1,5 +1,8 @@
 # AGENTS — D&D 3D Dice
 
+For Gauntlet acceptance and autonomous two-context critic execution, read `docs/GAUNTLET_ACCEPTANCE_V2.md` and `docs/GAUNTLET_AUTOPILOT.md` alongside the established `docs/GAUNTLET_LOOP.md`. Keep actual engine, full-frame and device gates; never claim independent PASS from schema tests.
+
+
 Read `docs/CONTEXT.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, and `docs/GAUNTLET_LOOP.md` before significant changes.
 
 Product and architecture were approved 2026-10-10. Never rewrite approved product decisions (top-down orthographic view, offline, obsidian/velvet, visible face = outcome, D100 two modes) without user consent.
@@ -17,7 +20,3 @@ LEAD → BUILDER → INDEPENDENT CRITIC (when actually available) → COMPARISON
 - No paid tools, cloud runtime, account flows, or third-party assets without approval/license.
 
 Use feature branches and PRs. Do not push unreviewed work directly to `main` unless explicitly authorized. Never commit signing keys or passwords.
-
-For all new substantial candidate acceptance reviews, apply the fail-closed independent evidence contract in `docs/GAUNTLET_ACCEPTANCE_V2.md` and verify it with `scripts/gauntlet_evidence.py`. This adds to, never replaces, the existing visual/temporal/Android Gauntlet or other agents' active work.
-
-For truly autonomous two-context builder/critic iterations, read `docs/GAUNTLET_AUTOPILOT.md` and use `scripts/gauntlet_autopilot.py` with the isolated `.github/workflows/gauntlet-autopilot.yml` dispatcher only after confirming a real reviewer provider. A schema test is not proof of model execution. Existing PR #23 art/physics workflow, user-approved design and physical handset criteria remain the product truth.
