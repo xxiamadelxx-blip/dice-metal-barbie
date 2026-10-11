@@ -1,0 +1,29 @@
+name: M4 Real Multi-die Jolt QA
+on:
+  push:
+    branches: [qa/m4-physical-pool]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actual-mixed-pool:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import approved physical Godot/Jolt scene
+        run: godot --headless --path . --editor --quit
+      - name: Check all multi-body Jolt scripts parse
+        run: |
+          godot --headless --path . --check-only --script res://src/core/physical_roll_pool.gd
+          godot --headless --path . --check-only --script res://tests/m4_physical_pool.gd
+      - name: Exercise genuine mixed physical bodies, percentile and D20 advantage
+        run: godot --headless --path . --script res://tests/m4_physical_pool.gd
+      - name: Formula parser regression
+        run: godot --headless --path . --script res://tests/m4_roll_formula.gd
+      - name: Percentile input authenticity regression
+        run: godot --headless --path . --script res://tests/percentile_pair_mapping.gd
