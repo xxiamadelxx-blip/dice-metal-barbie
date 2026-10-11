@@ -180,6 +180,10 @@ func _open_pool_editor() -> void:
         feedback.text = "Проверьте формулу перед редактированием набора."
         return
     pool_editor.popup_centered_ratio(0.82)
+    # Only the real debug application can emit this AFTER an actual touch
+    # opened the Window. Original Android screenshot checks are separate.
+    if OS.is_debug_build() and pool_editor.visible:
+        print("DICE_M4_POOL_EDITOR_OPEN formula=" + formula_input.text)
 
 func _apply_edited_pool() -> void:
     if pool_editor == null or pool_edit_button.disabled:

@@ -226,14 +226,77 @@ def inspect_pair_sources_m4(root):
         "hardware_oneplus_nord3_fps":"NOT_VERIFIED"}
 
 
+
+def inspect_pool_editor_m4(root):
+    """Player-tapped ORIGINAL Android pool editor, not a synthetic popup."""
+    source=root/"dice-M4-POOL-source.mp4"
+    film=root/"roll-M4-POOL-24fps.mp4"
+    log=(root/"roll-M4-POOL-godot.log").read_text()
+    assert source.stat().st_size>30000 and film.stat().st_size>30000, (
+        "Missing real Android editor recording")
+    assert "DICE_M4_POOL_EDITOR_OPEN formula=2d6+1d20-3" in log, (
+        "Godot did not open M4 actual edit window following ADB touch")
+    assert "DICE_M4_POOL_APPLIED" not in log and "DICE_M4_PHYSICAL_STARTED" not in log, (
+        "Opening draft editor must not alter physics")
+    for name in ("m4-pool-original-before-drawer.png",
+            "m4-pool-original-drawer.png","m4-pool-original-dialog.png"):
+        assert (root/name).stat().st_size>10000, "Original Android pool screenshot missing: "+name
+    before=Image.open(root/"m4-pool-original-drawer.png").convert("RGB")
+    after=Image.open(root/"m4-pool-original-dialog.png").convert("RGB")
+    assert before.size==after.size==(720,1280)
+    difference=ImageChops.difference(before.crop((40,190,680,1140)),
+                                   after.crop((40,190,680,1140))).convert("L")
+    changed_modal=sum(n for i,n in enumerate(difference.histogram()) if i>18)
+    assert changed_modal>15000,"Android physical pool popup not actually visible"
+    count=0
+    changed=0
+    duplicates=0
+    black=0
+    previous=None
+    every_second=[]
+    with (root/"every-avd-frame-M4-POOL.jsonl").open("w") as file:
+        for idx,image in video_frames(film):
+            crop=image.crop((80,150,640,930)).resize((96,144)).convert("L")
+            luminance=ImageStat.Stat(crop).mean[0]
+            delta=0 if previous is None else sum(
+                ImageChops.difference(crop,previous).histogram()[10:])
+            changed+=int(delta>36)
+            duplicates+=int(previous is not None and delta==0)
+            black+=int(luminance<8)
+            file.write(json.dumps({"frame":idx,"t_s":round(idx/24,4),
+                "source":"REAL_ANDROID_PLAYER_M4_POOL_EDITOR_OPEN",
+                "luminance":round(luminance,2),"changed_pixels":delta,
+                "black":luminance<8})+"\n")
+            every_second.append((idx,image.resize((120,215))))
+            if len(every_second)==24:
+                save_every_frame_sheet(root,"M4-POOL",idx//24,every_second)
+                every_second=[]
+            count+=1
+            previous=crop
+    if every_second:
+        save_every_frame_sheet(root,"M4-POOL",(count-1)//24,every_second)
+    assert count>=120,"Android editor UI was not recorded for at least 5 seconds"
+    assert changed>=2,"Android editable-pool menu frames did not visibly change"
+    assert black==0,"Android editable pool produced black frames"
+    return {"capture_key":"M4_REAL_PLAYER_POOL_EDITOR",
+        "opened_by_real_android_tap":True,"physical_roll_unchanged_on_open":True,
+        "original_dialog_changed_pixels":changed_modal,
+        "frames_checked_sequentially":count,
+        "full_24_frame_sheets":math.ceil(count/24),
+        "frames_with_visual_changes":changed,
+        "duplicate_frames":duplicates,"black_frames":black,
+        "real_phone_fps":"NOT_VERIFIED"}
+
 def main(root):
     all_dice=[inspect(root,s) for s in (4,6,8,12,20,10,100,"100_PAIR")]
     m4=inspect_advanced_m4(root)
     pair=inspect_pair_sources_m4(root)
+    editor=inspect_pool_editor_m4(root)
     report={"provenance":"REAL_ANDROID_EMULATOR_X86_64_ADB_SCREENRECORD",
             "results":all_dice,"m4_real_clicked_physical_ui":m4,
             "m4_real_clicked_percentile_source_digits":pair,
-            "frames_examined":sum(x["frames_checked_sequentially"] for x in all_dice)+m4["frame_count_all_checked"]+pair["frames_checked_sequentially"],
+            "m4_real_clicked_physical_pool_editor":editor,
+            "frames_examined":sum(x["frames_checked_sequentially"] for x in all_dice)+m4["frame_count_all_checked"]+pair["frames_checked_sequentially"]+editor["frames_checked_sequentially"],
             "status":"TEMPORAL_EVIDENCE_ONLY",
             "limitations":["24fps extracted screen frames can repeat if AVD GPU/source is slower",
                            "actual FPS and numerical face/HUD consistency unverified",
