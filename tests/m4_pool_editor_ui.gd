@@ -61,6 +61,27 @@ func _run() -> void:
         return
     _check(str(editor.call("composed_expression"))=="2d6+1d20-3",
         "Formula was changed by opening editor")
+    # Source-grounded adversarial Qwen 7B challenge #38158782443:
+    # duplicate groups are valid INDEPENDENT physical dice, NOT accidentally
+    # de-duplicated. Test-only faces below are arithmetic fixtures, not Jolt.
+    _check(bool(editor.call("load_expression","1d6")),
+        "Cannot load single physical die to test identical groups")
+    die.select(1)
+    sign.select(0)
+    add.pressed.emit()
+    var duplicates: Dictionary = Formula.parse(
+        str(editor.call("composed_expression")))
+    _check(bool(duplicates.get("ok",false)) and
+        str(duplicates.get("formula",""))=="1d6+1d6" and
+        int(duplicates.get("physical_dice",0))==2 and
+        (duplicates["groups"] as Array).size()==2,
+        "Two identical D6 groups MUST mean two separate actual dice")
+    var duplicate_values: Dictionary = Formula.evaluate(duplicates,[[2],[5]])
+    _check(bool(duplicate_values.get("ok",false)) and
+        int(duplicate_values.get("total",0))==7,
+        "Repeated D6 groups incorrectly collapsed or arithmetic changed")
+    _check(bool(editor.call("load_expression","2d6+1d20-3")),
+        "Cannot restore editor original groups after identical-group test")
     plus.pressed.emit()
     _check(str(editor.call("composed_expression"))=="3d6+1d20-3",
         "Pressing count +1 must update the FIRST actual source group")
