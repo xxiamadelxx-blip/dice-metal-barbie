@@ -70,6 +70,19 @@ func _run() -> void:
                 _check(mapped.albedo_texture != null, "D%d generated albedo texture not applied to real Godot mesh" % sides)
                 _check(mapped.normal_enabled and mapped.normal_texture != null, "D%d tangent-space normal texture not applied" % sides)
                 _check(mapped.roughness_texture != null, "D%d scalar-only roughness is not PBR art" % sides)
+                # Independent material-contract gate for M5 light-response
+                # correction: real GLB normal/roughness remain attached;
+                # emitting a uniform blue-grey color is not polished stone.
+                _check(not mapped.emission_enabled,
+                    "D%d fake emissive wash destroys true facet shading" % sides)
+                _check(mapped.clearcoat_enabled and mapped.clearcoat >= 0.50,
+                    "D%d obsidian lacks a distinct polish/reflection lobe" % sides)
+                _check(mapped.clearcoat_roughness <= 0.20,
+                    "D%d clearcoat is too matte for premium stone" % sides)
+                _check(mapped.metallic >= 0.15 and mapped.metallic <= 0.35,
+                    "D%d obsidian metallic response outside physical-art budget" % sides)
+                _check(mapped.roughness > 0.60 and mapped.roughness < 0.90,
+                    "D%d GLB roughness texture must retain real variation" % sides)
             _check(meshes.size() == 2, "D%d GLB must contain separate stone and bronze geometry" % sides)
             for mesh_node in meshes:
                 _check(mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0,
