@@ -55,3 +55,19 @@ flowchart TD
 | Ship | CI tests/export and signed APK | true Android ARM64 binary; device FPS/update independent gate |
 
 [Route rules](CREATIVE_TOOLCHAIN.md) · [Installation test results](TOOL_INSTALL_AUDIT.md) · [Autonomous loop](GAUNTLET_LOOP.md)
+
+## M5 execution through one canonical router (2026-10-11)
+
+This is the user-approved pipeline pictured in the architecture image, implemented by `AGENTS.md` / `config/engineering_routes.json` rather than a competing agent. The cloud *production entrypoint* is the existing exact-SHA `.github/workflows/gauntlet-release-gate.yml`, which calls `blender-assets.yml` before its native/Android physical consumers.
+
+| Input / reason | Verified route | Proof before integration | Do not confuse with |
+| --- | --- | --- | --- |
+| Premium die facets and real engraving | **Blender Python** source `tools/blender/generate_die_assets.py`, official fonts | Per-die true boolean engraved `.glb`, preview PNG, QA PLY, hash in `m5-route-manifest.json` | Merely importing or tinting a collision hull |
+| Mesh QA | **MeshLab** under Xvfb with PLY→OBJ + existing Python GLB validator (Trimesh optional) | Non-empty converted OBJ for EACH five sculpted die and validation report | Mere `meshlab --version` |
+| Obsidian & velvet PBR | **Blender/Python + ImageMagick** by default; Material Maker only after real checksum-verified `.ptex` export | Albedo, roughness and normal files checked for real size, color-space and actual Godot import | An installed but unproven texture editor |
+| Real interface glyphs | **Inkscape** authored `src/assets/ui/m5_roll_action.svg` exported to PNG | 256×256 generated image and hash; integrate in Godot only after mobile legibility review | SVG prototype claimed to be the final HUD |
+| Additional hand painting | **Krita / GIMP** only for needed actual art with tested real output | Owned editable source + PNG export with preserved alpha/ICC; otherwise CLI fallback | CLI version or virtual-display smoke |
+| Parametric constraints / reference shape | **OpenSCAD / to3D**, only for tasks requiring them; to3D only when connected/authorized | Revalidated mesh fed through Blender and Godot, never direct Jolt result | Automatically using a reference as verified physical dice |
+| Gameplay truth and full review | **Godot 4.6.3/Jolt → FFmpeg → screenshot/frame critic → Android AVD / ARM64** | Exact-SHA 8-mode physical/source-frame video and auditable JSONL; no false black/frozen success | Nominal 24fps file = actual render FPS; AVD = Nord 3 |
+
+The same-run artifact SHA256 check means no stale models are imported. **Build success does not approve styling**, so the next M5 visual critic must open original Godot and Android images against Concept 3 and record a concrete discrepancy list. Existing local Qwen 7B is a *source critic*, not a model that has visually seen every screenshot. OnePlus Nord 3 GPU FPS and real release signing remain M6 gates.
