@@ -1,0 +1,21 @@
+{
+  "repository": "xxiamadelxx-blip/dice-metal-barbie",
+  "task": "Repair the intentionally incorrect self-contained smoke fixture so standard_d6_faces() returns exactly 6 for a conventional six-sided die. Only change the allowed test fixture; do not change production game code, tests, documentation or workflows. This is an external model connectivity and independent critique test, not a product change.",
+  "approved_reference": "A standard D6 has exactly six faces. qa/gauntlet/smoke_target.py is disposable, not used by the actual Godot game.",
+  "acceptance": [
+    "standard_d6_faces() returns integer 6",
+    "Original source file is the only edited path",
+    "The fixed owner-provided Python assertion passes",
+    "A separately invoked critic judges the exact committed diff and original test output; no self-review"
+  ],
+  "allowed_paths": [
+    "qa/gauntlet/smoke_target.py"
+  ],
+  "test_command": [
+    "python3",
+    "-c",
+    "from runpy import run_path; outcome=run_path('qa/gauntlet/smoke_target.py')['standard_d6_faces'](); assert type(outcome) is int and outcome == 6, f'D6 must have 6 faces, got {outcome!r}'"
+  ],
+  "test_timeout_seconds": 30,
+  "max_iterations": 2
+}
