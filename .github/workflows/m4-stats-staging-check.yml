@@ -1,0 +1,45 @@
+name: M4 staged offline receipt statistics focused Godot Gauntlet
+on:
+  push:
+    branches:
+      - agent/m4-receipt-statistics-stage-20261011
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: m4-staged-statistics-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  original-godot-m4:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import actual offline Godot project
+        run: godot --headless --path . --editor --quit
+      - name: Formula receipts and actual-Jolt offline persistence baseline
+        run: |
+          set -eu
+          godot --headless --path . --script res://tests/m4_roll_formula.gd > m4-formula-check.log 2>&1 || { tail -120 m4-formula-check.log; exit 1; }
+          godot --headless --path . --script res://tests/m4_roll_persistence.gd > m4-disk-check.log 2>&1 || { tail -120 m4-disk-check.log; exit 1; }
+      - name: Exact new statistics source and adversarial deterministic receipts
+        run: |
+          godot --headless --path . --script res://tests/m4_roll_statistics.gd > m4-statistics-check.log 2>&1 || { cat m4-statistics-check.log; exit 1; }
+          grep -F 'M4_OFFLINE_RECEIPT_STATISTICS checks=' m4-statistics-check.log
+          ! grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Invalid call' m4-statistics-check.log
+      - name: Real Godot/Jolt cast, selected reroll, history/search/stats UI
+        run: |
+          godot --headless --path . --script res://tests/m4_full_history_browser.gd > m4-real-ui-check.log 2>&1 || { tail -150 m4-real-ui-check.log; exit 1; }
+          grep -F 'M4_REAL_UI_ALL_HISTORY checks=' m4-real-ui-check.log
+          grep -F 'DICE_M4_HISTORY_OPEN records=' m4-real-ui-check.log
+          ! grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Invalid call' m4-real-ui-check.log
+      - name: Keep original Jolt/stats logs on PASS or FAIL
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-staged-receipt-statistics-original-logs
+          path: m4-*-check.log
+          if-no-files-found: warn
+          retention-days: 14
