@@ -87,6 +87,43 @@ func _run() -> void:
             return
     var elapsed := float(Time.get_ticks_usec()-physical_start)/1000000.0
     var frames_drawn := Engine.get_frames_drawn()-count_start
+    var first_total := int(result["total"])
+    var first_face: int = int(result["groups"][0]["attempts"][0][0])
+    await create_timer(0.6).timeout
+
+    # Continue the SAME uncropped 24fps original source recording through
+    # real on-screen selection and Jolt reroll of ONLY the first D6.
+    button.pressed.emit()
+    var choose := panel.find_child("ChoosePhysicalDieToReroll",true,false) as OptionButton
+    var reroll := panel.find_child("RerollChosenPhysicalDie",true,false) as Button
+    if not panel.visible or choose == null or reroll == null or reroll.disabled:
+        push_error("M4 actual drawer has no usable selectable real-die reroll")
+        quit(43)
+        return
+    await create_timer(0.75).timeout
+    var reroll_started := Time.get_ticks_usec()
+    var reroll_frames := Engine.get_frames_drawn()
+    reroll.pressed.emit()
+    if not bool(pool.get("busy")) or panel.visible:
+        push_error("Real M4 reroll click did not start genuine dynamic Jolt")
+        quit(44)
+        return
+    max_until = Time.get_ticks_msec()+55000
+    while bool(pool.get("busy")):
+        if Time.get_ticks_msec() > max_until:
+            push_error("Actual selected physical source reroll timed out")
+            quit(45)
+            return
+        await physics_frame
+    result = pool.get("last_result")
+    var new_attempts: Array = result["groups"][0]["attempts"][0] if bool(result.get("ok",false)) else []
+    if new_attempts.size()!=2 or int(new_attempts[0])!=first_face or (
+            int(new_attempts[-1])!=int((pool.get("_active") as Array)[0].get("result"))):
+        push_error("Actual 24fps reroll did not preserve original and new physical faces")
+        quit(46)
+        return
+    elapsed += float(Time.get_ticks_usec()-reroll_started)/1000000.0
+    frames_drawn += Engine.get_frames_drawn()-reroll_frames
     await create_timer(1.3).timeout
     var store: RefCounted = scene.get("roll_store")
     var history: Array = store.call("snapshot")["history"]
@@ -97,6 +134,9 @@ func _run() -> void:
     var summary := {"provenance":"REAL_LINUX_MESA_GODOT_JOLT_HUD_NOT_ANDROID",
         "physical_formula":result["formula"],"real_Jolt_result":result["total"],
         "real_physical_groups":result["groups"].size(),
+        "original_real_total_before_reroll":first_total,
+        "rerolled_actual_source_trace":new_attempts,
+        "native_real_player_reroll":true,
         "real_visible_retained_Jolt_bodies":physically_visible.size(),
         "peak_simultaneously_rolling":int(pool.get("peak_simultaneously_rolling")),
         "seconds_real_body_rolls":elapsed,

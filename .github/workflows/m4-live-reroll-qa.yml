@@ -30,6 +30,27 @@ jobs:
         run: godot --headless --path . --script res://tests/m4_reroll_ui_integration.gd
       - name: Do not regress original eight-concurrent-dice and percentiles
         run: godot --headless --path . --script res://tests/m4_physical_pool.gd
+      - name: Install real video capture dependencies
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ffmpeg xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 \
+            libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 \
+            libxkbcommon0 libwayland-cursor0 python3-pil
+      - name: Check native M4 first-cast and reroll visual capture compiles
+        run: godot --headless --path . --check-only --script res://tests/m4_ui_temporal_capture.gd
+      - name: Capture actual UI-selected real reroll and all settled physical dice at 24fps
+        run: bash tools/visual/run_m4_ui_capture.sh
+      - name: Decode every rendered mobile screenshot including the actual second throw
+        run: python3 tools/visual/audit_m4_ui_frames.py qa-evidence/m4-ui-24fps
+      - name: Preserve full original reroll video, timeline and 24-frame sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-selective-real-jolt-reroll-24fps
+          path: qa-evidence/m4-ui-24fps/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Real-face formula/reroll-trace and offline storage regressions
         run: |
           godot --headless --path . --script res://tests/m4_roll_formula.gd
