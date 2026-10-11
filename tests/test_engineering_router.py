@@ -42,6 +42,9 @@ class EngineeringRouterTests(unittest.TestCase):
             selected = route_for(phrase, self.reg, self.saved["active"])
             self.assertEqual(selected["id"], self.saved["active"]["route"])
 
+    def test_dependencies_are_not_stuck_signal(self):
+        self.assertEqual(parse_mode("Анализ архитектуры и зависимостей"), "new-task")
+
     def test_explicit_specialty_selection(self):
         for prompt, name in (
                 ("Создай звук столкновения кубиков", "audio-haptics"),
