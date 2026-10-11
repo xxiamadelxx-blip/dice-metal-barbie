@@ -19,7 +19,7 @@ This implementation is a bounded **execution system**, not just a checklist. It 
 - BUILDER `qwen2.5-coder:1.5b` for a scoped small source edit;
 - CRITIC `qwen2.5-coder:3b` for a separate stateless review of the exact candidate SHA, diff and actual test log.
 
-Official Ollama model registry provides these quantized weights at ~986 MB and ~1.9 GB. The models run **inside GitHub's ephemeral Linux runner**, not on the owner's Android phone or a remote paid inference API. The server binds to `127.0.0.1:11434` only. `GAUNTLET_AI_BACKEND=ollama_local` forces a fixed localhost URL and sends **no** Authorization header. The two model IDs must differ. Original test logs, review and gate verdict still pass through the existing `gauntlet_evidence.py` acceptance record. Critical / major findings carry between attempts.
+Official Ollama model registry provides these quantized weights at ~986 MB and ~1.9 GB. The models run **inside GitHub's ephemeral Linux runner**, not on the owner's Android phone or a remote paid inference API. The server binds to `127.0.0.1:11434` only. `GAUNTLET_AI_BACKEND=ollama_local` forces a fixed localhost URL and sends **no** Authorization header. The two model IDs must differ. Invalid semantic critic findings receive at most one re-prompt, with both raw responses retained; unresolved or still-invalid reviews fail closed. Original test logs, review and gate verdict still pass through the existing `gauntlet_evidence.py` acceptance record. Critical / major findings carry between attempts.
 
 For a standalone authorized Linux shell with Docker available:
 
