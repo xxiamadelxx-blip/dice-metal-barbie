@@ -25,7 +25,7 @@ def validate(root):
     for name in [ao['file'],'d20_obsidian_albedo.png',
                  'd20_obsidian_roughness.png','d20_obsidian_normal.png']:
         raw=(root/name).read_bytes()
-        assert raw[:8]==b'\\x89PNG\\r\\n\\x1a\\n', 'D20 actual bake or PBR PNG missing'
+        assert raw[:8]==bytes.fromhex("89504e470d0a1a0a"), 'D20 actual bake or PBR PNG missing'
         width,height=struct.unpack_from('>II',raw,16)
         assert (width,height)==(1024,1024), 'D20 actual UV/texture resolution incorrect: '+name
         assert len(raw)>10000, 'D20 PNG is empty/flat '+name
