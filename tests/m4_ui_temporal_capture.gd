@@ -76,8 +76,10 @@ func _run() -> void:
     # Video evidence must contain the actual usable controls INSIDE the
     # popup; an all-height scrolling list once hid them beyond the screen.
     for name in ["IncreaseGroupCount","AddPhysicalGroup",
-            "RemovePhysicalGroup","IncreasePoolModifier"]:
-        var visible_button := editor.find_child(name,true,false) as Button
+            "RemovePhysicalGroup","IncreasePoolModifier","POOL_OK_BUTTON"]:
+        var visible_button: Button = editor.get_ok_button() if (
+            name=="POOL_OK_BUTTON") else (
+            editor.find_child(name,true,false) as Button)
         if visible_button==null or not visible_button.is_visible_in_tree():
             push_error("Visible screenshot lacks actual pool button "+name)
             quit(64)

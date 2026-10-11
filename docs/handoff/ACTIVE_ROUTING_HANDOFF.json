@@ -2,15 +2,14 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M4 hidden pool editor: fix real mobile offscreen touch controls despite prior green Jolt CI; verify via original native video and Android tap",
+    "task": "M4 pool editor: recover visible Apply/Cancel footer in genuine 720x1280 phone popup via ConfirmationDialog.get_vbox",
     "route": "interface-accessibility",
     "status": "in_progress",
     "owner": "Dice engineering agent via canonical router",
-    "next_action": "Review new exact-SHA native 24fps ORIGINAL modal PNG/frame capture and dedicated Godot geometry assertions, then implement original 720×1280 Android ADB tap-screen walkthrough from vetted staging script (only open event so far). After full Gauntlet all 9 gates pass, require actual Android finger interaction with add/remove/count/modifier and OK, not just popup-open.",
+    "next_action": "Inspect current exact-source new full Gauntlet native 24fps modal frame: all group controls AND Apply/Cancel must be inside 720x1280. If geometry passes, integrate staged original ADB mobile physical tap editor test; preserve Jolt source facts and all eight existing Android modes.",
     "blockers": [
-      "Full #38158723281 was GREEN for functional Jolt, but independent pixel inspection of original M4 24fps video shows full-height ItemList hides physical pool edit buttons offscreen. New list bounds fix and real geometry assertions NOT_VERIFIED.",
-      "Preflight #38159813447 for separate Android pool composer script passed only source syntax + Godot; not real Android touch/popup validation.",
-      "Actual Nord 3 installation/FPS/haptics and M5 premium art acceptance remain OPEN."
+      "#38160464307 RED despite Jolt 4-body PASS: original native frame shows editing controls visible but ConfirmDialog footer still below screen; new get_vbox/max_size fix not verified.",
+      "Actual AVD finger touches of editable pool and approved Nord3 physical device not yet validated."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -38,13 +37,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38156059709",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38158723281",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38158723281/artifacts/11709204179",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38159813447"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38159813447",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38160464307",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38160464307/artifacts/11709991128"
     ],
-    "last_observed_sha": "604851114bfcc186fe1238e511c434f032a26c8b",
+    "last_observed_sha": "ed421aab4a98f4393b2077bb9d68c3074433fd8e",
     "last_verified_sha": "47284270934393a72635d329c92934a95215e95a",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Real source native frame at 4.2s proves full-screen ItemList hid editor controls. Changed layout to fixed-height scrollable list; awaiting actual native screenshot and boundary test. Parent physical Jolt source already passed unified #38158723281."
+    "verification_note": "Original actual Godot 720x1280 M4 modal screenshot on ed421aa: row controls visible at y300-420, Apply footer off-screen. Root cause custom VBox added to Window rather than AcceptDialog-owned VBox. Repair with get_vbox; production QA pending."
   },
   "incidents": {}
 }

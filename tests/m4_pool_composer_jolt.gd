@@ -116,7 +116,8 @@ func _run() -> void:
     await process_frame
     await process_frame
     _check(dialog.size.x<=720 and dialog.size.y<=1280,
-        "Actual modal exceeds mobile 720x1280 viewport")
+        "Actual modal exceeds mobile 720x1280 viewport: "+
+        str(dialog.size)+" window pos="+str(dialog.position))
     var safe: Array[Control] = [
         list,increase,change_sign,add,die_choice,modifier_plus,
         dialog.find_child("DecreaseGroupCount",true,false) as Button,

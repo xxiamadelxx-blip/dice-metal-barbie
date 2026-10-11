@@ -28,13 +28,19 @@ func _ready() -> void:
     title = "НАБОР ФИЗИЧЕСКИХ КУБИКОВ"
     min_size = Vector2i(620,680)
     size = Vector2i(650,770)
+    # Never let a pop-up extend below a 720x1280 mobile viewport. These are
+    # logical Godot pixels; the approved camera and physical bodies are untouched.
+    max_size = Vector2i(690,1020)
     get_ok_button().text = "ПРИМЕНИТЬ ФОРМУЛУ"
     get_cancel_button().text = "ОТМЕНА"
     confirmed.connect(_accept_formula)
     var column := VBoxContainer.new()
     column.custom_minimum_size = Vector2(580,585)
     column.add_theme_constant_override("separation",8)
-    add_child(column)
+    # AcceptDialog owns its footer / OK / CANCEL controls. A direct Window
+    # child stretched the window past 1280px and sent APPLY/CANCEL offscreen.
+    # Place custom contents inside the dialog's actual built-in VBox instead.
+    get_vbox().add_child(column)
     var heading := Label.new()
     heading.text = "Редактируйте состав до броска. Грани определяет только физика."
     heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
