@@ -19,9 +19,16 @@ func _run() -> void:
 		quit(3)
 		return
 	root.size = Vector2i(768, 768)
+	# Dedicated real GPU render target: main project viewport is 720x1280.
+	# A Window.size change alone does NOT resize its content viewport.
+	var capture_viewport := SubViewport.new()
+	capture_viewport.name = "RealGodot768SquareSource"
+	capture_viewport.size = Vector2i(768, 768)
+	capture_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(capture_viewport)
 	var stage := Node3D.new()
 	stage.name = "IsolatedGLBComparison"
-	root.add_child(stage)
+	capture_viewport.add_child(stage)
 	var packed: PackedScene = load(GLB_PATH)
 	if packed == null:
 		push_error("Missing exact source GLB: " + GLB_PATH)
@@ -81,7 +88,9 @@ func _run() -> void:
 	camera.make_current()
 	await create_timer(1.5).timeout
 	await RenderingServer.frame_post_draw
-	var rendered := root.get_texture().get_image()
+	var rendered := capture_viewport.get_texture().get_image()
+	if rendered != null:
+		print("REAL_CAPTURE_DIMENSIONS ", rendered.get_size())
 	if rendered == null or rendered.is_empty() or rendered.get_width() != 768 or rendered.get_height() != 768:
 		push_error("No valid Godot 768x768 rendered frame")
 		quit(6)
