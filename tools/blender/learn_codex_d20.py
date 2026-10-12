@@ -78,7 +78,7 @@ def place_maps(m, ims):
 
 def cutter_glyph(value,center,normal,up,font,gold=False):
     data=bpy.data.curves.new("Glyph_%02d"%value,"FONT")
-    data.body=str(value);data.font=font;data.size=.50
+    data.body=str(value);data.font=font;data.size=.43
     data.align_x="CENTER";data.align_y="CENTER";data.resolution_u=6
     data.extrude=.0015 if gold else .06
     data.bevel_depth=.00065 if gold else 0
@@ -194,8 +194,9 @@ def enforce_exported_pbr_channels(glb, mr_png, albedo_png):
 def build():
     bpy.ops.object.select_all(action="SELECT");bpy.ops.object.delete(use_global=False)
     ims=maps()
-    stone=mat("PolishedObsidian",0.0,.17,(.015,.017,.020),.20)
-    gold=mat("GoldRecessedNoEmission",1.0,.29,(.56,.335,.105),.06)
+    # A/B study: dielectric clearcoat, never metallic stone or emission.
+    stone=mat("PolishedObsidian",0.0,.17,(.015,.017,.020),.26)
+    gold=mat("GoldRecessedNoEmission",1.0,.35,(.56,.335,.105),.06)
     place_maps(stone,ims)
     # Key visual complaint: bright specular bevel reads as a raised metal
     # picture-frame around each triangle. Real bevel must REMOVE stone, not
@@ -338,7 +339,9 @@ def build():
     scene.render.filepath=str(ROOT/"blender_cycles.png")
     bpy.ops.render.render(write_still=True)
     log("BLENDER_SOURCE_GLTF_ROUNDTRIP_RENDER",ROOT/"blender_cycles.png")
-    receipt={"shader":"real authored PBR, dielectric metallic=0, coat=.20, coat rough=.09",
+    receipt={"shader":"real authored PBR, dielectric metallic=0, coat=.26, coat rough=.09",
+             "art_pass":"facet-reflection-ibl-plus-smaller-recessed-numerals",
+             "glyph_size":.43, "gold_roughness":.35,
              "num_original_glyphs":glyph_count,"boolean_polygons":stone_polygon_count,
              "edge_treatment":{"bevel_width":.010,"segments":3,"material":"PolishedObsidian_EdgeSatin",
                  "edge_roughness":.31,"face_roughness_mean":.17,
@@ -365,10 +368,17 @@ def make_studio_hdr():
                 np.cos(theta)),axis=-1)
     base=.25+.12*np.maximum(d[:,:,2],0.0)
     radiance=np.stack((base*.91,base,base*1.06),axis=-1).astype(np.float32)
+    # Facet-guided light cards: directions are specular reflections from
+    # ACTUAL dominant source D20 face normals as seen by the inspection
+    # camera at (3.5, -4.6, 5), not arbitrary scene decoration.
+    # First card touches upper (-camera x,+Z) planes. Second/final cards
+    # give warm/cool shape to near-vertical polygons. All live in the HDR.
+    # No emitted or painted fake shine in obsidian BaseColor PNG.
     for pos,width,height,color in [
-        ((-3.4,1.4,4.8),.48,.60,(2.3,2.5,2.8)),
-        ((3.0,-.6,3.0),.30,.70,(2.0,1.55,1.25)),
-        ((0.0,3.3,5.5),.40,.38,(1.0,1.0,.95))
+        ((.21,-.01,.97),.24,.54,(3.8,4.1,4.4)),
+        ((.62,-.80,-.04),.27,.52,(2.7,2.2,1.65)),
+        ((-.92,0.0,-.39),.23,.47,(1.8,2.05,2.45)),
+        ((-.46,.60,.65),.18,.35,(1.25,1.35,1.55)),
     ]:
         axis=np.array(pos,dtype=np.float32)
         axis/=np.linalg.norm(axis)

@@ -120,7 +120,7 @@ func _review_materials(node: Node) -> int:
             else:
                 assert(material.roughness_texture != null, "Primary face roughness map lost")
                 material.clearcoat_enabled = true
-                material.clearcoat = .20
+                material.clearcoat = .26
                 material.clearcoat_roughness = .09
             print("LEARNED_D20_FACET_EDGE_MATERIAL edge=",is_edge,
                 " material=",material.resource_name,
