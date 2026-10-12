@@ -1,0 +1,62 @@
+Blender 4.0.2
+Info: Total files 0 | Changed 0 | Failed 0
+Data are loaded, start creating Blender stuff
+glTF import finished in 0.12s
+Info: No new files have been packed
+Info: Saved "d20_inlay_refined.blend"
+08:47:36 | ERROR: Draco mesh compression is not available because library could not be found at /workspace/scratch/260b70341ae7/runtime/blender-distro/root/usr/bin/4.0/python/lib/python3.12/site-packages/libextern_draco.so
+08:47:36 | INFO: Starting glTF 2.0 export
+08:47:36 | INFO: Extracting primitive: Icosphere
+08:47:36 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_01
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_02
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_03
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_04
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_05
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_06
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_07
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_08
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_09
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_10
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_11
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_12
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_13
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_14
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_15
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_16
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_17
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_18
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_19
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_20
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_dot_6
+08:47:36 | INFO: Primitives created: 1
+08:47:36 | INFO: Extracting primitive: Gold_dot_9
+08:47:36 | INFO: Primitives created: 1
+08:47:37 | INFO: Finished glTF 2.0 export in 0.2449052333831787 s
+
+BLENDER_TRUE_GLB_EXPORT_DONE {"mesh_count": 23, "gold_moved": 22, "sha256": "80bd2337d1f0fdee1e02a039b81693a46e0633d54eb2b5621c8afe90595739a2"}
+
+Blender quit
+socket(): Operation not permitted
+socket(): Operation not permitted

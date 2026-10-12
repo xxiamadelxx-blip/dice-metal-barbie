@@ -1,0 +1,39 @@
+{
+  "original_sha256": "c5d971370fae51328461cbd220293d9445a14d7fd6f182b623f52551dbb8fa27",
+  "original_oblique_visibility": {
+    "20": {
+      "sampled_front_triangle_centroids": 176,
+      "body_occluded_centroids": 112
+    },
+    "2": {
+      "sampled_front_triangle_centroids": 80,
+      "body_occluded_centroids": 26
+    },
+    "8": {
+      "sampled_front_triangle_centroids": 194,
+      "body_occluded_centroids": 96
+    }
+  },
+  "meaning": "Centroid ray samples, not percentage of glyph pixel area; static geometry review, no Jolt outcome",
+  "opposite_face_pairs_sum_21": "PASS",
+  "candidate_sha256": "80bd2337d1f0fdee1e02a039b81693a46e0633d54eb2b5621c8afe90595739a2",
+  "candidate_oblique_visibility": {
+    "20": {
+      "sampled_front_triangle_centroids": 176,
+      "body_occluded_centroids": 24
+    },
+    "2": {
+      "sampled_front_triangle_centroids": 80,
+      "body_occluded_centroids": 9
+    },
+    "8": {
+      "sampled_front_triangle_centroids": 194,
+      "body_occluded_centroids": 11
+    }
+  },
+  "stone_world_positions_and_triangle_count_preserved": true,
+  "twenty_number_face_directions_preserved": true,
+  "albedo_normal_ao_roughness_pixels_preserved": true,
+  "stone_triangles": 9544,
+  "mesh_nodes": 23
+}

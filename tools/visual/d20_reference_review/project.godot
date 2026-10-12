@@ -1,0 +1,19 @@
+config_version=5
+
+[application]
+config/name="D20 authored GLB material review"
+
+[display]
+window/size/viewport_width=768
+window/size/viewport_height=768
+window/size/window_width_override=768
+window/size/window_height_override=768
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="mobile"
+textures/default_filters/use_nearest_mipmap_filter=false
+anti_aliasing/quality/msaa_3d=2
+lights_and_shadows/directional_shadow/size=4096
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
+lights_and_shadows/positional_shadow/atlas_size=4096
