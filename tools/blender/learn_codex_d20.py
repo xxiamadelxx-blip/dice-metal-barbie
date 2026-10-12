@@ -250,6 +250,9 @@ def add_studio():
     world.node_tree.nodes["Background"].inputs["Strength"].default_value=.7
     scene.world=world
     scene.render.engine="CYCLES";scene.cycles.samples=64;scene.cycles.device="CPU"
+    # Debian Blender Cycles has no OpenImageDenoise: documented Codex failure.
+    scene.cycles.use_denoising=False
+    bpy.context.view_layer.cycles.use_denoising=False
     scene.render.resolution_x=1000;scene.render.resolution_y=850;scene.render.resolution_percentage=100
     scene.render.image_settings.file_format="PNG"
     scene.view_settings.view_transform="AgX"
