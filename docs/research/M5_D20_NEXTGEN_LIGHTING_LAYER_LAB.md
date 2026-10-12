@@ -76,3 +76,22 @@ Three independent actual Godot Mobile/Mesa render captures were executed on the 
 - Test 1-2 stone face BRDF adjustments and specular card shapes against Sky `narrow50` in original Godot Mobile source captures, with fixed geometry/lighting per test; only accept if owner can actually see a difference for the better.
 - A separate soft-shadow PCSS test could improve contact with table and LightmapGI could improve static velvet, but they cannot cure specular gray facets. Keep them out of this art gate until the core obsidian is approved.
 - Real independent visual critic, verified actual spatial AO, Android/OnePlus Nord 3 and full Jolt/24fps acceptance remain **NOT_VERIFIED**. 
+
+
+## Exact GLB BRDF separation (real Mobile evidence #38293631310)
+
+[Real Godot 4.6.3 Mobile Mesa source A/B](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38293631310), artifact `11767700064`, original PNGs `godot_brdf_*.png`, logs and `real_mobile_obsidian_brdf_comparison.png`. Same source GLB SHA256 `ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f`, physically unchanged numbers, edge normals, face geometry and studio narrow50 HDR. Material changes ONLY on two stone surfaces, never gold. Workflow `.github/workflows/d20-brdf-lab.yml`, source `tools/visual/d20_brdf_lab_capture.gd`.
+
+| Captured real variant | ROI mean luma (0..255, background included) | Highlight fraction >100 | Independent visual interpretation |
+|---|---:|---:|---|
+| Reference F0 knob .50, source G roughness .17, coat .26/.09 | 57.88 | 8.51% | gray/silver planar faces, FAIL |
+| `metallic_specular=.25` | 42.81 | 1.87% | meaningful suppression of silver; loses some sparkle, **controlled candidate only** |
+| `metallic_specular=.12` | 32.11 | 0.78% | TOO DARK, reject |
+| Coat disabled | 58.30 | 8.58% | does not solve gray faces |
+| Roughness .24 flat | 54.83 | 8.38% | diffuse reflection still gray facets |
+| Roughness .10 flat | 61.14 | 8.79% | sharper but brightens gray facets |
+| Coat roughness .18 | 57.91 | 8.51% | negligible effect; avoid tuning clearcoat blindly |
+
+**Causal result:** Godot 4.6 metallic_specular controls the specular reflections *including reflected sky*, whereas setting `specular_mode=DISABLED` only disables direct-light specular lobes. Godot official documentation warns `metallic_specular` outside .5 is not strictly energy-conserving; this is a **diagnostic parameter probe, not a physically verified premium-shader final value**. The significant flat-looking gray facets are driven primarily by sky specular strength and constant planar normals, not a missing clearcoat trick or excessive emissive gold. A higher-quality physically grounded solution needs actual local angular variation of reflected light (controlled normal microfield or controlled HDR card angular distribution) while retaining dark dielectric stone.
+
+**Next study**: `tools/visual/d20_micronormal_lab_capture.gd` + `.github/workflows/d20-micronormal-lab.yml`, actual identical source GLB and narrow50 studio, compare `spec=.25` source normal and three subtle per-tile tangent-space normal lapping slopes .06/.12/.20 on face ONLY. All tangent-normal perturbations smoothly fade to zero at 5x4 tile borders; this is a temporary diagnostic shader texture generated procedurally by Godot, *not a claimed Blender AO or approved GLB*. Independent premium acceptance remains FAIL/NOT_VERIFIED until genuine source PNG review and user approval.
