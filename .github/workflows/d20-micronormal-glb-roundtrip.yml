@@ -1,0 +1,171 @@
+name: M5 D20 real Blender GLB micro-normal transfer and Godot Mobile roundtrip
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/blender/learn_codex_d20_micronormal.py"
+      - ".github/workflows/d20-micronormal-glb-roundtrip.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: d20-micro-normal-glb-blender-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  art-first-real-render:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender and actual native Godot graphics dependencies
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil fonts-dejavu-core xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          blender -b --python-expr "import numpy; print('BLENDER_NUMPY',numpy.__version__)"
+          godot --version
+      - name: Independently sculpt and bake full D20, export GLB, delete and reimport in Blender
+        run: |
+          mkdir -p build/learned-d20 src/assets/generated
+          blender -b -t 3 --python-exit-code 2 --python tools/blender/learn_codex_d20_micronormal.py > build/learned-d20/blender.log 2>&1 || { tail -150 build/learned-d20/blender.log; exit 1; }
+          test -s build/learned-d20/learned_d20.glb
+          test -s build/learned-d20/blender_cycles.png
+          test -s build/learned-d20/authored.blend
+          test -s build/learned-d20/roundtrip_import.blend
+          cp build/learned-d20/learned_d20.glb src/assets/generated/learned_d20.glb
+          test -s build/learned-d20/learned_studio.hdr
+          head -c 10 build/learned-d20/learned_studio.hdr | grep -a -F '#?RADIANCE'
+          cp build/learned-d20/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          python3 tools/visual/d20_narrow_studio.py build/learned-d20/learned_studio.hdr build/learned-d20/ > build/learned-d20/narrow-studio.log
+          grep -F PASS_AUTHORED_NARROW_STUDIO_CARD_MAPS build/learned-d20/narrow-studio.log
+          cp build/learned-d20/learned_studio_mobile_narrow*.hdr src/assets/generated/
+          sha256sum build/learned-d20/learned_d20.glb src/assets/generated/learned_d20.glb > build/learned-d20/glb.sha256
+      - name: Inspect exported geometry, real GLTF PBR channels, and deep Boolean engraving
+        run: |
+          python3 - <<'PY'
+          import pathlib,struct,json
+          f=pathlib.Path('build/learned-d20/learned_d20.glb').read_bytes()
+          assert f[:4]==b'glTF'
+          n=struct.unpack_from('<I',f,12)[0]
+          g=json.loads(f[20:20+n])
+          # glTF object names live in nodes; mesh datablocks have Blender
+          # internal labels ('Icosphere', 'Glyph_XX.001'), not object names.
+          named=[n.get('name','') for n in g.get('nodes',[]) if 'mesh' in n]
+          assert any(n=='D20_Engraved_Obsidian' for n in named),named
+          assert sorted(n for n in named if n.startswith('Gold_')) == ['Gold_%02d'%i for i in range(1,21)],named
+          stones=[m for m in g['materials'] if m['name']=='PolishedObsidian']
+          bevels=[m for m in g['materials'] if m['name']=='PolishedObsidian_EdgeSatin']
+          assert len(stones)==1 and len(bevels)==1,('Expected separate smooth stone faces and satin inset chamfers',g['materials'])
+          edge_mat=bevels[0]
+          assert .27<edge_mat['pbrMetallicRoughness']['roughnessFactor']<.34,edge_mat
+          assert 'metallicRoughnessTexture' not in edge_mat['pbrMetallicRoughness'], 'Bevel material wrongly inherits harsh face roughness'
+          m=stones[0]
+          assert m['pbrMetallicRoughness']['metallicFactor']==0.0
+          assert 'baseColorTexture' in m['pbrMetallicRoughness']
+          assert 'metallicRoughnessTexture' in m['pbrMetallicRoughness']
+          assert 'normalTexture' in m
+          assert 'KHR_materials_clearcoat' in m.get('extensions',{}),m.get('extensions',{})
+          # Validate actual PNG bytes in glTF, not only existence of slots!
+          import io
+          import numpy as np
+          from PIL import Image
+          bpos=20+n
+          bl,magic=struct.unpack_from('<II',f,bpos)
+          assert magic==0x004e4942
+          blob=f[bpos+8:bpos+8+bl]
+          def pixels(index):
+            image=g['images'][g['textures'][index]['source']]
+            view=g['bufferViews'][image['bufferView']]
+            raw=blob[view.get('byteOffset',0):view.get('byteOffset',0)+view['byteLength']]
+            return np.array(Image.open(io.BytesIO(raw)).convert('RGB'))
+          color=pixels(m['pbrMetallicRoughness']['baseColorTexture']['index'])
+          packed=pixels(m['pbrMetallicRoughness']['metallicRoughnessTexture']['index'])
+          cm=color.mean(axis=(0,1))
+          orm=packed.mean(axis=(0,1))
+          real_normal=pixels(m['normalTexture']['index'])
+          normal_sigma=real_normal.std(axis=(0,1))
+          assert normal_sigma[0]>2 and normal_sigma[1]>2,('NEW MICRO-NORMAL SILENTLY LOST ON GLTF EXPORT',normal_sigma)
+          assert real_normal[:,:,2].mean()>248,('Tangent normal Z broken',real_normal[:,:,2].mean())
+          print('PASS REAL GLTF MICRO-NORMAL PIXEL BYTES (no painted shine)',normal_sigma,real_normal[:,:,2].mean())
+          assert all(18<k<36 for k in cm),('RGB albedo almost black',cm)
+          assert 250<orm[0]<=255 and 30<orm[1]<65 and orm[2]<5,('Broken PBR ORM',orm)
+          assert m['occlusionTexture']['index']==m['pbrMetallicRoughness']['metallicRoughnessTexture']['index']
+          print('PASS REAL GLTF BYTE CHANNELS albedo',cm,'ORM R/G/B',orm,
+                'neutral AO pending real verified spatial bake')
+          print('PASS INDEPENDENT BLENDER GLB true gold nodes',len(named),'PBR, dielectric and coat')
+          PY
+      - name: Godot real import and native Compatibility 3D viewport PNG
+        run: |
+          # The build directory contains .blend roundtrip evidence which is NOT a
+          # runtime resource. Godot tries to import it as a source if not ignored.
+          touch build/.gdignore
+          timeout 100 godot --headless --path . --editor --import --quit > build/learned-d20/import.log 2>&1 || { tail -100 build/learned-d20/import.log; exit 1; }
+          if grep -E 'ERROR:|SCRIPT ERROR:|Parse Error' build/learned-d20/import.log; then
+            echo "Godot editor importer emitted errors (must not issue false PASS)"
+            exit 42
+          fi
+          test -s src/assets/generated/learned_d20.glb
+          timeout 70 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/godot-compat.log 2>&1 || { tail -120 build/learned-d20/godot-compat.log; exit 1; }
+          grep -F "LEARNED_D20_GODOT_REAL_FRAME" build/learned-d20/godot-compat.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace' build/learned-d20/godot-compat.log; then cat build/learned-d20/godot-compat.log; exit 40; fi
+          test -s build/learned-d20/godot_compatibility.png
+      - name: Capture Godot Mobile THREE material and studio variants, same GLB
+        run: |
+          set -eu
+          cp build/learned-d20/godot_compatibility.png build/learned-d20/_preserve-compat.png
+          timeout 85 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/mobile-base.log 2>&1 || { tail -90 build/learned-d20/mobile-base.log; exit 1; }
+          mv build/learned-d20/godot_compatibility.png build/learned-d20/godot_mobile.png
+          mv build/learned-d20/_preserve-compat.png build/learned-d20/godot_compatibility.png
+          for flavor in ibl ibl90; do
+            timeout 85 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant="$flavor" > "build/learned-d20/mobile-$flavor.log" 2>&1 || { tail -90 "build/learned-d20/mobile-$flavor.log"; exit 1; }
+            test -s "build/learned-d20/godot_$flavor.png"
+          done
+          for file in build/learned-d20/mobile-base.log build/learned-d20/mobile-ibl.log build/learned-d20/mobile-ibl90.log; do
+            grep -F "LEARNED_D20_SEPARATE_SURFACES_OK" "$file"
+            grep -F "LEARNED_D20_GODOT_REAL_FRAME" "$file"
+            if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' "$file"; then
+              echo "FAIL real Godot Mobile material/runtime error: $file"; exit 33
+            fi
+          done
+          timeout 100 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/d20_micronormal_rotation_capture.gd -- --variant=brdf_spec025 --yaw=0 > build/learned-d20/mobile-source-normal-f025.log 2>&1 || { tail -100 build/learned-d20/mobile-source-normal-f025.log;exit 1; }
+          grep -F D20_BRDF_APPLIED build/learned-d20/mobile-source-normal-f025.log
+          test -s build/learned-d20/godot_brdf_spec025_yaw000.png
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' build/learned-d20/mobile-source-normal-f025.log;then exit 36;fi
+          echo "All real engine original PNGs captured; no Android hardware claims." | tee build/learned-d20/mobile-note.txt
+      - name: Verify real unaltered PNGs and compose original engine images
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageDraw,ImageFont,ImageStat
+          from pathlib import Path
+          import hashlib,json
+          p=Path('build/learned-d20')
+          files=['blender_cycles.png','godot_compatibility.png','godot_brdf_spec025_yaw000.png']
+          imgs=[]
+          for f in files:
+            with Image.open(p/f) as im:
+              assert im.size==(1000,850),(f,im.size)
+              im=im.convert('RGB')
+              assert max(ImageStat.Stat(im).stddev)>6,'blank scene '+f
+              imgs.append(im.copy())
+          out=Image.new('RGB',(3050,964),(15,19,22))
+          d=ImageDraw.Draw(out)
+          font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',25)
+          d.text((20,12),'BLENDER CYCLES  |  NEW INDEPENDENT D20',font=font,fill='white')
+          d.text((1030,12),'GODOT COMPATIBILITY | ACTUAL NEW GLB',font=font,fill='white')
+          d.text((2040,12),'GODOT MOBILE | REAL GLB NORMAL + F0 .25',font=font,fill='white')
+          for i,im in enumerate(imgs):out.paste(im,(20+i*1010,54))
+          d.text((20,920),'Actual, unretouched render pixels. Lights / tonemapping differ; not Android approval.',font=font,fill='#bfc7ce')
+          out.save(p/'actual_blender_godot_compare.png')
+          j={'glb_sha256':hashlib.sha256((p/'learned_d20.glb').read_bytes()).hexdigest(),'pairs':[{'filename':f,'sha256':hashlib.sha256((p/f).read_bytes()).hexdigest()} for f in files],'comparison_sha256':hashlib.sha256((p/'actual_blender_godot_compare.png').read_bytes()).hexdigest()}
+          (p/'render_manifest.json').write_text(json.dumps(j,indent=2))
+          print('PASS independent D20 actual frame pixels + manifest')
+          PY
+      - name: Upload real independent Blender Godot comparison even if any strict gate fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: REAL-M5-D20-Blender-GLB-micronormal-Godot-Mobile
+          path: build/learned-d20/
+          retention-days: 14
+          if-no-files-found: warn
