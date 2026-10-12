@@ -1,0 +1,49 @@
+{
+  "source_sha": "5d76db113bea1c23bd03fbd1b1ca89dd54af0cc4",
+  "generator": "REAL Blender Cycles + REAL Godot engine; Pillow composites screenshots only",
+  "comparison_limitations": "Godot gl_compatibility cannot duplicate physical Cycles disk area lights/tonemap. Godot Mobile on Lavapipe (if present) is not ARM Android.",
+  "d20_glb_sha256": "75ae5921396f2c9714a32eb5e332cbeaf2b2bfb16ac01c4c56ead67850e85edb",
+  "panels": [
+    {
+      "name": "BLENDER / CYCLES",
+      "source_png": "blender_cycles.png",
+      "sha256": "e2fac0409c79e29b74dbab0adced91e36c6f96cf5e0d4c5d39a4438baefcf451",
+      "std_rgb": [
+        25.14,
+        36.49,
+        35.93
+      ]
+    },
+    {
+      "name": "GODOT / SOURCE GLB",
+      "source_png": "godot_source.png",
+      "sha256": "16a4272459a4c787c5b5d8d64f9ad1d089a577c11fb8f2a1842b92b6f5d4d0a0",
+      "std_rgb": [
+        9.59,
+        10.19,
+        9.68
+      ]
+    },
+    {
+      "name": "GODOT / PRODUCTION",
+      "source_png": "godot_production.png",
+      "sha256": "44a7d8dc54d21a12a77bc2b0d06bf68292839120faab3fac5f055f9c5882f99d",
+      "std_rgb": [
+        7.96,
+        10.04,
+        10.3
+      ]
+    },
+    {
+      "name": "GODOT / MOBILE",
+      "source_png": "godot_mobile_source.png",
+      "sha256": "bd046b4dcfa09cbd11e4f8348f3757dc3f47bf54bef48ef3244d28822eda1e9d",
+      "std_rgb": [
+        9.36,
+        7.27,
+        9.46
+      ]
+    }
+  ],
+  "montage_sha256": "54984620e047ad7f9fb7986f00e8ad27fabcf1805fe0ce6ec1a53474c65580dc"
+}
