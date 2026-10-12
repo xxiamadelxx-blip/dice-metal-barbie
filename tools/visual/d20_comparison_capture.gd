@@ -101,6 +101,9 @@ func _run() -> void:
 			panel.layers = 2
 			panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			panel.position = spec["pos"]
+			# Node3D.look_at() requires this fixture to already be inside SceneTree.
+			# Previous source had a fake-green screenshot with a hard engine error.
+			stage.add_child(panel)
 			panel.look_at(Vector3.ZERO, Vector3.UP)
 			var emissive := StandardMaterial3D.new()
 			emissive.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -110,7 +113,6 @@ func _run() -> void:
 			emissive.emission = spec["color"]
 			emissive.emission_energy_multiplier = 10.0
 			panel.material_override = emissive
-			stage.add_child(panel)
 		var reflection := ReflectionProbe.new()
 		reflection.name = "MobileD20StudioReflectionProbe"
 		reflection.position = Vector3.ZERO
@@ -142,6 +144,9 @@ func _run() -> void:
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 3.15
 	camera.position = Vector3(2.8, 2.5, 3.2)
+	# Only layer #1 belongs to the actual game camera. Probe-only emitter
+	# fixtures live on layer #2 and must NEVER appear as world rectangles.
+	camera.cull_mask = 1
 	stage.add_child(camera)
 	camera.look_at(Vector3.ZERO, Vector3.UP)
 	camera.make_current()

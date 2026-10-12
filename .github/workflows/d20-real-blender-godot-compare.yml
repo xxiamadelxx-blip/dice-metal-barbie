@@ -71,6 +71,10 @@ jobs:
           test -s build/d20-compare/godot_probe.png
           grep -F "D20_REAL_REFLECTION_PROBE_READY" build/d20-compare/godot-mobile-probe.log
           grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-mobile-probe.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|Node not inside tree|GDScript backtrace|Shader compilation failed' build/d20-compare/godot-mobile-probe.log; then
+            echo "FAIL: Godot generated a PNG but the real engine log contains an error"
+            exit 32
+          fi
           mv build/d20-compare/godot_probe.png build/d20-compare/godot_mobile_probe.png
           echo "Mobile-on-desktop attempt exit=$result; NOT a physical Android GPU proof" | tee build/d20-compare/mobile-status.txt
           exit 0

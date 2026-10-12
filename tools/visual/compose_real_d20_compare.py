@@ -53,6 +53,11 @@ studio_img=images[2][3]
 changed=ImageChops.difference(base_img, studio_img)
 assert changed.getbbox() is not None, "Studio sky has NO actual Godot Mobile pixel effect"
 assert ImageChops.difference(images[2][3], images[3][3]).getbbox() is not None, "Reflection probe has NO actual Godot Mobile pixel effect"
+# Fail a bright rectangular emitter leaking into the gameplay camera.
+# Small highlight pixels on real stone remain permitted; large pale screens do not.
+probe_frame = images[3][3]
+leaked_panel_pixels = sum(1 for (r,g,b) in probe_frame.getdata() if r>120 and g>160 and b>180 and b>r*1.08)
+assert leaked_panel_pixels < 2500, "Studio light emitter itself visible in camera: %d suspect pale pixels" % leaked_panel_pixels
 # Film / game art judgment cannot be automated by this numeric smoke.
 pixel_stats={
  "baseline_rgb_mean":[round(v,2) for v in ImageStat.Stat(base_img).mean],
@@ -68,6 +73,7 @@ manifest={
  "d20_glb_sha256":hashlib.sha256(Path("src/assets/generated/d20_boolean_engraved.glb").read_bytes()).hexdigest(),
  "studio_ab_delta":pixel_stats,
  "other_authentic_capture_sha256":{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [godot_original, godot_production, out/"godot_studio.png", out/"godot_studio_production.png"] if p.is_file()},
+ "probe_emitter_leak_candidate_pixels":leaked_panel_pixels,
  "probe_ab_delta":{"mobile_sky_rgb_mean":[round(v,2) for v in ImageStat.Stat(images[2][3]).mean],"mobile_probe_rgb_mean":[round(v,2) for v in ImageStat.Stat(images[3][3]).mean],"difference_bbox":ImageChops.difference(images[2][3], images[3][3]).getbbox()},
  "panels":[{"name":name,"source_png":p.name,"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"std_rgb":std} for name,desc,p,im,std in images],
  "montage_sha256":hashlib.sha256(final.read_bytes()).hexdigest()
