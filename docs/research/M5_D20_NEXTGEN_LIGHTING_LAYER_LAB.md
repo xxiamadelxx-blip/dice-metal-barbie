@@ -59,3 +59,20 @@ The first strict native full diagnostic workflow **passed renderer execution and
 - Branch `experiment/m5-learn-codex-d20` files `tools/visual/d20_probe_lab_capture.gd` and `.github/workflows/d20-probe-lab.yml` move probe box to 12m, actually include the 2 reflector emitters, switch on emissive color instead of relying on unshaded bright diffuse and capture 12 real frames for `UPDATE_ONCE`.
 - Compare same `lab_ibl` sky and `lab_probe_sky` with **Sky left enabled**; `lab_probe` with Sky reflection disabled remains only a negative control.
 - [Live run #38291232045](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38291232045). Until verified, actual improvement remains NOT_VERIFIED.
+
+
+## Final local-ReflectionProbe falsification (run #38291232045, #38291827376, #38292234674)
+
+Three independent actual Godot Mobile/Mesa render captures were executed on the SAME exact GLB hash `ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f`. All source engine PNGs and logs are kept in the failed-run artifacts, even though the strict ART gates were deliberately red.
+
+1. [#38291232045](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38291232045) artifact `11766376486`: increased probe size from 5 to 12, added correctly emissive fixture cards. Sky-only 51.50/255 mean ROI; Sky+probe **2.84/255**. `lab_probe_sky.png` and no-sky `lab_probe.png` were byte-for-byte identical. This is NOT proof of good localized IBL.
+2. [#38291827376](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38291827376) artifact `11767001159`: waited 12 actual `RenderingServer.frame_post_draw` signals instead of 12 game process ticks, inspected fixture layer independently. Captured emitter visible at outer edge of fixture-only frame, but probe image still 2.84/255 mean ROI. The proper GPU-frame timing alone did not solve it.
+3. [#38292234674](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38292234674) artifact `11766278091`: added an authored unshaded emitting **studio cyclorama sphere on probe cull layer 2** behind the softbox cards, invisible to the game camera on layer 1, in order to avoid black local radiance in most directions. Sky+local studio probe rose to **21.65/255** mean ROI (from 2.84), but remains visually **too black** compared to real Sky-only 51.50 and Codex premium reference. The fixture-only capture was almost uniform and failed the screenshot variance heuristic; its own screenshot is saved. The actual die render has some warm facet response, but no premium readable obsidian. **Do not claim artistic success.**
+
+**Decision:** HOLD all three ReflectionProbe lookdev variants in the evidence archive as failed proof of technique. The local probe mechanism is supported by Godot Mobile, but *this authored setup did not improve the requested D20*. Do not copy it into production or replace proven Sky/IBL. Preserve the last readable experimental lookdev `narrow50` and its physical HDR axis correction. Further art direction should test narrower physically consistent highlights and facet-normal specular distribution in controlled diagnostic passes. The geometry halfspace, genuine engraved numerals, .010 satin bevel, and color/ORM numeric checks remain canonical. No PSSR, SSR, volumetric fog, GI changes, Godot Forward+ switch, or Jolt/Android changes have been made.
+
+**Next practical steps:**
+- Use the first successful 8-pass diagnostics as the source-grounded cause: normal map no change; silver facets from Sky and coat, not Omni or geometry.
+- Test 1-2 stone face BRDF adjustments and specular card shapes against Sky `narrow50` in original Godot Mobile source captures, with fixed geometry/lighting per test; only accept if owner can actually see a difference for the better.
+- A separate soft-shadow PCSS test could improve contact with table and LightmapGI could improve static velvet, but they cannot cure specular gray facets. Keep them out of this art gate until the core obsidian is approved.
+- Real independent visual critic, verified actual spatial AO, Android/OnePlus Nord 3 and full Jolt/24fps acceptance remain **NOT_VERIFIED**. 

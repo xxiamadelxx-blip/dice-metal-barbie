@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 independent D20: corrected physically aligned HDR; narrowed 50% studio is current experimental lookdev, Codex-equivalent polish ART FAIL",
+    "task": "M5 D20: console-grade lighting component isolation and local ReflectionProbe tested; source PBR and model valid, local probe artistic FAIL",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "experimental branch; exact original Blender GLB + native Godot Mobile/Mesa actual PNGs",
-    "next_action": "Read docs/research/M5_D20_HDR_PHYSICAL_STUDIO_AUDIT_2026-10-12.md and GitHub runs #38285582615 #38286307673 #38286853449. Physical HDR axis U_B=(.25-U_G)%1 verified; full-size aligned causes whole-face gray reflections, 3x worse; 50% studio cards best provisional balance, 30% too dark. Omni-off barely changes bright gray facets, thus Sky IBL dominant. Preserve .010 satin edge, G~.17, dielectric stone and original GLB SHA ec7bcee05f9d...; next isolate directions of bevel normals vs face normals, aim narrow real specular highlights. No Android/Jolt until art approval.",
+    "owner": "isolated real Godot 4.6.3 Mobile/Mesa D20 native render diagnostic",
+    "next_action": "Read docs/research/M5_D20_NEXTGEN_LIGHTING_LAYER_LAB.md. First 8-layer native Godot test #38290410135 PASS execution; reflected gray facets caused by IBL/spec, not fake protruding edge or normal map. Three ReflectionProbe followup runs #38291232045 #38291827376 #38292234674 completed with strict artistic FAIL; even after real GPU frames and emitting cyclorama local probe 21.65 average vs Sky-only 51.50. Preserve SKY narrow50, no new probe integration. Next controlled BRDF/specular light card A/B with fixed GLB and verified owner art evaluation. No physics/main/PR23 changes.",
     "blockers": [
-      "Real Godot 4.6.3 Mobile/Mesa screenshots still show flat broad silver side facets rather than high-end polished black obsidian; Codex parity and user visual acceptance FAIL.",
-      "Spatial AO not actually baked in final glTF: neutral white packed R=255; source Cycles AO image remains invalid.",
-      "Independent vision critic, 6/9 punctuation, full Jolt face mapping and 24fps physics visual review NOT VERIFIED.",
-      "Android AVD and OnePlus Nord 3 live art/performance/install NOT VERIFIED; main and draft PR #23 unchanged."
+      "Premium obsidian still below Codex and user art approval NOT_VERIFIED; source D20 has silver Sky-only facets.",
+      "Godot local ReflectionProbe captures real fixtures but 3 tests all ART FAIL: last studio cyclorama result only 21.65/255 mean source ROI vs Sky-only 51.50.",
+      "Spatial AO map remains invalid, neutral R=255 fallback; real nonblack spatial AO NOT_VERIFIED.",
+      "Independent Qwen visual critic, D20 physical Jolt face mapping, 24fps temporal motion, Android AVD and actual OnePlus Nord 3 NOT_VERIFIED; M4 PR23 independent Android gate open."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -109,13 +109,17 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38281898713/artifacts/11762120818",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38285582615",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38286307673",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38286853449"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38286853449",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38290410135",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38291232045",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38291827376",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38292234674"
     ],
-    "last_observed_sha": "db86888018555b2e3a2b08cf391c2dbd661519fb",
-    "last_verified_sha": "db86888018555b2e3a2b08cf391c2dbd661519fb",
+    "last_observed_sha": "b5d50ee6c3cb6910ab15e4b3ca5554643d16332a",
+    "last_verified_sha": "b5d50ee6c3cb6910ab15e4b3ca5554643d16332a",
     "branch": "experiment/m5-learn-codex-d20",
     "updated_at": "2026-10-12",
-    "verification_note": "Exact self-authored GLB SHA ec7bcee...; three real Godot Mobile mesa runs all success, full HDR aligned brightens whole facets, narrow50 mid 57.89 vs narrow30 51.4, Omni disabled narrow50 remains gray ROI 51.50. No user art signoff."
+    "verification_note": "Native Mesa real diagnostic PNGs and hashes: original D20 GLB ec7bcee05f9..., clay/normals/no-normal/spec-off/direct/IBL/probe captures. Probe trials supported technically but art FAIL. Sky-only ROI 51.50 vs studio probe v3 21.65. No device or app production evidence. CLI router NOT_VERIFIED (no local repository network)."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
