@@ -99,18 +99,25 @@ jobs:
           grep -F "LEARNED_D20_GODOT_REAL_FRAME" build/learned-d20/godot-compat.log
           if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace' build/learned-d20/godot-compat.log; then cat build/learned-d20/godot-compat.log; exit 40; fi
           test -s build/learned-d20/godot_compatibility.png
-      - name: Try actual Godot Mobile render on Mesa desktop (NOT Nord 3)
-        continue-on-error: true
+      - name: Capture Godot Mobile THREE material and studio variants, same GLB
         run: |
+          set -eu
           cp build/learned-d20/godot_compatibility.png build/learned-d20/_preserve-compat.png
-          timeout 75 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/godot-mobile-attempt.log 2>&1
-          rc=$?
-          if test "$rc" -eq 0 && test -s build/learned-d20/godot_compatibility.png; then
-            mv build/learned-d20/godot_compatibility.png build/learned-d20/godot_mobile.png
-          fi
+          timeout 85 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/mobile-base.log 2>&1 || { tail -90 build/learned-d20/mobile-base.log; exit 1; }
+          mv build/learned-d20/godot_compatibility.png build/learned-d20/godot_mobile.png
           mv build/learned-d20/_preserve-compat.png build/learned-d20/godot_compatibility.png
-          echo "Godot Mobile desktop attempt result $rc. Not Android." | tee build/learned-d20/mobile-note.txt
-          exit 0
+          for flavor in ibl ibl90; do
+            timeout 85 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant="$flavor" > "build/learned-d20/mobile-$flavor.log" 2>&1 || { tail -90 "build/learned-d20/mobile-$flavor.log"; exit 1; }
+            test -s "build/learned-d20/godot_$flavor.png"
+          done
+          for file in build/learned-d20/mobile-{base,ibl,ibl90}.log; do
+            grep -F "LEARNED_D20_SEPARATE_SURFACES_OK" "$file"
+            grep -F "LEARNED_D20_GODOT_REAL_FRAME" "$file"
+            if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' "$file"; then
+              echo "FAIL real Godot Mobile material/runtime error: $file"; exit 33
+            fi
+          done
+          echo "All original Godot 4.6.3 Mobile / Mesa GLB screenshots captured. NOT a Nord3 hardware test." | tee build/learned-d20/mobile-note.txt
       - name: Verify real unaltered PNGs and compose original engine images
         run: |
           python3 - <<'PY'
