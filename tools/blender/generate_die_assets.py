@@ -443,144 +443,122 @@ def engraved_die(sides, font, maps):
     return shell,bronze,values
 
 def bake_true_d20_ao(shell, out):
-    """Actually bake light-independent cavity occlusion from cut Blender mesh.
-    This first D20-only lookdev proof uses SAME-MESH AO, NOT a high→low normal
-    bake or a fake AI image. The AO map ships in the evidence artifact; its
-    glTF occlusion hookup is gated on a separate importer compatibility test.
+    """Geometric D20 cavity AO via Blender Cycles, with disk-backed bake.
+
+    The legacy INTERNAL generated-image target has twice failed a controlled
+    constant-white EMIT bake (both RGB and alpha remained 0). Rather than
+    silently editing pixels or weakening the AO QA, bake to an EXTERNAL RGB
+    PNG, a documented separate Blender API path, and test the disk output.
     """
     scene=bpy.context.scene
     scene.render.engine='CYCLES'
-    scene.cycles.samples=8
+    scene.cycles.samples=32
     scene.cycles.device='CPU'
-    scene.render.bake.margin=10
-    baked=bpy.data.images.new('D20_Cycles_TrueCavityAO',width=1024,
-                             height=1024,alpha=True,float_buffer=False)
-    # Blender's new alpha=False BLANK image exported solid black even though
-    # bpy.ops.object.bake returned FINISHED. Explicitly create an opaque
-    # white non-image background so there is no ambiguity between unbaked
-    # pixels and true physically occluded pockets.
-    baked.pixels.foreach_set(np.ones(1024*1024*4,dtype=np.float32))
-    baked.update()
-    scene.render.bake.use_clear=False
+    scene.render.bake.margin=12
+    scene.render.bake.use_selected_to_active=False
+    scene.render.bake.image_settings.file_format='PNG'
+    scene.render.bake.image_settings.color_mode='RGB'
     assert len(shell.data.uv_layers)==1 and shell.data.uv_layers.active_index==0, (
-        'D20 real Cycles AO must bake to the one true render UV0 atlas')
+        'D20 Cycles source must have one true primary face-atlas UV0')
+    uv_name=shell.data.uv_layers[0].name
+    assert uv_name=='D20FaceAtlas', 'No true D20 5x4 atlas'
     material=shell.data.materials[0]
     nodes=material.node_tree.nodes
     links=material.node_tree.links
-    target=nodes.new('ShaderNodeTexImage')
-    target.name='D20_ActualCyclesAOBakeTarget'
-    target.image=baked
-    for node in nodes:
-        node.select=False
-    target.select=True
-    nodes.active=target
-    # True physical short-range hemisphere rays from engraved geometry.
-    # The stock 'AO' bake produced a binary black face silhouette, not
-    # the actual 3D recess shading. Instead evaluate the documented
-    # Cycles AO shader with a local <0.14 unit radius and bake its output
-    # with EMIT (light-independent, not painted image, no external API).
     output=next(n for n in nodes if n.type=='OUTPUT_MATERIAL' and n.is_active_output)
-    old_link=next(link for link in links if link.to_node==output
-                  and link.to_socket==output.inputs['Surface'])
-    old_surface=(old_link.from_socket,old_link.from_node)
-    links.remove(old_link)
-    occlusion=nodes.new('ShaderNodeAmbientOcclusion')
-    occlusion.name='D20_True_Local_Cavity_AO'
-    occlusion.only_local=True
-    occlusion.samples=24
-    occlusion.inside=False
-    distance_socket=occlusion.inputs.get('Distance')
-    assert distance_socket is not None, 'Cycles AO Distance socket missing'
-    distance_socket.default_value=.115
+    prior=next(link for link in links if link.to_node==output
+               and link.to_socket==output.inputs['Surface'])
+    old_socket=prior.from_socket
+    links.remove(prior)
     emission=nodes.new('ShaderNodeEmission')
-    emission.name='D20_AO_Light_Independent_Emission'
+    emission.name='D20_ExternalBake_Emission'
     links.new(emission.outputs['Emission'],output.inputs['Surface'])
-    # Calibration control: a black-initialized 256² image MUST receive opaque
-    # WHITE pixels from a constant white EMIT shader on the same D20 UV0.
-    # If not, Blender is not baking to the intended image target, not an
-    # ambient-occlusion art issue.
-    probe=bpy.data.images.new('D20_Bake_White_Probe',width=256,height=256,
-                              alpha=True,float_buffer=False)
-    probe.pixels.foreach_set(np.zeros(256*256*4,dtype=np.float32))
-    probe.update()
-    target.image=probe
+
+    def bake_file(path, resolution):
+        active(shell)
+        if path.exists():
+            path.unlink()
+        result=bpy.ops.object.bake(
+            type='EMIT',save_mode='EXTERNAL',target='IMAGE_TEXTURES',
+            filepath=str(path),width=resolution,height=resolution,
+            uv_layer=uv_name,margin=12,use_selected_to_active=False)
+        assert result=={'FINISHED'}, 'Cycles EXTERNAL EMIT returned '+str(result)
+        assert path.is_file() and path.stat().st_size>100, (
+            'Cycles EXTERNAL bake did not write target file '+str(path))
+        return path
+
+    # An actual test of Blender's external bake output. Unlike the prior
+    # internal probe, a fully white emission must yield an RGB image with a
+    # nonzero area of white atlas-face pixels (not a transparent mask).
+    probe_path=out/'d20_white_emission_bake_probe.png'
     emission.inputs['Color'].default_value=(1.0,1.0,1.0,1.0)
-    active(shell)
-    bpy.ops.object.bake(type='EMIT')
-    probe_rgba=np.empty(256*256*4,dtype=np.float32)
-    probe.pixels.foreach_get(probe_rgba)
-    probes=probe_rgba.reshape((-1,4))
-    white_rgb=int(np.count_nonzero(np.min(probes[:,:3],axis=1)>.95))
-    white_opaque=int(np.count_nonzero(
-        (np.min(probes[:,:3],axis=1)>.95)&(probes[:,3]>.95)))
-    print('D20_CYCLES_BAKE_WHITE_EMIT_PROBE rgb_white=%d opaque_white=%d '
-          'r_quantiles=%s alpha_quantiles=%s' %
-          (white_rgb,white_opaque,
-           np.quantile(probes[:,0],[0,.5,1]).tolist(),
-           np.quantile(probes[:,3],[0,.5,1]).tolist()),flush=True)
-    assert white_rgb>8000, (
-        'Cycles EMIT RGB white control bake missing: material/UV target broken')
-    target.image=baked
+    bake_file(probe_path,256)
+    probe_img=bpy.data.images.load(str(probe_path),check_existing=False)
+    probe_pixels=np.empty(256*256*4,dtype=np.float32)
+    probe_img.pixels.foreach_get(probe_pixels)
+    probe_data=probe_pixels.reshape((-1,4))
+    probe_white=int(np.count_nonzero(
+        (probe_data[:,0]>.95)&(probe_data[:,1]>.95)&
+        (probe_data[:,2]>.95)&(probe_data[:,3]>.95)))
+    print('D20_EXTERNAL_WHITE_EMISSION_CONTROL opaque_white=%d/%d' %
+          (probe_white,len(probe_data)),flush=True)
+    bpy.data.images.remove(probe_img)
+    assert probe_white>8000, (
+        'Even disk-backed Cycles EMIT missed true D20 UV atlas; NO AO acceptance')
+
+    # Short-range real geometry ray occlusion, not a guessed mask.
+    occlusion=nodes.new('ShaderNodeAmbientOcclusion')
+    occlusion.name='D20_Short_Range_Real_Geometry_AO'
+    occlusion.only_local=True
+    occlusion.inside=False
+    occlusion.samples=48
+    occlusion.inputs['Distance'].default_value=.16
     links.new(occlusion.outputs['AO'],emission.inputs['Color'])
-    print('D20_CYCLES_LOCAL_AO: EMIT bake, 24 rays, radius=.115, '
-          'self shell only, no baked scene lighting',flush=True)
-    active(shell)
-    bpy.ops.object.bake(type='EMIT')
-    links.remove(next(l for l in links if l.to_node==output
-                      and l.to_socket==output.inputs['Surface']))
-    links.new(old_surface[0],output.inputs['Surface'])
-    nodes.remove(emission)
-    nodes.remove(occlusion)
-    nodes.remove(target)
-    bpy.data.images.remove(probe)
     destination=out/'d20_cycles_baked_ao.png'
-    baked.filepath_raw=str(destination)
-    baked.file_format='PNG'
+    print('D20_CYCLES_EXTERNAL_AO: local geometry rays=48, distance=.16, '
+          'RGB disk output, 1024 UV0',flush=True)
+    bake_file(destination,1024)
+    baked=bpy.data.images.load(str(destination),check_existing=False)
     pixels=np.empty(1024*1024*4,dtype=np.float32)
     baked.pixels.foreach_get(pixels)
     rgba=pixels.reshape((-1,4))
-    # Independently log RAW RGB and alpha before PNG export. Previous AO
-    # visually looked black wherever Blender stored transparent alpha 0;
-    # this experiment only repairs opacity, NEVER paints fake RGB shadows.
-    original_zero_alpha=int(np.count_nonzero(rgba[:,3]<.01))
-    print('D20_CYCLES_AO_RAW before save alpha_zero=%d r_quantiles=%s '
-          'a_quantiles=%s' %
-          (original_zero_alpha,np.quantile(rgba[:,0],[0,.25,.5,.99,1]).tolist(),
-           np.quantile(rgba[:,3],[0,.25,.5,.99,1]).tolist()),flush=True)
-    rgba[:,3]=1.0
-    baked.pixels.foreach_set(pixels)
-    baked.update()
-    baked.alpha_mode='NONE'
-    baked.save()
-    assert destination.is_file() and destination.stat().st_size>10000, (
-        'D20 true Cycles AO did not produce an image')
-    # Never accept all-opaque white or black: the strict 2D spatial
-    # gradient test in check_cycles_ao_content.py remains authoritative.
     values=rgba[:,0]
-    # Excluding untouched white atlas background: a real cavity on the
-    # engraved render shell must contain occluded pixels.
-    touched=values[values<.88]
+    opaque=int(np.count_nonzero(rgba[:,3]>.98))
+    dark=values[values<.88]
     bright=values[values>.93]
-    dark_fraction=float(len(touched))/float(len(values))
-    contrast=float(np.std(values))
-    print('D20 AO RAW pixel min/max/mean/std: %.4f %.4f %.4f %.4f dark=%.4f' %
-          (float(values.min()),float(values.max()),float(values.mean()),
-           contrast,dark_fraction),flush=True)
-    # A bake that is ALL BLACK OR ALL WHITE is INVALID even if Blender
-    # writes a PNG and reports operation FINISHED. Original first iteration
-    # was exactly 1,048,576 black pixels, previously a false CI PASS.
-    assert len(touched)>2000 and len(bright)>2000 and contrast>.025, (
-        'D20 AO bake contains uniform black/white output, not physical cavity shading')
-    assert dark_fraction<.65, 'D20 AO has implausible solid-black fill instead of localized occlusion'
+    mid=values[(values>.075)&(values<.925)]
+    dark_fraction=float(len(dark))/len(values)
+    variation=float(np.std(values))
+    print('D20_EXTERNAL_AO_PIXEL_AUDIT: opaque=%d/%d min=%.4f max=%.4f '
+          'std=%.4f mid=%.4f dark=%.4f' %
+          (opaque,len(values),float(values.min()),float(values.max()),
+           variation,len(mid)/len(values),dark_fraction),flush=True)
+    assert opaque>int(len(values)*.99), 'Cycles EXTERNAL output has transparent faces'
+    assert len(dark)>2000 and len(bright)>2000 and variation>.025, (
+        'External Cycles AO contains no meaningful real 3D cavity contrast')
+    assert dark_fraction<.65, 'External AO is mostly black, not local occlusion'
+    assert len(mid)>int(len(values)*.008), (
+        'External AO lacks cavity shading penumbrae; must remain RED')
+
+    # Never export temporary AO probe material in our final GLB. Restore
+    # physical material graph and leave original Blender PBR textures intact.
+    links.remove(next(link for link in links if
+        link.to_node==output and link.to_socket==output.inputs['Surface']))
+    links.new(old_socket,output.inputs['Surface'])
+    nodes.remove(occlusion)
+    nodes.remove(emission)
+    bpy.data.images.remove(baked)
+    if probe_path.exists():
+        probe_path.unlink()
     print('D20_CYCLES_AO_BAKED: pixels=%d min=%.4f contrast=%.4f' %
-          (len(touched),float(values.min()),contrast),flush=True)
+          (len(dark),float(values.min()),variation),flush=True)
     return {'file':destination.name,'resolution':1024,
-            'bake':'Blender Cycles AO (local shader EMIT bake) from exact Boolean-cut render shell',
-            'cavity_pixels':int(len(touched)),
+            'bake':'Blender Cycles AO (external local EMIT) from exact Boolean-cut render shell',
+            'cavity_pixels':int(len(dark)),
             'cavity_min':float(values.min()),
-            'luma_std':contrast,
+            'luma_std':variation,
             'dark_fraction':dark_fraction,
-            'runtime_ao': 'NOT_IN_GLTF_YET_IMPORT_TEST_REQUIRED'}
+            'runtime_ao':'NOT_IN_GLTF_YET_IMPORT_TEST_REQUIRED'}
 
 def export_and_preview(sides,out,font,maps):
     bpy.ops.object.select_all(action='SELECT')
