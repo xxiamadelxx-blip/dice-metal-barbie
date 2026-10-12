@@ -1,0 +1,119 @@
+name: M5 authored micro-normal GLB Mobile import recheck
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/visual/d20_micronormal_rotation_capture.gd"
+      - ".github/workflows/d20-authored-glb-fastcheck.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: real-d20-authored-glb-fastcheck
+  cancel-in-progress: true
+jobs:
+  same-glb-axis:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install real Mesa software-rendering libraries
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core fontconfig libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          name: REAL-M5-D20-Blender-GLB-micronormal-Godot-Mobile
+          run-id: 38296322475
+          github-token: ${{ github.token }}
+          path: build/learned-d20
+      - name: Verify exact known source GLB and calculate remapped Radiance HDR
+        run: |
+          set -eu
+          sha256sum build/learned-d20/learned_d20.glb
+          echo "f9c7fe2403878e06e5fd7cab71bf80e3d4c05a7334073e30d232e7c09b678589  build/learned-d20/learned_d20.glb" | sha256sum --check
+          mkdir -p src/assets/generated
+          cp build/learned-d20/learned_d20.glb src/assets/generated/learned_d20.glb
+          cp build/learned-d20/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          python3 tools/visual/d20_hdr_alignment.py build/learned-d20/learned_studio.hdr build/learned-d20/learned_studio_mobile_aligned.hdr > build/learned-d20/hdr-alignment.log
+          grep -F PASS_TRUE_RADIANCE_HDR_COORDINATE_REMAP build/learned-d20/hdr-alignment.log
+          cp build/learned-d20/learned_studio_mobile_aligned.hdr src/assets/generated/learned_studio_mobile_aligned.hdr
+          python3 tools/visual/d20_narrow_studio.py build/learned-d20/learned_studio.hdr build/learned-d20/ > build/learned-d20/narrow-studio.log
+          grep -F PASS_AUTHORED_NARROW_STUDIO_CARD_MAPS build/learned-d20/narrow-studio.log
+          cp build/learned-d20/learned_studio_mobile_narrow*.hdr src/assets/generated/
+          touch build/.gdignore
+      - name: Import physical GLB and two real HDR files into Godot
+        run: |
+          timeout 100 godot --headless --path . --editor --import --quit > build/learned-d20/reimport.log 2>&1 || { tail -90 build/learned-d20/reimport.log; exit 1; }
+          if grep -E 'ERROR:|SCRIPT ERROR:|Parse Error' build/learned-d20/reimport.log | grep -vF 'Unable to load fontconfig'; then tail -90 build/learned-d20/reimport.log; exit 20;fi
+      - name: Capture three actual Godot 4.6.3 Mobile Vulkan source frames
+        run: |
+          set -eu
+          for variant in brdf_ref brdf_spec025; do
+            for yaw in 0 45 90; do
+              filename="godot_${variant}_yaw$(printf '%03d' "$yaw").png"
+              logfile="build/learned-d20/turn-${variant}-${yaw}.log"
+              timeout 110 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/d20_micronormal_rotation_capture.gd -- --variant="$variant" --yaw="$yaw" > "$logfile" 2>&1 || { tail -100 "$logfile"; exit 21; }
+              grep -F D20_ROTATION_LAB_YAW_DEGREES "$logfile"
+              grep -F D20_BRDF_APPLIED "$logfile"
+              grep -F "D20_BRDF_PRIMITIVE_AUDIT faces=1 bevel_parts=2 total=3" "$logfile"
+              grep -F LEARNED_D20_GODOT_REAL_FRAME "$logfile"
+              test -s "build/learned-d20/$filename"
+              if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' "$logfile"; then echo "real shader failed";exit 22;fi
+            done
+          done
+      - name: Compose only real engine pixels and provenance
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageDraw,ImageFont,ImageChops,ImageStat
+          import numpy as np,json,hashlib
+          from pathlib import Path
+          d=Path("build/learned-d20")
+          panels=[("AUTHORED MICRO GLB / F0 0.50 / YAW 0",d/"godot_brdf_ref_yaw000.png"),
+                  ("AUTHORED MICRO GLB / F0 0.50 / YAW 45",d/"godot_brdf_ref_yaw045.png"),
+                  ("AUTHORED MICRO GLB / F0 0.50 / YAW 90",d/"godot_brdf_ref_yaw090.png"),
+                  ("AUTHORED MICRO GLB / F0 0.25 / YAW 0",d/"godot_brdf_spec025_yaw000.png"),
+                  ("AUTHORED MICRO GLB / F0 0.25 / YAW 45",d/"godot_brdf_spec025_yaw045.png"),
+                  ("AUTHORED MICRO GLB / F0 0.25 / YAW 90",d/"godot_brdf_spec025_yaw090.png")]
+          images=[];metrics={}
+          for label,p in panels:
+            with Image.open(p) as r:
+              assert r.size==(1000,850),(p,r.size)
+              im=r.convert('RGB')
+            assert max(ImageStat.Stat(im).stddev)>5,(p,"BLANK")
+            region=np.asarray(im)[150:730,250:780,:].astype(float)
+            luma=region.mean(axis=2)
+            metrics[p.name]={"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"mean_luma":round(float(luma.mean()),2),"p90_luma":round(float(np.percentile(luma,90)),2),"bright_fraction_100":round(float((luma>100).mean()),4)}
+            images.append(im)
+          from PIL import ImageChops
+          for i in range(3):
+            source=images[i]
+            updated=images[i+3]
+            metrics["yaw_%03d_visual_difference"%[0,45,90][i]]={
+              "pixel_difference":ImageChops.difference(source,updated).getbbox() is not None,
+              "source_filename":panels[i][1].name,
+              "micro_filename":panels[i+3][1].name
+            }
+          out=Image.new("RGB",(3024,1820),(15,19,22))
+          draw=ImageDraw.Draw(out)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",24)
+          for i,((label,_),im) in enumerate(zip(panels,images)):
+            x=8+(i%3)*1006;y=43+(i//3)*896
+            draw.text((x,y-32),label,font=font,fill=(245,245,245))
+            out.paste(im,(x,y))
+          out.save(d/"real_authored_glb_f0_yaw_comparison.png")
+          (d/"real_authored_glb_f0_yaw_evidence.json").write_text(json.dumps(metrics,indent=2)+"\n")
+          print("PASS_REAL_BLENDER_AUTHORED_GLTF_MOBILE_BRDF_ROUNDTRIP",json.dumps(metrics))
+          PY
+      - name: Publish real source engine images, independent manifest and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: REAL-D20-AuthoredGLB-MicroNormal-Mobile-FastCheck
+          path: build/learned-d20/
+          retention-days: 14
+          if-no-files-found: warn
