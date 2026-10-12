@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""Only compose ORIGINAL actual Cycles/Godot screenshots. Never synthesize dice pixels."""
+import hashlib
+import json
+import os
+import sys
+from pathlib import Path
+from PIL import Image, ImageDraw, ImageFont, ImageStat
+
+out = Path("build/d20-compare")
+source = out / "blender_cycles.png"
+godot_original = out / "godot_source.png"
+godot_production = out / "godot_production.png"
+inputs = [
+    ("BLENDER / CYCLES", "Cycles, GLB unchanged", source),
+    ("GODOT / SOURCE GLB", "Compatibility, imported material", godot_original),
+    ("GODOT / PRODUCTION", "Compatibility, game overrides", godot_production),
+]
+mobile = out / "godot_mobile_source.png"
+if mobile.is_file():
+    inputs.append(("GODOT / MOBILE", "Lavapipe desktop, NOT Android", mobile))
+images = []
+for head, desc, p in inputs:
+    assert p.is_file() and p.stat().st_size > 10000, "MISSING/EMPTY ACTUAL RENDER: " + str(p)
+    with Image.open(p) as im:
+        assert im.size == (768,768), (p,im.size)
+        x = im.convert("RGB")
+        # Solid-black or flat-background image should not quietly become PASS.
+        stats = ImageStat.Stat(x)
+        assert max(stats.stddev) >= 5, "Likely blank/frozen render: " + str(p)
+        images.append((head, desc, p, x.copy(), [round(v,2) for v in stats.stddev]))
+scale=1
+pad=14
+top=86
+bottom=93
+w=len(images)*768 + (len(images)+1)*pad
+h=768+top+bottom
+sheet=Image.new("RGB", (w,h), (17,20,24))
+draw=ImageDraw.Draw(sheet)
+font_path="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+font=ImageFont.truetype(font_path,27)
+small=ImageFont.truetype(font_path,17)
+for i,(name,desc,path,im,std) in enumerate(images):
+    x=pad+i*(768+pad)
+    draw.text((x+10,10),name,font=font,fill=(240,240,240))
+    draw.text((x+10,49),desc,font=small,fill=(170,181,192))
+    sheet.paste(im,(x,top))
+draw.text((pad,top+768+12),"SAME EXACT GLB / pose / orthographic angle / frame size. Real engine PNG files above.",font=small,fill=(217,220,225))
+draw.text((pad,top+768+42),"Light source models and tonemappers differ. NOT identical illumination or on-phone proof.",font=small,fill=(170,181,192))
+final=out/"actual_blender_vs_godot.png"
+sheet.save(final)
+manifest={
+ "source_sha":os.environ.get("GITHUB_SHA","unknown"),
+ "generator":"REAL Blender Cycles + REAL Godot engine; Pillow composites screenshots only",
+ "comparison_limitations":"Godot gl_compatibility cannot duplicate physical Cycles disk area lights/tonemap. Godot Mobile on Lavapipe (if present) is not ARM Android.",
+ "d20_glb_sha256":hashlib.sha256(Path("src/assets/generated/d20_boolean_engraved.glb").read_bytes()).hexdigest(),
+ "panels":[{"name":name,"source_png":p.name,"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"std_rgb":std} for name,desc,p,im,std in images],
+ "montage_sha256":hashlib.sha256(final.read_bytes()).hexdigest()
+}
+(out/"evidence_manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
+print("PASS REAL BLENDER GODOT COMPARISON",final,len(images),"panels")
+print(json.dumps(manifest,indent=2))

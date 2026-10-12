@@ -1,0 +1,66 @@
+name: REAL D20 comparison - Blender Cycles versus Godot
+on:
+  push:
+    branches: [experiment/m5-d20-real-render-compare]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-compare:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install actual Blender/Cycles, Mesa, and image checking
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil fonts-dejavu-core xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          blender -b --python-expr "import numpy; print('REAL BLENDER',numpy.__version__)"
+          godot --version
+      - name: Generate actual D20 sculpt using canonical repository source
+        run: |
+          mkdir -p build/premium-glb build/d20-compare src/assets/generated
+          blender -b -noaudio --python-exit-code 2 --python tools/blender/generate_die_assets.py -- --output build/premium-glb > build/d20-compare/d20-generator.log 2>&1 || { tail -100 build/d20-compare/d20-generator.log; exit 1; }
+          python3 tools/blender/validate_glb.py build/premium-glb
+          python3 tools/materials/check_cycles_ao_content.py build/premium-glb/d20_geometry_baked_ao.png
+          cp build/premium-glb/d20_boolean_engraved.glb src/assets/generated/d20_boolean_engraved.glb
+          sha256sum src/assets/generated/d20_boolean_engraved.glb > build/d20-compare/glb.sha256
+      - name: Render original source D20 in true Blender Cycles
+        run: |
+          blender -b -noaudio --python-exit-code 2 --python tools/blender/render_d20_real_comparison.py -- --glb build/premium-glb/d20_boolean_engraved.glb --out build/d20-compare/blender_cycles.png > build/d20-compare/blender-render.log 2>&1 || { tail -100 build/d20-compare/blender-render.log; exit 1; }
+          test -s build/d20-compare/blender_cycles.png
+      - name: Import same source GLB into actual Godot 4.6.3
+        run: |
+          godot --headless --path . --editor --quit > build/d20-compare/import.log 2>&1 || { tail -80 build/d20-compare/import.log; exit 1; }
+      - name: Render actual Godot Compatibility source GLB and game production overrides
+        run: |
+          set -eu
+          xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method gl_compatibility --script res://tools/visual/d20_comparison_capture.gd -- --variant=source > build/d20-compare/godot-source.log 2>&1 || { tail -90 build/d20-compare/godot-source.log; exit 1; }
+          xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method gl_compatibility --script res://tools/visual/d20_comparison_capture.gd -- --variant=production > build/d20-compare/godot-production.log 2>&1 || { tail -90 build/d20-compare/godot-production.log; exit 1; }
+          grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-source.log
+          grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-production.log
+      - name: Attempt separate Godot Mobile desktop rendering (not Android)
+        continue-on-error: true
+        run: |
+          set +e
+          timeout 120 xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method mobile --script res://tools/visual/d20_comparison_capture.gd -- --variant=source > build/d20-compare/godot-mobile-attempt.log 2>&1
+          result=$?
+          if test "$result" -eq 0 && test -s build/d20-compare/godot_source.png; then
+            cp build/d20-compare/godot_source.png build/d20-compare/godot_mobile_source.png
+          fi
+          echo "Mobile-on-desktop attempt exit=$result; NOT a physical Android GPU proof" | tee build/d20-compare/mobile-status.txt
+          exit 0
+      - name: Compose original unretouched panels with provenance, fail on blank frames
+        run: |
+          python3 tools/visual/compose_real_d20_compare.py
+          sha256sum build/d20-compare/*.png > build/d20-compare/png-sha256.txt
+      - name: Publish REAL source images, side-by-side and logs even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: REAL-blender-godot-d20-comparison
+          path: build/d20-compare/
+          retention-days: 14
+          if-no-files-found: warn
