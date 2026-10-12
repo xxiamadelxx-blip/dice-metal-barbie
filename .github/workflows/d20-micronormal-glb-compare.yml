@@ -1,0 +1,145 @@
+name: M5 D20 original GLB versus authored micronormal GLB - real Mobile
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/visual/d20_micronormal_rotation_capture.gd"
+      - ".github/workflows/d20-micronormal-glb-compare.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: m5-authored-micro-normal-source-compare
+  cancel-in-progress: true
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 23
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native Mesa Mobile and pixel tools
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core fontconfig libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          name: REAL-M5-D20-Blender-GLB-micronormal-Godot-Mobile
+          run-id: 38296322475
+          github-token: ${{ github.token }}
+          path: build/new
+      - uses: actions/download-artifact@v4
+        with:
+          name: REAL-D20-Godot-Mobile-micronormal-three-angle-roll-visual
+          run-id: 38295279142
+          github-token: ${{ github.token }}
+          path: build/old
+      - name: Validate exact source GLBs and unchanged mesh positions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,struct,numpy as np
+          d=Path('build')
+          def unpack(path):
+              raw=path.read_bytes()
+              h=hashlib.sha256(raw).hexdigest()
+              jlen=struct.unpack_from('<I',raw,12)[0]
+              obj=json.loads(raw[20:20+jlen])
+              pos=20+jlen
+              binlen=struct.unpack_from('<I',raw,pos)[0]
+              chunk=raw[pos+8:pos+8+binlen]
+              return h,obj,chunk
+          old_sha,og,ob=unpack(d/'old/learned_d20.glb')
+          new_sha,ng,nb=unpack(d/'new/learned_d20.glb')
+          assert old_sha=='ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f',old_sha
+          assert new_sha=='f9c7fe2403878e06e5fd7cab71bf80e3d4c05a7334073e30d232e7c09b678589',new_sha
+          def positions(g,blob):
+              pts=set()
+              for primitive in g['meshes'][0]['primitives']:
+                  ac=g['accessors'][primitive['attributes']['POSITION']]
+                  view=g['bufferViews'][ac['bufferView']]
+                  offset=view.get('byteOffset',0)+ac.get('byteOffset',0)
+                  arr=np.frombuffer(blob,dtype='<f4',offset=offset,count=3*ac['count']).reshape(-1,3)
+                  pts.update(tuple(v) for v in np.round(arr,5))
+              return pts
+          left,right=positions(og,ob),positions(ng,nb)
+          assert left==right and len(left)>4000,('GLB CHANGED VERTEX GEOMETRY',len(left),len(right),len(left^right))
+          def surfaces(g):
+              return [g['materials'][p['material']]['name'] for p in g['meshes'][0]['primitives']]
+          a,b=surfaces(og),surfaces(ng)
+          assert a.count('PolishedObsidian')==b.count('PolishedObsidian')==1
+          assert a.count('PolishedObsidian_EdgeSatin')>=1 and b.count('PolishedObsidian_EdgeSatin')>=1
+          assert len([n for n in ng['nodes'] if n.get('name','').startswith('Gold_')])==20
+          print('PASS_PROVEN_PHYSICALLY_IDENTICAL_D20_VERTICES',len(left),'before',a,'after',b)
+          manifest={'before_glb':old_sha,'authored_micronormal_glb':new_sha,
+              'mesh_unique_positions':len(left),'geometry_changed':False,
+              'before_primitives':a,'after_primitives':b,'reason_for_prior_failure':'bad assertion on primitive count, not damaged bevel'}
+          (d/'new/micronormal-comparison-source.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+      - name: Import actual Blender authored GLB with real HDR, no runtime micro map
+        run: |
+          mkdir -p src/assets/generated
+          cp build/new/learned_d20.glb src/assets/generated/learned_d20.glb
+          cp build/new/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          cp build/new/learned_studio_mobile_narrow50.hdr src/assets/generated/learned_studio_mobile_narrow50.hdr
+          touch build/.gdignore
+          timeout 120 godot --headless --path . --editor --import --quit > build/new/real-import.log 2>&1 || { tail -100 build/new/real-import.log;exit 1; }
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' build/new/real-import.log | grep -vF 'Unable to load fontconfig'; then tail -90 build/new/real-import.log;exit 30;fi
+      - name: Genuine Godot Mobile original GLB normal, 3 rotating orientations
+        run: |
+          set -eu
+          for yaw in 0 45 90; do
+            log="build/new/godot-authored-micronormal-yaw$yaw.log"
+            timeout 110 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/d20_micronormal_rotation_capture.gd -- --variant=brdf_spec025 --yaw="$yaw" > "$log" 2>&1 || { tail -100 "$log";exit 31; }
+            grep -F "LEARNED_D20_GODOT_REAL_FRAME" "$log"
+            grep -F "D20_BRDF_PRIMITIVE_AUDIT faces=1 bevel_parts=2 total=3" "$log"
+            grep -F "D20_BRDF_APPLIED mode=brdf_spec025 stone_surfaces=3" "$log"
+            if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' "$log";then tail -80 "$log";exit 32;fi
+            test -s "build/new/godot_brdf_spec025_yaw$(printf '%03d' "$yaw").png"
+          done
+      - name: Original screenshot pairs at matching angles, provable source pixels
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageDraw,ImageFont,ImageChops,ImageStat
+          import hashlib,json,numpy as np
+          from pathlib import Path
+          old=Path('build/old');new=Path('build/new')
+          out=Image.new('RGB',(3040,1830),(15,18,22))
+          draw=ImageDraw.Draw(out)
+          font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',22)
+          records={}
+          for col,yaw in enumerate([0,45,90]):
+              fn=f'godot_brdf_spec025_yaw{yaw:03d}.png'
+              frames=[]
+              for row,d in enumerate([old,new]):
+                  raw=(d/fn).read_bytes()
+                  im=Image.open(d/fn).convert('RGB')
+                  assert im.size==(1000,850) and max(ImageStat.Stat(im).stddev)>5
+                  frames.append(im)
+                  x=8+col*1010; y=39+row*897
+                  draw.text((x,y-30),f'YAW {yaw} / '+('OLD GLB' if row==0 else 'NEW BLENDER GLB'),font=font,fill='white')
+                  out.paste(im,(x,y))
+                  records[f'{row}_{fn}']={'png_sha256':hashlib.sha256(raw).hexdigest()}
+              a=np.asarray(frames[0],np.int16);b=np.asarray(frames[1],np.int16)
+              roi=np.abs(a[155:725,250:780]-b[155:725,250:780])
+              records[f'yaw_{yaw}_delta']={'mean_absolute_rgb':round(float(roi.mean()),3),
+                                            'p90_absolute_rgb':round(float(np.percentile(roi,90)),3),
+                                            'different_pixels':ImageChops.difference(*frames).getbbox() is not None}
+              assert records[f'yaw_{yaw}_delta']['different_pixels'],f'GLB normal had zero real pixel effect yaw={yaw}'
+          fn=new/'real_blender_normal_glb_rotation_ab.png'
+          out.save(fn)
+          records['sheet_png_sha256']=hashlib.sha256(fn.read_bytes()).hexdigest()
+          (new/'real_glb_normal_rotation_evidence.json').write_text(json.dumps(records,indent=2)+'\n')
+          print('PASS_REAL_GODOT_MOBILE_AUTHORED_MICRONORMAL_GLTF_AND_YAW',json.dumps(records))
+          PY
+      - name: Upload source GLB and real images including failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: M5-REAL-BLENDER-GLB-MICRONORMAL-ROTATION-A-B
+          path: build/new/
+          retention-days: 14
+          if-no-files-found: warn
