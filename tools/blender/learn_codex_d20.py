@@ -167,10 +167,10 @@ def enforce_exported_pbr_channels(glb, mr_png, albedo_png):
     albedo_image=doc["images"][color_id]
     source_albedo=albedo_png.read_bytes()
     assert source_albedo[:8] == bytes((137,80,78,71,13,10,26,10)), "Author PNG not valid"
-    if len(blob)%4:blob.extend(b"\\x00"*((-len(blob))%4))
+    if len(blob)%4:blob.extend(bytes((0,))*((-len(blob))%4))
     start=len(blob)
     blob.extend(source_albedo)
-    if len(blob)%4:blob.extend(b"\\x00"*((-len(blob))%4))
+    if len(blob)%4:blob.extend(bytes((0,))*((-len(blob))%4))
     albedo_view=doc["bufferViews"][albedo_image["bufferView"]]
     albedo_view["byteOffset"]=start
     albedo_view["byteLength"]=len(source_albedo)
