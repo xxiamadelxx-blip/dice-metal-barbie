@@ -198,6 +198,8 @@ def build():
         ao_status="FAILED:"+str(e)
         log("CYCLES_AO",ao_status)
     # Geometric inlays are separate real GLB meshes, nothing screen-space.
+    stone_polygon_count=len(shell.data.polygons)
+    glyph_count=len(inserts)
     authored=[shell]+inserts
     active(shell)
     for o in inserts:o.select_set(True)
@@ -216,7 +218,7 @@ def build():
     bpy.ops.render.render(write_still=True)
     log("BLENDER_SOURCE_GLTF_ROUNDTRIP_RENDER",ROOT/"blender_cycles.png")
     receipt={"shader":"real authored PBR, dielectric metallic=0, coat=.20, coat rough=.09",
-             "num_original_glyphs":len(inserts),"boolean_polygons":len(shell.data.polygons),
+             "num_original_glyphs":glyph_count,"boolean_polygons":stone_polygon_count,
              "face_numbers":numbers,"cycles_ao":ao_status,
              "source_glb_sha256":hashlib.sha256(glb.read_bytes()).hexdigest(),
              "roundtrip_mesh_count":len(imported),"blender":bpy.app.version_string}
