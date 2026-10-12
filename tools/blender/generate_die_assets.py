@@ -470,6 +470,9 @@ def bake_true_d20_ao(shell, out):
     target=nodes.new('ShaderNodeTexImage')
     target.name='D20_ActualCyclesAOBakeTarget'
     target.image=baked
+    for node in nodes:
+        node.select=False
+    target.select=True
     nodes.active=target
     # True physical short-range hemisphere rays from engraved geometry.
     # The stock 'AO' bake produced a binary black face silhouette, not
@@ -491,13 +494,32 @@ def bake_true_d20_ao(shell, out):
     distance_socket.default_value=.115
     emission=nodes.new('ShaderNodeEmission')
     emission.name='D20_AO_Light_Independent_Emission'
-    links.new(occlusion.outputs['AO'],emission.inputs['Color'])
     links.new(emission.outputs['Emission'],output.inputs['Surface'])
-    # Bronze inserts can self-occlude entire surface under an unlimited
-    # AO bake. only_local=True explicitly excludes other scene objects.
+    # Calibration control: a black-initialized 256² image MUST receive opaque
+    # WHITE pixels from a constant white EMIT shader on the same D20 UV0.
+    # If not, Blender is not baking to the intended image target, not an
+    # ambient-occlusion art issue.
+    probe=bpy.data.images.new('D20_Bake_White_Probe',width=256,height=256,
+                              alpha=True,float_buffer=False)
+    probe.pixels.foreach_set(np.zeros(256*256*4,dtype=np.float32))
+    probe.update()
+    target.image=probe
+    emission.inputs['Color'].default_value=(1.0,1.0,1.0,1.0)
     active(shell)
+    bpy.ops.object.bake(type='EMIT')
+    probe_rgba=np.empty(256*256*4,dtype=np.float32)
+    probe.pixels.foreach_get(probe_rgba)
+    probes=probe_rgba.reshape((-1,4))
+    white_count=int(np.count_nonzero((probes[:,0]>.95)&(probes[:,3]>.95)))
+    print('D20_CYCLES_BAKE_WHITE_EMIT_PROBE white_opaque=%d' %
+          white_count,flush=True)
+    assert white_count>8000, (
+        'Cycles image bake target FAILED white emission control: do not fake AO')
+    target.image=baked
+    links.new(occlusion.outputs['AO'],emission.inputs['Color'])
     print('D20_CYCLES_LOCAL_AO: EMIT bake, 24 rays, radius=.115, '
           'self shell only, no baked scene lighting',flush=True)
+    active(shell)
     bpy.ops.object.bake(type='EMIT')
     links.remove(next(l for l in links if l.to_node==output
                       and l.to_socket==output.inputs['Surface']))
@@ -505,6 +527,7 @@ def bake_true_d20_ao(shell, out):
     nodes.remove(emission)
     nodes.remove(occlusion)
     nodes.remove(target)
+    bpy.data.images.remove(probe)
     destination=out/'d20_cycles_baked_ao.png'
     baked.filepath_raw=str(destination)
     baked.file_format='PNG'
