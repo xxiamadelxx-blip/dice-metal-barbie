@@ -218,7 +218,7 @@ func _make_face_micro_normal_atlas(slope: float) -> ImageTexture:
             var tz := sqrt(maxf(0.0,1.0-tx*tx-ty*ty))
             pic.set_pixel(x,y,Color(.5+.5*tx,.5+.5*ty,.5+.5*tz,1.0))
     var tex := ImageTexture.create_from_image(pic)
-    assert(tex!=null and tex.get_size()==Vector2i(dim,dim))
+    assert(tex!=null and tex.get_width()==dim and tex.get_height()==dim)
     print("D20_MICRONORMAL_AUTHORED slope=",slope," atlas=",tex.get_size(),
         " tile_uv=5x4, returns_to_flat_at_tile_boundaries=true")
     return tex
