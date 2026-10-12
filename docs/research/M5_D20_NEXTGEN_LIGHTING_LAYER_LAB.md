@@ -95,3 +95,22 @@ Three independent actual Godot Mobile/Mesa render captures were executed on the 
 **Causal result:** Godot 4.6 metallic_specular controls the specular reflections *including reflected sky*, whereas setting `specular_mode=DISABLED` only disables direct-light specular lobes. Godot official documentation warns `metallic_specular` outside .5 is not strictly energy-conserving; this is a **diagnostic parameter probe, not a physically verified premium-shader final value**. The significant flat-looking gray facets are driven primarily by sky specular strength and constant planar normals, not a missing clearcoat trick or excessive emissive gold. A higher-quality physically grounded solution needs actual local angular variation of reflected light (controlled normal microfield or controlled HDR card angular distribution) while retaining dark dielectric stone.
 
 **Next study**: `tools/visual/d20_micronormal_lab_capture.gd` + `.github/workflows/d20-micronormal-lab.yml`, actual identical source GLB and narrow50 studio, compare `spec=.25` source normal and three subtle per-tile tangent-space normal lapping slopes .06/.12/.20 on face ONLY. All tangent-normal perturbations smoothly fade to zero at 5x4 tile borders; this is a temporary diagnostic shader texture generated procedurally by Godot, *not a claimed Blender AO or approved GLB*. Independent premium acceptance remains FAIL/NOT_VERIFIED until genuine source PNG review and user approval.
+
+
+## Same-GLB tangent-normal polishing test: real Mobile #38294641803
+
+[Real exact-source Godot Mobile render and logs](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38294641803), artifact `11768110732`. Actual PNGs `godot_micro_006.png`, `godot_micro_012.png`, `godot_micro_020.png` alongside `godot_brdf_ref.png` and `godot_brdf_spec025.png`. Images/BRDF scene are Godot 4.6.3 Mesa Mobile, NOT physical Android. The source GLB, 20 gold inset meshes, bevel, face vertex polygons, UVs, camera and narrow50 HDR were unchanged.
+
+The test generated a deterministic 5x4 per-face **tangent-space normal field in an in-memory 512px ImageTexture**: a small smooth slope within each original UV tile, deliberately going to zero on each tile boundary. Every die's physical face is still planar. It is a proof of how small polished-stone surface deviations change Sky reflections, **not a Cycles bake and not an exported Blender GLB**.
+
+| Actual same-GLB screen | ROI luma mean /255 | p90 | bright fraction >100 |
+| --- | ---: | ---: | ---: |
+| source imported PBR `metallic_specular=.50` | 57.88 | 87.0 | 8.51% |
+| baseline less-silver PBR `metallic_specular=.25` | 42.81 | 66.67 | 1.87% |
+| F0=.25, micro-normal slope .06 | 42.39 | 66.33 | 1.15% |
+| F0=.25, micro-normal slope **.12** | 41.72 | 66.0 | 0.98% |
+| F0=.25, micro-normal slope .20 | 40.81 | 60.33 | 1.03% |
+
+**Visual critic:** slope=.12 shows a softer spatial gradation on the central `17` facet where the source PBR reflected a uniform panel; .06 is barely noticeable, .20 over-darkens and develops noticeable diagonally striped shading. The `11` side face still receives a large gray highlight. `0.12` is the controlled **lookdev candidate only**, not premium acceptance; it is not proved consistent in Blender Cycles nor during a real physical throw. The slight micro-gradient must not be described as raised face geometry.
+
+**Next gated verification:** `tools/visual/d20_micronormal_rotation_capture.gd` + `.github/workflows/d20-micronormal-rotation.yml` compare source `spec=.25` with micro-normal `slope=.12` at yaw 0/45/90 degrees under the same real Mobile camera/light. Look for visible edge seams, faceted geometry reading, gold numeral integrity, and whether the gradient follows the physical surface rather than the display. Explicitly keep this experiment isolated; no change to `main`, PR23, actual packaged die skin or Jolt physics.
