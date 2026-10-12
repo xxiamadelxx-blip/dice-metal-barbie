@@ -49,6 +49,8 @@ def maps():
     # diagonal striping. A circular C1-soft normal field removes that seam and
     # remains a small, physically coherent tangent-plane height gradient.
     # FACE GEOMETRY, boolean engraving and gilded inlays are unchanged.
+    # Blender's --python does not insert this directory into sys.path.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
     from d20_micronormal_field import tangent_normal_field
     slope=np.float32(.18)
     u=np.mod((x+.5)*5.0/n,1.0)
