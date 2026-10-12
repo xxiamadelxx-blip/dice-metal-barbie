@@ -102,7 +102,7 @@ jobs:
                     "oneplus_nord3_hardware":"NOT_VERIFIED",
                     "blender":"actual sculpt+true Boolean numerals+GLB export",
                     "meshlab":"real PLY import and OBJ export under Xvfb",
-                    "imagemagick":"real 256px legacy PBR + 1024px D20 atlas and Cycles cavity AO image dimensions",
+                    "imagemagick":"real 256px legacy PBR + 1024px D20 atlas and Blender BVHTree geometry AO image dimensions",
                     "inkscape":"original SVG to 256x256 rendered PNG",
                     "ffmpeg":"available for authentic Godot video QA in temporal job; no synthetic gameplay",
                     "material_maker":"optional only if actual PTEX export is proven; Python/Blender fallback",
