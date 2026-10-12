@@ -1,4 +1,4 @@
-"""Check actual spatial content of 1024px D20 Cycles AO in CI.
+"""Check actual spatial content of 1024px D20 geometric AO in CI.
 
 A previous 'PASS' AO file had 443392 pure-white pixels, 604160 black
 pixels and only ONE midgray row: a baked stripe rather than real relief.
@@ -34,4 +34,4 @@ def inspect(path):
     return result
 
 if __name__=='__main__':
-    inspect(Path(sys.argv[1] if len(sys.argv)>1 else 'build/premium-glb/d20_cycles_baked_ao.png'))
+    inspect(Path(sys.argv[1] if len(sys.argv)>1 else 'build/premium-glb/d20_geometry_baked_ao.png'))

@@ -17,7 +17,7 @@ def validate(root):
     assert look.get('uv_layout')=='numbered_face_planar_5x4', 'D20 requires real separate planar face UV atlas'
     assert look.get('pbr_resolution')==1024, 'D20 high-resolution lookdev textures missing'
     ao=look.get('ao',{})
-    assert ao.get('bake','').startswith('Blender Cycles AO'), 'AO must be genuinely Cycles baked'
+    assert ao.get('bake','').startswith('Blender BVHTree geometry AO'), 'AO must use real geometric BVH raycasts, never flat fake mask'
     assert ao.get('runtime_ao')=='NOT_IN_GLTF_YET_IMPORT_TEST_REQUIRED', (
         'Do not claim an AO map is imported when its runtime hookup is untested')
     assert ao.get('cavity_pixels',0)>2000 and ao.get('cavity_min',1.0)<.88, (

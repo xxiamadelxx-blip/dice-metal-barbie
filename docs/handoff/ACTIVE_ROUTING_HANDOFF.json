@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 Cycles D20 AO: verify image-target integrity with actual black-to-white emission bake",
+    "task": "M5 premium D20: replace broken Blender 4.0 Cycles image bake with honest CPU BVH raycast geometry AO",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Read exact-source Blender job after commit 99e14b1. Prior source #38210618367 local AO+EMIT produced IDENTICAL PNG bytes to stock AO (SHA 991235...) with 31% black transparent triangular faces, only .236% midtones; 5×4 UV0 still verified. New fail-closed D20_CYCLES_BAKE_WHITE_EMIT_PROBE starts 256² RGBA all zero, expects at least 8,000 opaque-white UV surface pixels from constant emission; if fails, debug Blender material target and UV rather than AO shader. If passes, fix shader/local occlusion sampling; preserve stricter real 1024² spatial AO gradation test. No merge; after success run full Godot/Mesa/AArch64/Jolt/AVD, real original 720x1280 material review.",
+    "next_action": "Check exact SHA new Gauntlet Blender output. Previous two Cycles image paths both BROKEN in runner: internal white emission bake had 0 RGB and alpha, external save_mode produced NO file despite operator success; do not declare actual Cycles. Implemented true Blender BVHTree ray intersection on Boolean-engraved D20 5x4 UV0, 512x512 geometry samples, cosine-weighted hemisphere 20 rays per texel to local 0.17 radius, bilinear 1024 map, strict real 2D AO pixel gate and glTF face atlas geometry. Inspect actual resulting PNG, manifest, baked 2D gradients, then Godot native original images and 24fps/Jolt/AVD/ARM64. If script red, fix actual source. No fake masks, no numeric bypass. Do not merge.",
     "blockers": [
-      "AO bake not yet valid: exact output identical after stock AO vs local short-range shader method; content remains black faces/white background.",
-      "New independent white emission bake probe pending original runner proof.",
-      "Native Android and physical Jolt downstream skipped due failed Blender gated pipeline; former AVD M4 drawer no pixel change still unresolved.",
-      "AI-generated basecolor unapproved for production, no paid tools, physical OnePlus Nord 3 not verified."
+      "Prior #38212023968 EXTERNAL Cycles bake returned FINISHED but output white calibration PNG NOT WRITTEN, strict Blender AO never passed.",
+      "New Blender BVH geometric AO implementation NOT VERIFIED; different documented provenance, retain failed Cycles experiment in handoff rather than mislabel.",
+      "M5 D20 atlas verified but advanced editor AVD tap and native D4 facet art still unresolved, Godot/Jolt cloud only tested after new asset passes.",
+      "Real OnePlus Nord 3 hardware and user premium art approval not verified."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -92,13 +92,14 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38186006813",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38186006813/artifacts/11719229307",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38210618367",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38210618367/artifacts/11728463493"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38210618367/artifacts/11728463493",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38212023968"
     ],
-    "last_observed_sha": "9a7e8aab4ecaf31929ecdfd07dec247437ce6cf8",
+    "last_observed_sha": "4de656644e0df7e4f276ebc89b58d3a28a8dfaf2",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Compared actual AO image PNG from #38210618367 to #38186006813: identical bytes (SHA256 9912351c), every RGBA dark triangle pixel 0,0,0,0 and white atlas background 255,255,255,255. Separate short-range AO+EMIT did not change baked output at all. Added real white-control bake on same final D20 UV0 and explicit active image target selection, but exact new runner not yet verified. Do not weaken fake-AO rejection."
+    "verification_note": "Blender 4.0.2 stock AO produced UV-face binary silhouettes, local shader EMIT identical; black-initialized white emission control baked 0 RGB and 0 alpha; EXTERNAL bake did not write file. Switching honest algorithm to Blender BVHTree real ray tests on true Boolean-cut mesh, no AI, no rendering API. Source artifact expected 1024² raster from 512² actual ray samples. Strict content checks remain intact."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
