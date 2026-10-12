@@ -47,7 +47,8 @@ func _capture_main() -> void:
     e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     e.tonemap_mode = Environment.TONE_MAPPER_ACES
     var sky := Sky.new()
-    sky.radiance_size=Sky.RADIANCE_SIZE_512
+    # 256 radiance map allows free Mesa compatibility to finish on CPU.
+    sky.radiance_size=Sky.RADIANCE_SIZE_256
     var smat := PanoramaSkyMaterial.new()
     smat.panorama = _build_studio_hdr()
     sky.sky_material = smat
@@ -93,7 +94,7 @@ func _review_materials(node: Node) -> int:
         var n:=node as MeshInstance3D
         count=1
         assert(n.material_override == null, "Source material overridden")
-        var material:=n.mesh.surface_get_material(0) as StandardMaterial3D
+        var material:=n.mesh.surface_get_material(0) as BaseMaterial3D
         assert(material!=null)
         if "D20_Engraved" in str(n.name):
             assert(material.albedo_texture != null, "PBR albedo lost")

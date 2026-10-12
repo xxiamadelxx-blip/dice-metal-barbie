@@ -58,7 +58,7 @@ jobs:
       - name: Godot real import and native Compatibility 3D viewport PNG
         run: |
           godot --headless --path . --editor --quit > build/learned-d20/import.log 2>&1 || { tail -100 build/learned-d20/import.log; exit 1; }
-          timeout 180 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/godot-compat.log 2>&1 || { tail -120 build/learned-d20/godot-compat.log; exit 1; }
+          timeout 70 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/godot-compat.log 2>&1 || { tail -120 build/learned-d20/godot-compat.log; exit 1; }
           grep -F "LEARNED_D20_GODOT_REAL_FRAME" build/learned-d20/godot-compat.log
           if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace' build/learned-d20/godot-compat.log; then cat build/learned-d20/godot-compat.log; exit 40; fi
           test -s build/learned-d20/godot_compatibility.png
@@ -66,7 +66,7 @@ jobs:
         continue-on-error: true
         run: |
           cp build/learned-d20/godot_compatibility.png build/learned-d20/_preserve-compat.png
-          timeout 150 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/godot-mobile-attempt.log 2>&1
+          timeout 75 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/godot-mobile-attempt.log 2>&1
           rc=$?
           if test "$rc" -eq 0 && test -s build/learned-d20/godot_compatibility.png; then
             mv build/learned-d20/godot_compatibility.png build/learned-d20/godot_mobile.png
