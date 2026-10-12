@@ -130,6 +130,11 @@ def bake_d20_geometry_ao(shell, out):
     blur_x=sum(filt[i]*padded[:,i:i+WORK] for i in range(5))
     padded=np.pad(blur_x,((2,2),(0,0)),constant_values=1.0)
     filtered=sum(filt[i]*padded[i:i+WORK,:] for i in range(5))
+    # Standard PBR AO intensity control: slightly strengthen ONLY the
+    # measured ray-derived occlusion after anti-aliasing, preserving the
+    # white neutral surface and local cavity penumbrae. This is not drawn
+    # geometry or an acceptance threshold change.
+    filtered=np.clip(1.0-(1.0-filtered)*1.16,0.0,1.0)
     filtered[~touched]=1.0
     result=_interpolate_bilinear(filtered)
     assert result.shape==(SIZE,SIZE)
