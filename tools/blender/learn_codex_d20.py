@@ -73,7 +73,7 @@ def place_maps(m, ims):
     m.node_tree.links.new(tex.outputs["Color"],nn.inputs["Color"])
     m.node_tree.links.new(nn.outputs["Normal"],bs.inputs["Normal"])
 
-def cutter_glyph(value,center,normal,font,gold=False):
+def cutter_glyph(value,center,normal,up,font,gold=False):
     data=bpy.data.curves.new("Glyph_%02d"%value,"FONT")
     data.body=str(value);data.font=font;data.size=.50
     data.align_x="CENTER";data.align_y="CENTER";data.resolution_u=6
@@ -82,7 +82,11 @@ def cutter_glyph(value,center,normal,font,gold=False):
     glyph=bpy.data.objects.new(("Gold_%02d" if gold else "Cut_%02d")%value,data)
     bpy.context.collection.objects.link(glyph)
     glyph.rotation_mode="QUATERNION"
-    glyph.rotation_quaternion=normal.to_track_quat("Z","Y")
+    # Set BOTH normal and readable in-plane type orientation. The previous
+    # normal-only quaternion rotated the primary "20" almost upside down.
+    up=(up-normal*up.dot(normal)).normalized()
+    right=up.cross(normal).normalized()
+    glyph.rotation_quaternion=Matrix((right,up,normal)).transposed().to_quaternion()
     glyph.location=center-normal*(.032 if gold else .008)
     active(glyph)
     bpy.ops.object.convert(target="MESH")
@@ -123,6 +127,12 @@ def build():
     q=top.normal.rotation_difference(Vector((0,0,1)))
     shell.data.transform(q.to_matrix().to_4x4())
     shell.data.update()
+    # In the approved authoring pose one triangle apex points towards +Y.
+    # Rotation changes only VISUAL geometry (this is an isolated art experiment).
+    upper=max(shell.data.polygons,key=lambda p:p.normal.z)
+    tip=max((shell.data.vertices[j].co for j in upper.vertices),key=lambda v:v.y)
+    shell.data.transform(Matrix.Rotation(math.atan2(tip.x,tip.y),4,"Z"))
+    shell.data.update()
     face_specs=[]
     normals=[]
     for i,p in enumerate(shell.data.polygons):
@@ -158,8 +168,10 @@ def build():
     cutters=[]; inserts=[]
     for i,sp in enumerate(face_specs):
         n=numbers[i];pos=sp["center"]-sp["up"]*.035
-        cutters.append(cutter_glyph(n,pos,sp["normal"],font,False))
-        ins=cutter_glyph(n,pos,sp["normal"],font,True)
+        nominal_up=Vector((0,1,0)) if abs(sp["normal"].z)>.90 else Vector((0,0,1))
+        up=(nominal_up-sp["normal"]*nominal_up.dot(sp["normal"])).normalized()
+        cutters.append(cutter_glyph(n,pos,sp["normal"],up,font,False))
+        ins=cutter_glyph(n,pos,sp["normal"],up,font,True)
         ins.data.materials.append(gold);inserts.append(ins)
     # Single Exact Boolean on real text cutter meshes.
     active(cutters[0])
@@ -225,6 +237,52 @@ def build():
     (ROOT/"manifest.json").write_text(json.dumps(receipt,indent=2))
     log("DONE",json.dumps(receipt))
     
+
+def make_studio_hdr():
+    """Actual shared physically evaluated HDR radiance source for both engines.
+    Panels exist IN THE LIGHTING, not prepainted on any stone texture.
+    Blender Z-up latlong; Godot imports the same image as a real panorama.
+    """
+    w,h=512,256
+    yy,xx=np.mgrid[0:h,0:w].astype(np.float32)
+    theta=(yy+.5)/h*math.pi
+    phi=(xx+.5)/w*(2*math.pi)
+    d=np.stack((np.sin(theta)*np.cos(phi),
+                np.sin(theta)*np.sin(phi),
+                np.cos(theta)),axis=-1)
+    base=.25+.12*np.maximum(d[:,:,2],0.0)
+    radiance=np.stack((base*.91,base,base*1.06),axis=-1).astype(np.float32)
+    for pos,width,height,color in [
+        ((-3.4,1.4,4.8),.48,.60,(2.3,2.5,2.8)),
+        ((3.0,-.6,3.0),.30,.70,(2.0,1.55,1.25)),
+        ((0.0,3.3,5.5),.40,.38,(1.0,1.0,.95))
+    ]:
+        axis=np.array(pos,dtype=np.float32)
+        axis/=np.linalg.norm(axis)
+        world_up=np.array((0,0,1),dtype=np.float32)
+        right=np.cross(axis,world_up)
+        if np.linalg.norm(right)<.05:right=np.array((1,0,0),dtype=np.float32)
+        right/=np.linalg.norm(right)
+        up=np.cross(right,axis)
+        facing=np.sum(d*axis,axis=-1)
+        den=np.maximum(facing,.0001)
+        rx=np.abs(np.sum(d*right,axis=-1)/den)
+        ry=np.abs(np.sum(d*up,axis=-1)/den)
+        feather=np.clip(np.minimum((width-rx)/.09,(height-ry)/.09),0,1)
+        feather*=np.clip(facing*10,0,1)
+        radiance+=feather[:,:,None]*np.asarray(color,dtype=np.float32)
+    img=bpy.data.images.new("Learned_shared_studio_HDR",width=w,height=h,alpha=False,float_buffer=True)
+    rgba=np.ones((h,w,4),dtype=np.float32)
+    rgba[:,:,:3]=radiance
+    img.pixels.foreach_set(rgba.ravel())
+    img.colorspace_settings.name="Non-Color"
+    img.filepath_raw=str(ROOT/"learned_studio.hdr")
+    img.file_format="HDR"
+    img.save()
+    img.pack()
+    log("ACTUAL_STUDIO_HDR",img.filepath_raw,(w,h))
+    return img
+
 def add_studio():
     scene=bpy.context.scene
     floor_height=-1.015
@@ -248,8 +306,14 @@ def add_studio():
         light.location=where
         light.rotation_euler=(Vector((0,0,0))-light.location).to_track_quat("-Z","Y").to_euler()
     world=bpy.data.worlds.new("StudioWorld") if bpy.data.worlds.get("StudioWorld")==None else bpy.data.worlds["StudioWorld"]
-    world.use_nodes=True;world.node_tree.nodes["Background"].inputs["Color"].default_value=(.20,.23,.26,1)
-    world.node_tree.nodes["Background"].inputs["Strength"].default_value=.7
+    world.use_nodes=True
+    nodes=world.node_tree.nodes
+    bg=nodes.get("Background")
+    studio_tex=nodes.new("ShaderNodeTexEnvironment")
+    studio_tex.name="ActualWideSoftboxHDR"
+    studio_tex.image=make_studio_hdr()
+    world.node_tree.links.new(studio_tex.outputs["Color"],bg.inputs["Color"])
+    bg.inputs["Strength"].default_value=.82
     scene.world=world
     scene.render.engine="CYCLES";scene.cycles.samples=64;scene.cycles.device="CPU"
     # Debian Blender Cycles has no OpenImageDenoise: documented Codex failure.

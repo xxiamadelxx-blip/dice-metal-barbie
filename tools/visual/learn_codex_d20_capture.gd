@@ -45,23 +45,31 @@ func _capture_main() -> void:
     var e := Environment.new()
     e.background_mode = Environment.BG_COLOR
     e.background_color = Color(.090,.14,.12)
-    e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    e.ambient_light_energy = .72
+    # Real diffuse fill is separate from reflection environment.
+    # Black facets were nearly zero in the first imported Mobile frame.
+    e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+    e.ambient_light_color = Color(.55,.60,.66)
+    e.ambient_light_energy = 1.05
     e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     e.tonemap_mode = Environment.TONE_MAPPER_ACES
     var sky := Sky.new()
     # 256 radiance map allows free Mesa compatibility to finish on CPU.
     sky.radiance_size=Sky.RADIANCE_SIZE_256
     var smat := PanoramaSkyMaterial.new()
-    smat.panorama = _build_studio_hdr()
+    var same_studio_hdr := load("res://src/assets/generated/learned_studio.hdr") as Texture2D
+    if same_studio_hdr == null:
+        push_error("Shared Blender HDR studio environment did not import into Godot")
+        quit(45)
+        return
+    smat.panorama = same_studio_hdr
     sky.sky_material = smat
     e.sky = sky
     envi.environment = e
     world.add_child(envi)
     for spec in [
-        {"pos":Vector3(-3.4,4.8,-1.4),"energy":2.6,"color":Color(.82,.9,1)},
-        {"pos":Vector3(3,3,.6),"energy":1.7,"color":Color(1,.83,.62)},
-        {"pos":Vector3(0,5.5,-3.3),"energy":1.0,"color":Color(1,.95,.86)}
+        {"pos":Vector3(-3.4,4.8,-1.4),"energy":1.9,"color":Color(.82,.9,1)},
+        {"pos":Vector3(3,3,.6),"energy":1.35,"color":Color(1,.83,.62)},
+        {"pos":Vector3(0,5.5,-3.3),"energy":.85,"color":Color(1,.95,.86)}
     ]:
         var omni := OmniLight3D.new()
         omni.position = spec.pos

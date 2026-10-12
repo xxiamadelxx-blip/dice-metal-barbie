@@ -31,6 +31,8 @@ jobs:
           test -s build/learned-d20/authored.blend
           test -s build/learned-d20/roundtrip_import.blend
           cp build/learned-d20/learned_d20.glb src/assets/generated/learned_d20.glb
+          test -s build/learned-d20/learned_studio.hdr
+          cp build/learned-d20/learned_studio.hdr src/assets/generated/learned_studio.hdr
           sha256sum build/learned-d20/learned_d20.glb src/assets/generated/learned_d20.glb > build/learned-d20/glb.sha256
       - name: Inspect exported geometry, real GLTF PBR channels, and deep Boolean engraving
         run: |
