@@ -14,11 +14,9 @@ godot_production = out / "godot_production.png"
 inputs = [
     ("BLENDER / CYCLES", "Cycles, GLB unchanged", source),
     ("GODOT / SOURCE GLB", "Compatibility, imported material", godot_original),
-    ("GODOT / PRODUCTION", "Compatibility, game overrides", godot_production),
+    ("GODOT / STUDIO", "Compatibility, GLB unchanged + reflected softboxes", out / "godot_studio.png"),
+    ("STUDIO + GAME", "Compatibility, studio + production overrides", out / "godot_studio_production.png"),
 ]
-mobile = out / "godot_mobile_source.png"
-if mobile.is_file():
-    inputs.append(("GODOT / MOBILE", "Lavapipe desktop, NOT Android", mobile))
 images = []
 for head, desc, p in inputs:
     assert p.is_file() and p.stat().st_size > 10000, "MISSING/EMPTY ACTUAL RENDER: " + str(p)
@@ -47,13 +45,26 @@ for i,(name,desc,path,im,std) in enumerate(images):
     sheet.paste(im,(x,top))
 draw.text((pad,top+768+12),"SAME EXACT GLB / pose / orthographic angle / frame size. Real engine PNG files above.",font=small,fill=(217,220,225))
 draw.text((pad,top+768+42),"Light source models and tonemappers differ. NOT identical illumination or on-phone proof.",font=small,fill=(170,181,192))
+from PIL import ImageChops
+base_img=images[1][3]
+studio_img=images[2][3]
+changed=ImageChops.difference(base_img, studio_img)
+assert changed.getbbox() is not None, "Studio sky has NO actual Godot pixel effect"
+# Film / game art judgment cannot be automated by this numeric smoke.
+pixel_stats={
+ "baseline_rgb_mean":[round(v,2) for v in ImageStat.Stat(base_img).mean],
+ "studio_rgb_mean":[round(v,2) for v in ImageStat.Stat(studio_img).mean],
+ "studio_vs_baseline_bbox":changed.getbbox(),
+}
 final=out/"actual_blender_vs_godot.png"
 sheet.save(final)
 manifest={
  "source_sha":os.environ.get("GITHUB_SHA","unknown"),
  "generator":"REAL Blender Cycles + REAL Godot engine; Pillow composites screenshots only",
- "comparison_limitations":"Godot gl_compatibility cannot duplicate physical Cycles disk area lights/tonemap. Godot Mobile on Lavapipe (if present) is not ARM Android.",
+ "comparison_limitations":"Godot gl_compatibility cannot duplicate physical Cycles disk area lights/tonemap. Studio sky is a controlled new reflection test, not matched studio exposure or phone. Godot Mobile on Lavapipe (if present) is not ARM Android.",
  "d20_glb_sha256":hashlib.sha256(Path("src/assets/generated/d20_boolean_engraved.glb").read_bytes()).hexdigest(),
+ "studio_ab_delta":pixel_stats,
+ "other_authentic_capture_sha256":{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [godot_production, out/"godot_mobile_source.png", out/"godot_mobile_studio.png"] if p.is_file()},
  "panels":[{"name":name,"source_png":p.name,"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"std_rgb":std} for name,desc,p,im,std in images],
  "montage_sha256":hashlib.sha256(final.read_bytes()).hexdigest()
 }

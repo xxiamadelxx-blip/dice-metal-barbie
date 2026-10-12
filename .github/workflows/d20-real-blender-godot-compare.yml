@@ -41,6 +41,11 @@ jobs:
           xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method gl_compatibility --script res://tools/visual/d20_comparison_capture.gd -- --variant=production > build/d20-compare/godot-production.log 2>&1 || { tail -90 build/d20-compare/godot-production.log; exit 1; }
           grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-source.log
           grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-production.log
+          xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method gl_compatibility --script res://tools/visual/d20_comparison_capture.gd -- --variant=studio > build/d20-compare/godot-studio.log 2>&1 || { tail -100 build/d20-compare/godot-studio.log; exit 1; }
+          xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method gl_compatibility --script res://tools/visual/d20_comparison_capture.gd -- --variant=studio_production > build/d20-compare/godot-studio-production.log 2>&1 || { tail -100 build/d20-compare/godot-studio-production.log; exit 1; }
+          grep -F "D20_STUDIO_REFLECTION_SOURCE: SKY" build/d20-compare/godot-studio.log
+          grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-studio.log
+          grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-studio-production.log
       - name: Attempt separate Godot Mobile desktop rendering (not Android)
         continue-on-error: true
         run: |
@@ -52,25 +57,23 @@ jobs:
             mv build/d20-compare/godot_source.png build/d20-compare/godot_mobile_source.png
           fi
           mv build/d20-compare/godot_source_backup.png build/d20-compare/godot_source.png
+          # Additional limited Mobile studio capture, preserved independently.
+          cp build/d20-compare/godot_studio.png build/d20-compare/godot_studio_backup.png
+          timeout 90 xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method mobile --script res://tools/visual/d20_comparison_capture.gd -- --variant=studio > build/d20-compare/godot-mobile-studio-attempt.log 2>&1
+          studio_result=$?
+          if test "$studio_result" -eq 0 && test -s build/d20-compare/godot_studio.png; then
+            mv build/d20-compare/godot_studio.png build/d20-compare/godot_mobile_studio.png
+          fi
+          mv build/d20-compare/godot_studio_backup.png build/d20-compare/godot_studio.png
+          echo "Mobile studio attempt exit=$studio_result; emulator/software renderer, NOT handset" | tee build/d20-compare/mobile-studio-status.txt
           echo "Mobile-on-desktop attempt exit=$result; NOT a physical Android GPU proof" | tee build/d20-compare/mobile-status.txt
           exit 0
       - name: Compose original unretouched panels with provenance, fail on blank frames
         run: |
           python3 tools/visual/compose_real_d20_compare.py
           sha256sum build/d20-compare/*.png > build/d20-compare/png-sha256.txt
-      - name: Commit REAL comparison PNG for direct viewing (experiment branch only)
-        if: success()
-        run: |
-          set -euo pipefail
-          test -s build/d20-compare/actual_blender_vs_godot.png
-          mkdir -p docs/evidence/m5-real-d20
-          cp build/d20-compare/actual_blender_vs_godot.png docs/evidence/m5-real-d20/actual_blender_vs_godot.png
-          cp build/d20-compare/evidence_manifest.json docs/evidence/m5-real-d20/evidence_manifest.json
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/evidence/m5-real-d20/
-          git commit -m 'evidence: actual same-GLB Blender Godot screenshots [skip ci]'
-          git push origin HEAD:refs/heads/experiment/m5-d20-real-render-compare
+      # Evidence is published through a separate SHA-verifying workflow,
+      # avoiding a competing attempt to change the feature branch mid-run.
       - name: Publish REAL source images, side-by-side and logs even on failure
         if: always()
         uses: actions/upload-artifact@v4

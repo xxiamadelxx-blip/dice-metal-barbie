@@ -14,7 +14,11 @@ func _run() -> void:
 			variant = "production"
 		elif arg == "--variant=source":
 			variant = "source"
-	if variant != "source" and variant != "production":
+		elif arg == "--variant=studio":
+			variant = "studio"
+		elif arg == "--variant=studio_production":
+			variant = "studio_production"
+	if variant not in ["source","production","studio","studio_production"]:
 		push_error("Invalid render variant")
 		quit(3)
 		return
@@ -41,7 +45,7 @@ func _run() -> void:
 		return
 	art.name = "ExactSourceD20"
 	stage.add_child(art)
-	if variant == "production":
+	if variant in ["production","studio_production"]:
 		Premium._finish_glb_node(art)
 	var floor_mesh := MeshInstance3D.new()
 	var mesh := PlaneMesh.new()
@@ -62,6 +66,21 @@ func _run() -> void:
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.10, 0.13, 0.14)
 	env.ambient_light_energy = 0.6
+	# Single controlled change: only studio variants enable an authored
+	# reflective sky. Source and production variants preserve the old scene.
+	# This sky never becomes the game's background: the black/green table
+	# and fixed camera retain their approved gameplay constraints.
+	if variant in ["studio", "studio_production"]:
+		var sky := Sky.new()
+		sky.radiance_size = Sky.RADIANCE_SIZE_256
+		var sky_material := ShaderMaterial.new()
+		sky_material.shader = load("res://tools/visual/studio_softboxes.gdshader")
+		sky.sky_material = sky_material
+		env.sky = sky
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+		env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+		env.ambient_light_energy = 0.72
+		print("D20_STUDIO_REFLECTION_SOURCE: SKY, authored procedural softboxes, not Cycles")
 	env_node.environment = env
 	stage.add_child(env_node)
 	# Coordinate mapping Blender Z-up -> Godot Y-up: (x,y,z) -> (x,z,-y).
