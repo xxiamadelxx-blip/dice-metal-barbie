@@ -284,6 +284,31 @@ func _install_reflection_probe(stage: Node3D, inspection: Camera3D) -> void:
         material.emission = spec.color
         material.emission_energy_multiplier = spec.power
         fixture.material_override = material
+    # A local reflection cubemap with ONLY luminous cards captures mostly black.
+    # A moving polished die requires diffuse reflected surround as well.
+    # Add a physically rendered studio-cyclorama sphere in probe layer 2,
+    # completely invisible to the normal camera (layer 1).
+    var surround := MeshInstance3D.new()
+    surround.name = "ReflectionsOnlyStudioCyclorama"
+    surround.layers = 2
+    surround.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    var backdrop_mesh := SphereMesh.new()
+    backdrop_mesh.radius = 5.2
+    backdrop_mesh.height = 10.4
+    backdrop_mesh.radial_segments = 64
+    backdrop_mesh.rings = 32
+    surround.mesh = backdrop_mesh
+    var backdrop_mat := StandardMaterial3D.new()
+    backdrop_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    backdrop_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    backdrop_mat.albedo_color = Color(.28, .31, .33)
+    backdrop_mat.emission_enabled = true
+    backdrop_mat.emission = Color(.28, .31, .33)
+    backdrop_mat.emission_energy_multiplier = 1.0
+    surround.material_override = backdrop_mat
+    stage.add_child(surround)
+    print("D20_LAB_PROBE_STUDIO_SURROUND radius=", backdrop_mesh.radius,
+        " camera_layer=1 probe_fixture_layer=", surround.layers)
     var probe := ReflectionProbe.new()
     probe.name = "OfflineStudioCaptureNoGeometrySelfReflection"
     probe.position = Vector3.ZERO
