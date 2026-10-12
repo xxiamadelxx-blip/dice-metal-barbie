@@ -1,0 +1,22 @@
+{
+  "docs/evidence/d20-reference-2026-10-12/godot-mobile-candidate-oblique.png": {
+    "sha256": "368ab6c38c350b8fe980d42e80544e132a240e569c8fba684e09606cec03fa13",
+    "bytes": 166347,
+    "git_blob_sha": "01f8f6bb11d0cae9df4810ddffe83644af486c89"
+  },
+  "docs/evidence/d20-reference-2026-10-12/godot-mobile-candidate-overhead.png": {
+    "sha256": "91d886e27296604e9fb9cf1a8eb6e519ac4a8c5a193fc48073c52f2cafd9ecfa",
+    "bytes": 196919,
+    "git_blob_sha": "c93e25ca2911836a2255125daa2d0ef39955c642"
+  },
+  "docs/evidence/d20-reference-2026-10-12/godot-mobile-original-oblique.png": {
+    "sha256": "6cbcf0c012e4bdd6ea088685aea16f1df7f486c049a9723dd45e3d0f7b9535be",
+    "bytes": 167745,
+    "git_blob_sha": "82066b2ccee5ab42020f998c17f991c78eba4218"
+  },
+  "docs/evidence/d20-reference-2026-10-12/godot-mobile-original-overhead.png": {
+    "sha256": "65054e2ad39f5b5370787d9016281a1eb19085795712a63a1a131aa7b5906b29",
+    "bytes": 202447,
+    "git_blob_sha": "409c0ec223de48ba543d9a72e7587c048bbcde77"
+  }
+}
