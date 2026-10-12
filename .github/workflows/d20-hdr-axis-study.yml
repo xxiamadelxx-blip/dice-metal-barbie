@@ -55,7 +55,7 @@ jobs:
       - name: Capture three actual Godot 4.6.3 Mobile Vulkan source frames
         run: |
           set -eu
-          for variant in ibl aligned aligned_boost narrow50 narrow30; do
+          for variant in ibl aligned aligned_boost narrow50 narrow30 narrow50_no_omni; do
             timeout 90 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant="$variant" > "build/learned-d20/probe-$variant.log" 2>&1 || { tail -95 "build/learned-d20/probe-$variant.log"; exit 21; }
             grep -F LEARNED_D20_SEPARATE_SURFACES_OK "build/learned-d20/probe-$variant.log"
             grep -F LEARNED_D20_GODOT_REAL_FRAME "build/learned-d20/probe-$variant.log"
@@ -74,7 +74,9 @@ jobs:
                   ("GODOT MOBILE / AXES CORRECT",d/"godot_aligned.png"),
                   ("GODOT MOBILE / AXES + 3x",d/"godot_aligned_boost.png"),
                   ("MOBILE / NARROW CARD 50%",d/"godot_narrow50.png"),
-                  ("MOBILE / NARROW CARD 30%",d/"godot_narrow30.png")]
+                  ("MOBILE / NARROW CARD 30%",d/"godot_narrow30.png"),
+                  ("MOBILE / NARROW 50%, NO OMNIS",d/"godot_narrow50_no_omni.png"),
+                  ("GODOT / COMPATIBILITY",d/"godot_compatibility.png")]
           images=[];metrics={}
           for label,p in panels:
             with Image.open(p) as r:
@@ -87,14 +89,15 @@ jobs:
             images.append(im)
           assert ImageChops.difference(images[1],images[2]).getbbox() is not None,"Axes fix had zero effect"
           assert ImageChops.difference(images[2],images[4]).getbbox() is not None,"Narrow studio card had zero real engine pixel effect"
-          out=Image.new("RGB",(2030,2730),(15,19,22))
+          assert ImageChops.difference(images[4],images[6]).getbbox() is not None,"OmniLight isolation had zero real engine pixel effect"
+          out=Image.new("RGB",(2030,3630),(15,19,22))
           draw=ImageDraw.Draw(out)
           font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",24)
           for i,((label,_),im) in enumerate(zip(panels,images)):
             x=10+(i%2)*1010;y=43+(i//2)*890
             draw.text((x,y-32),label,font=font,fill=(245,245,245))
             out.paste(im,(x,y))
-          out.save(d/"real_hdr_axis_and_card_size_ab.png")
+          out.save(d/"real_hdr_axis_card_and_omni_ab.png")
           (d/"real_hdr_axis_manifest.json").write_text(json.dumps(metrics,indent=2)+"\n")
           print("PASS_REAL_GODOT_MOBILE_HDR_AXIS_EXPERIMENT",json.dumps(metrics))
           PY

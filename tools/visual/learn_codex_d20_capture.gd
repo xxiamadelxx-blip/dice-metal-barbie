@@ -26,6 +26,8 @@ func _capture_main() -> void:
             variant = "narrow50"
         elif arg == "--variant=narrow30":
             variant = "narrow30"
+        elif arg == "--variant=narrow50_no_omni":
+            variant = "narrow50_no_omni"
     DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))
     viewport = SubViewport.new()
     viewport.name = "RealGLBCapture"
@@ -67,7 +69,7 @@ func _capture_main() -> void:
     e.ambient_light_energy = 1.05
     e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     e.tonemap_mode = Environment.TONE_MAPPER_ACES
-    if variant in ["ibl", "ibl90", "aligned", "aligned_boost", "narrow50", "narrow30"]:
+    if variant in ["ibl", "ibl90", "aligned", "aligned_boost", "narrow50", "narrow30", "narrow50_no_omni"]:
         # Godot 4.6 documented sky ambient/AGX/exposure; follow Codex
         # real-runtime lessons instead of compensating black material via emission.
         e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
@@ -84,6 +86,8 @@ func _capture_main() -> void:
     var panorama_path := "res://src/assets/generated/learned_studio_mobile_aligned.hdr" if use_correct_axis_hdr else "res://src/assets/generated/learned_studio.hdr"
     if variant in ["narrow50", "narrow30"]:
         panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant
+    if variant == "narrow50_no_omni":
+        panorama_path = "res://src/assets/generated/learned_studio_mobile_narrow50.hdr"
     var same_studio_hdr := load(panorama_path) as Texture2D
     if same_studio_hdr == null:
         push_error("Shared Blender HDR studio environment did not import into Godot")
@@ -106,7 +110,7 @@ func _capture_main() -> void:
     ]:
         var omni := OmniLight3D.new()
         omni.position = spec.pos
-        omni.light_energy=spec.energy
+        omni.light_energy=0.0 if variant == "narrow50_no_omni" else spec.energy
         omni.light_color=spec.color
         omni.omni_range=15
         omni.light_size=.8
