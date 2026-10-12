@@ -11,11 +11,13 @@ out = Path("build/d20-compare")
 source = out / "blender_cycles.png"
 godot_original = out / "godot_source.png"
 godot_production = out / "godot_production.png"
+# Compare the ACTUAL app-target Mobile renderer on Mesa/Lavapipe, never
+# pretending it is real hardware. Compatibility originals stay in the ZIP.
 inputs = [
-    ("BLENDER / CYCLES", "Cycles, GLB unchanged", source),
-    ("GODOT / SOURCE GLB", "Compatibility, imported material", godot_original),
-    ("GODOT / STUDIO", "Compatibility, GLB unchanged + reflected softboxes", out / "godot_studio.png"),
-    ("STUDIO + GAME", "Compatibility, studio + production overrides", out / "godot_studio_production.png"),
+    ("BLENDER / CYCLES", "Cycles, canonical GLB", source),
+    ("GODOT / MOBILE BASE", "Original GLB / no reflected studio", out / "godot_mobile_source.png"),
+    ("GODOT / MOBILE SKY", "Same GLB + authored reflective sky", out / "godot_mobile_studio.png"),
+    ("GODOT / MOBILE PROBE", "Same GLB + real emissive-panel probe", out / "godot_mobile_probe.png"),
 ]
 images = []
 for head, desc, p in inputs:
@@ -49,7 +51,8 @@ from PIL import ImageChops
 base_img=images[1][3]
 studio_img=images[2][3]
 changed=ImageChops.difference(base_img, studio_img)
-assert changed.getbbox() is not None, "Studio sky has NO actual Godot pixel effect"
+assert changed.getbbox() is not None, "Studio sky has NO actual Godot Mobile pixel effect"
+assert ImageChops.difference(images[2][3], images[3][3]).getbbox() is not None, "Reflection probe has NO actual Godot Mobile pixel effect"
 # Film / game art judgment cannot be automated by this numeric smoke.
 pixel_stats={
  "baseline_rgb_mean":[round(v,2) for v in ImageStat.Stat(base_img).mean],
@@ -61,10 +64,11 @@ sheet.save(final)
 manifest={
  "source_sha":os.environ.get("GITHUB_SHA","unknown"),
  "generator":"REAL Blender Cycles + REAL Godot engine; Pillow composites screenshots only",
- "comparison_limitations":"Godot gl_compatibility cannot duplicate physical Cycles disk area lights/tonemap. Studio sky is a controlled new reflection test, not matched studio exposure or phone. Godot Mobile on Lavapipe (if present) is not ARM Android.",
+ "comparison_limitations":"One exact GLB; Cycles disk lamps versus Godot Mobile source/studio/probe. No physically matched illumination/tonemapper. Godot Mobile on desktop Mesa/Lavapipe is NOT Android handset evidence.",
  "d20_glb_sha256":hashlib.sha256(Path("src/assets/generated/d20_boolean_engraved.glb").read_bytes()).hexdigest(),
  "studio_ab_delta":pixel_stats,
- "other_authentic_capture_sha256":{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [godot_production, out/"godot_mobile_source.png", out/"godot_mobile_studio.png"] if p.is_file()},
+ "other_authentic_capture_sha256":{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [godot_original, godot_production, out/"godot_studio.png", out/"godot_studio_production.png"] if p.is_file()},
+ "probe_ab_delta":{"mobile_sky_rgb_mean":[round(v,2) for v in ImageStat.Stat(images[2][3]).mean],"mobile_probe_rgb_mean":[round(v,2) for v in ImageStat.Stat(images[3][3]).mean],"difference_bbox":ImageChops.difference(images[2][3], images[3][3]).getbbox()},
  "panels":[{"name":name,"source_png":p.name,"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"std_rgb":std} for name,desc,p,im,std in images],
  "montage_sha256":hashlib.sha256(final.read_bytes()).hexdigest()
 }

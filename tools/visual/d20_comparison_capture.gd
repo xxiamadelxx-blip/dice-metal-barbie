@@ -18,7 +18,9 @@ func _run() -> void:
 			variant = "studio"
 		elif arg == "--variant=studio_production":
 			variant = "studio_production"
-	if variant not in ["source","production","studio","studio_production"]:
+		elif arg == "--variant=probe":
+			variant = "probe"
+	if variant not in ["source","production","studio","studio_production","probe"]:
 		push_error("Invalid render variant")
 		quit(3)
 		return
@@ -70,7 +72,7 @@ func _run() -> void:
 	# reflective sky. Source and production variants preserve the old scene.
 	# This sky never becomes the game's background: the black/green table
 	# and fixed camera retain their approved gameplay constraints.
-	if variant in ["studio", "studio_production"]:
+	if variant in ["studio", "studio_production", "probe"]:
 		var sky := Sky.new()
 		sky.radiance_size = Sky.RADIANCE_SIZE_256
 		var sky_material := ShaderMaterial.new()
@@ -83,6 +85,44 @@ func _run() -> void:
 		print("D20_STUDIO_REFLECTION_SOURCE: SKY, authored procedural softboxes, not Cycles")
 	env_node.environment = env
 	stage.add_child(env_node)
+	if variant == "probe":
+		# Offline studio-light fixtures rendered ONLY to reflection layer #2,
+		# invisible to the inspection camera; no painted or generated dice image.
+		# ReflectionProbe captures real emissive panels without self-reflection.
+		for spec in [
+			{"pos": Vector3(-2.6, 2.4, -2.3), "size": Vector2(2.1, 3.0), "color": Color(1.0, 0.80, 0.62)},
+			{"pos": Vector3(2.3, 2.8, 1.5), "size": Vector2(1.8, 2.6), "color": Color(0.65, 0.80, 1.0)},
+		]:
+			var panel := MeshInstance3D.new()
+			panel.name = "PhysicalStudioSoftbox_ProbeOnly"
+			var quad := QuadMesh.new()
+			quad.size = spec["size"]
+			panel.mesh = quad
+			panel.layers = 2
+			panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			panel.position = spec["pos"]
+			panel.look_at(Vector3.ZERO, Vector3.UP)
+			var emissive := StandardMaterial3D.new()
+			emissive.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			emissive.cull_mode = BaseMaterial3D.CULL_DISABLED
+			emissive.albedo_color = spec["color"]
+			emissive.emission_enabled = true
+			emissive.emission = spec["color"]
+			emissive.emission_energy_multiplier = 10.0
+			panel.material_override = emissive
+			stage.add_child(panel)
+		var reflection := ReflectionProbe.new()
+		reflection.name = "MobileD20StudioReflectionProbe"
+		reflection.position = Vector3.ZERO
+		reflection.size = Vector3(8.0, 8.0, 8.0)
+		reflection.cull_mask = 2
+		reflection.reflection_mask = 1
+		reflection.update_mode = ReflectionProbe.UPDATE_ONCE
+		reflection.box_projection = false
+		reflection.intensity = 1.8
+		reflection.enable_shadows = false
+		stage.add_child(reflection)
+		print("D20_REAL_REFLECTION_PROBE_READY: two authored emissive mesh panels; UPDATE_ONCE; separate camera/probe layers")
 	# Coordinate mapping Blender Z-up -> Godot Y-up: (x,y,z) -> (x,z,-y).
 	# OmniLights are a visible limitation: Godot gl_compatibility has no
 	# physical Cycles disk-shaped area sources; record, do not conceal, mismatch.

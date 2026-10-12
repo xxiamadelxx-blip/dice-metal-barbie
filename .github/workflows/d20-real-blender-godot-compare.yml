@@ -47,7 +47,6 @@ jobs:
           grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-studio.log
           grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-studio-production.log
       - name: Attempt separate Godot Mobile desktop rendering (not Android)
-        continue-on-error: true
         run: |
           set +e
           cp build/d20-compare/godot_source.png build/d20-compare/godot_source_backup.png
@@ -65,7 +64,14 @@ jobs:
             mv build/d20-compare/godot_studio.png build/d20-compare/godot_mobile_studio.png
           fi
           mv build/d20-compare/godot_studio_backup.png build/d20-compare/godot_studio.png
-          echo "Mobile studio attempt exit=$studio_result; emulator/software renderer, NOT handset" | tee build/d20-compare/mobile-studio-status.txt
+          echo "Mobile studio attempt exit=$studio_result; software renderer, NOT handset" | tee build/d20-compare/mobile-studio-status.txt
+          # Experimental one-shot real captured mobile reflection probe.
+          # Strict: a missing probe frame or script error must be visible as FAIL.
+          xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method mobile --script res://tools/visual/d20_comparison_capture.gd -- --variant=probe > build/d20-compare/godot-mobile-probe.log 2>&1 || { tail -100 build/d20-compare/godot-mobile-probe.log; exit 1; }
+          test -s build/d20-compare/godot_probe.png
+          grep -F "D20_REAL_REFLECTION_PROBE_READY" build/d20-compare/godot-mobile-probe.log
+          grep -F "PASS ACTUAL GODOT FRAME" build/d20-compare/godot-mobile-probe.log
+          mv build/d20-compare/godot_probe.png build/d20-compare/godot_mobile_probe.png
           echo "Mobile-on-desktop attempt exit=$result; NOT a physical Android GPU proof" | tee build/d20-compare/mobile-status.txt
           exit 0
       - name: Compose original unretouched panels with provenance, fail on blank frames
