@@ -56,6 +56,28 @@ jobs:
           assert 'metallicRoughnessTexture' in m['pbrMetallicRoughness']
           assert 'normalTexture' in m
           assert 'KHR_materials_clearcoat' in m.get('extensions',{}),m.get('extensions',{})
+          # Validate actual PNG bytes in glTF, not only existence of slots!
+          import io
+          import numpy as np
+          from PIL import Image
+          bpos=20+n
+          bl,magic=struct.unpack_from('<II',f,bpos)
+          assert magic==0x004e4942
+          blob=f[bpos+8:bpos+8+bl]
+          def pixels(index):
+            image=g['images'][g['textures'][index]['source']]
+            view=g['bufferViews'][image['bufferView']]
+            raw=blob[view.get('byteOffset',0):view.get('byteOffset',0)+view['byteLength']]
+            return np.array(Image.open(io.BytesIO(raw)).convert('RGB'))
+          color=pixels(m['pbrMetallicRoughness']['baseColorTexture']['index'])
+          packed=pixels(m['pbrMetallicRoughness']['metallicRoughnessTexture']['index'])
+          cm=color.mean(axis=(0,1))
+          orm=packed.mean(axis=(0,1))
+          assert all(18<k<36 for k in cm),('RGB albedo almost black',cm)
+          assert 250<orm[0]<=255 and 30<orm[1]<65 and orm[2]<5,('Broken PBR ORM',orm)
+          assert m['occlusionTexture']['index']==m['pbrMetallicRoughness']['metallicRoughnessTexture']['index']
+          print('PASS REAL GLTF BYTE CHANNELS albedo',cm,'ORM R/G/B',orm,
+                'neutral AO pending real verified spatial bake')
           print('PASS INDEPENDENT BLENDER GLB true gold nodes',len(named),'PBR, dielectric and coat')
           PY
       - name: Godot real import and native Compatibility 3D viewport PNG

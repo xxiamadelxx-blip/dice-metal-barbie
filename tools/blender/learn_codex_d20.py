@@ -3,7 +3,7 @@ Creates true engraved Boolean stone + recessed gold, real 1024 PBR maps,
 exports glTF, deletes original die, reimports own GLB and renders with Cycles.
 No image generation; graphics are Blender/Godot original engine frames.
 """
-import bpy, math, sys, json, hashlib, time
+import bpy, math, sys, json, hashlib, time, struct
 from pathlib import Path
 import numpy as np
 from mathutils import Vector, Matrix, Quaternion
@@ -38,7 +38,10 @@ def maps():
          + np.sin(y*.012+np.sin(x*.008))*.30
          + np.sin((x+y)*.035)*.13
          + rng.normal(0,.08,(n,n)).astype(np.float32))
-    stone=np.stack((.012+tile*.002,.014+tile*.002,.017+tile*.0025),axis=2).astype(np.float32)
+    # Source RGB PNG bytes must be ~23/25/28 (Codex instruction), NOT
+    # 3/4/4 as in the failed proof. Image.save stores these as PNG byte
+    # values, and glTF BaseColorTexture decodes sRGB when imported.
+    stone=np.stack((.090+tile*.006,.098+tile*.006,.110+tile*.007),axis=2).astype(np.float32)
     r=np.clip(.17 + tile*.025,.12,.225)
     mr=np.stack((np.ones_like(r),r,np.zeros_like(r)),axis=2).astype(np.float32)
     # Real tangent-space Normal Map (OpenGL +Y), gentle polished microscopic relief.
@@ -112,6 +115,61 @@ def face_uv(mesh,face_specs):
             uv.data[li].uv=((col+.5+u)/5.,(row+.5+t)/4.)
     assert min(count)>0
     log("UV0 5x4 face tiles polys",count)
+
+
+def enforce_exported_pbr_channels(glb, mr_png):
+    """Fix real BIN-packed glTF ORM payload AFTER Blender exporter.
+    The original source-image connection was silently exported as ORM
+    R=0/G=255/B=0 (black AO + matte roughness) despite "all slots present".
+    Keep geometry, UV, separate original gold and all other textures intact.
+    Use authored genuine roughness G and *NEUTRAL* AO R=1 until a
+    genuine validated spatial AO bake is available. This is NOT a fake AO bake.
+    """
+    data=glb.read_bytes()
+    magic,version,total=struct.unpack_from("<III",data,0)
+    assert magic==0x46546c67 and version==2 and total==len(data)
+    jl,jtag=struct.unpack_from("<II",data,12)
+    assert jtag==0x4e4f534a
+    doc=json.loads(data[20:20+jl])
+    bpos=20+jl
+    bl,btag=struct.unpack_from("<II",data,bpos)
+    assert btag==0x004e4942
+    blob=bytearray(data[bpos+8:bpos+8+bl])
+    material=next(m for m in doc["materials"] if m.get("name")=="PolishedObsidian")
+    mr_index=material["pbrMetallicRoughness"]["metallicRoughnessTexture"]["index"]
+    image_id=doc["textures"][mr_index]["source"]
+    image=doc["images"][image_id]
+    mr_bytes=mr_png.read_bytes()
+    assert mr_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+    # Source is an actual numeric image with source G=0.17; source R=1
+    # leaves occlusion neutral, B=0 for a dielectric.
+    padding=(-len(blob))%4
+    if padding: blob.extend(b"\x00"*padding)
+    begin=len(blob)
+    blob.extend(mr_bytes)
+    if len(blob)%4:blob.extend(b"\x00"*((-len(blob))%4))
+    view_index=image["bufferView"]
+    doc["bufferViews"][view_index]["byteOffset"]=begin
+    doc["bufferViews"][view_index]["byteLength"]=len(mr_bytes)
+    image["name"]="VerifiedStudioNeutralAO_AuthoredRoughness"
+    image["mimeType"]="image/png"
+    material["occlusionTexture"]={"index":mr_index,"strength":1}
+    material["pbrMetallicRoughness"]["metallicFactor"]=0
+    material["pbrMetallicRoughness"].pop("roughnessFactor",None)
+    doc["buffers"][0]["byteLength"]=len(blob)
+    jsondata=json.dumps(doc,separators=(",",":"),ensure_ascii=False).encode("utf-8")
+    jsondata+=b" "*((-len(jsondata))%4)
+    total_len=12+8+len(jsondata)+8+len(blob)
+    rebuilt=(struct.pack("<III",magic,version,total_len)
+            +struct.pack("<II",len(jsondata),0x4e4f534a)+jsondata
+            +struct.pack("<II",len(blob),0x004e4942)+bytes(blob))
+    assert len(rebuilt)==total_len
+    glb.write_bytes(rebuilt)
+    log("REAL_GLTF_ORM_REPAIRED",'red AO neutral 1.0; GREEN authored roughness ~0.17; BLUE metallic 0',
+        "image_bytes",len(mr_bytes),"new_glb_sha",hashlib.sha256(rebuilt).hexdigest())
+    return {"source_ao":"UNVERIFIED, neutral white R=1 fallback",
+            "roughness":"AUTHORED numeric G channel, source range ~0.14..0.20",
+            "glb_image_buffer_repair":True}
 
 def build():
     bpy.ops.object.select_all(action="SELECT");bpy.ops.object.delete(use_global=False)
@@ -218,6 +276,7 @@ def build():
     glb=ROOT/"learned_d20.glb"
     bpy.ops.export_scene.gltf(filepath=str(glb),export_format="GLB",use_selection=True,export_yup=True)
     log("GLB_EXPORT",glb,glb.stat().st_size)
+    repaired_orm=enforce_exported_pbr_channels(glb,ROOT/"learned_obsidian_metalrough.png")
     # Scene both for user's .blend and independent round-trip rendering.
     add_studio()
     bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/"authored.blend"))
@@ -231,6 +290,7 @@ def build():
     log("BLENDER_SOURCE_GLTF_ROUNDTRIP_RENDER",ROOT/"blender_cycles.png")
     receipt={"shader":"real authored PBR, dielectric metallic=0, coat=.20, coat rough=.09",
              "num_original_glyphs":glyph_count,"boolean_polygons":stone_polygon_count,
+             "exported_pbr":repaired_orm,
              "face_numbers":numbers,"cycles_ao":ao_status,
              "source_glb_sha256":hashlib.sha256(glb.read_bytes()).hexdigest(),
              "roundtrip_mesh_count":len(imported),"blender":bpy.app.version_string}
