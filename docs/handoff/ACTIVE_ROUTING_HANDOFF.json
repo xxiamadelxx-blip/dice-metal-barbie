@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 independent self-authored Codex-instruction D20 production exercise: PBR pixel repair passed, artistic parity NOT MET",
+    "task": "M5 independent D20: corrected raised-looking shiny edge trim; art parity with Codex still open",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "isolated experiment branch, not PR23/main; Codex GLB never used as input",
-    "next_action": "Read docs/research/M5_INDEPENDENT_CODEX_LEARNING_D20_2026-10-12.md and artifact #38273994084. Real channels corrected albedo RGB(23,25,28), ORM(255,43.58,0). AO is neutral fallback NOT real bake; fix actual spatial AO and reflection/highlight direction in genuine Mobile. Compare source screenshot to Codex reference, then run Jolt/Android only after art approval. Do not merge.",
+    "owner": "isolated proof branch; real native Blender/Godot test",
+    "next_action": "Source run #38278837373 and docs/research/M5_D20_EDGE_PROFILE_FIX_2026-10-12.md. Edge chamfer .023->.010, material satin .31 roughness, coat .05/.30; measured outward plane error 4.47e-8. Preserve this fix, continue with true g glossy reflection & numeral inlay quality toward Codex, but do not erase separate source GLB. Full Jolt/Android M4 pending, owner art acceptance NOT_VERIFIED.",
     "blockers": [
-      "Independent D20 Cycles and Godot Mobile art still visibly inferior to Codex reference; user premium art approval NOT_VERIFIED.",
-      "Exported Cycles AO PNG is all black; packed glTF AO is explicitly neutral R=255 fallback, spatial AO pending.",
-      "Physical 6/9 punctuations, semantic Jolt collision/face mapping, true Android and Nord 3 acceptance remain NOT_VERIFIED.",
-      "PR23 M4 AVD source-reroll selector gate remains open; main untouched."
+      "Independent D20 has substantially reduced false raised metallic rim, but premium Codex-equivalent specular facet quality still NOT_APPROVED.",
+      "AO remains neutral white fallback; 'made' Cycles AO status does not prove spatial texture import.",
+      "Real Jolt face orientation, 24fps physics, Android AVD and actual OnePlus Nord 3 remain NOT_VERIFIED.",
+      "PR23/M4 Android source-reroll selector still open; main and PR23 untouched."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -102,13 +102,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/feat/m5-d20-reference-godot-proof/docs/research/D20_REFERENCE_GODOT_PROOF_2026-10-12.md",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38239424270",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38273994084",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38271331715"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38271331715",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38278837373",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38278837373/artifacts/11760546884"
     ],
-    "last_observed_sha": "da42b5bd1fed13ce0883613dca438200261971e5",
-    "last_verified_sha": "da42b5bd1fed13ce0883613dca438200261971e5",
+    "last_observed_sha": "5941b1096a48a50b731d167d230a04deab03c382",
+    "last_verified_sha": "5941b1096a48a50b731d167d230a04deab03c382",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-12",
-    "verification_note": "Exact-source #38273994084: real Blender 4.0.2 roundtrip and original Godot Compatibility+Mobile Mesa screenshots, glTF embedded RGB means (23.012,25.049,28.115), ORM (255,43.58,0), 21 meshes/20 gold digits, GLB hash 85dbd1d...; no real spatial AO or game art acceptance."
+    "verification_note": "Original true Cycles/Godot source screenshots and actual user requested 2x2 A/B composite locally verified. Edge material after real GLB export roughness .31 coat .05/.30 and color means 23/25/28 with ORM 255/43.58/0. Geometric halfspace maximum protrusion 4.47e-8. Android hardware/owner premium art NOT_VERIFIED."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
