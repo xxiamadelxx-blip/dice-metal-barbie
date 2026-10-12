@@ -21,7 +21,10 @@ func _capture_main() -> void:
     world = Node3D.new()
     viewport.add_child(world)
     var imported := load(SOURCE) as PackedScene
-    assert(imported != null, "Exact source GLB not available")
+    if imported == null:
+        push_error("FATAL: real D20 glTF not imported; ensure --editor --import --quit")
+        quit(44)
+        return
     var d20 := imported.instantiate() as Node3D
     assert(d20 != null)
     world.add_child(d20)

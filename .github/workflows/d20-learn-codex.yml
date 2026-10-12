@@ -57,7 +57,15 @@ jobs:
           PY
       - name: Godot real import and native Compatibility 3D viewport PNG
         run: |
-          godot --headless --path . --editor --quit > build/learned-d20/import.log 2>&1 || { tail -100 build/learned-d20/import.log; exit 1; }
+          # The build directory contains .blend roundtrip evidence which is NOT a
+          # runtime resource. Godot tries to import it as a source if not ignored.
+          touch build/.gdignore
+          timeout 100 godot --headless --path . --editor --import --quit > build/learned-d20/import.log 2>&1 || { tail -100 build/learned-d20/import.log; exit 1; }
+          if grep -E 'ERROR:|SCRIPT ERROR:|Parse Error' build/learned-d20/import.log; then
+            echo "Godot editor importer emitted errors (must not issue false PASS)"
+            exit 42
+          fi
+          test -s src/assets/generated/learned_d20.glb
           timeout 70 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd > build/learned-d20/godot-compat.log 2>&1 || { tail -120 build/learned-d20/godot-compat.log; exit 1; }
           grep -F "LEARNED_D20_GODOT_REAL_FRAME" build/learned-d20/godot-compat.log
           if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace' build/learned-d20/godot-compat.log; then cat build/learned-d20/godot-compat.log; exit 40; fi
