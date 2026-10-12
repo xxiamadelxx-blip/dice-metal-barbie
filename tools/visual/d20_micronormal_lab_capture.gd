@@ -230,7 +230,7 @@ func _apply_brdf_to_stone(d20: Node3D, variant: String) -> int:
     var total := 0
     var micro_map: Texture2D = null
     if variant in ["micro_006","micro_012","micro_020"]:
-        var slope := {"micro_006":.06,"micro_012":.12,"micro_020":.20}[variant]
+        var slope: float = {"micro_006":.06,"micro_012":.12,"micro_020":.20}[variant]
         micro_map = _make_face_micro_normal_atlas(slope)
     for child in d20.get_children():
         total += _override_d20_material_recursive(child, variant, micro_map)
