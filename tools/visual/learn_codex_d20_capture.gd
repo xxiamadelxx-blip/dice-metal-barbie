@@ -109,14 +109,23 @@ func _review_materials(node: Node) -> int:
         assert(material!=null)
         if "D20_Engraved" in str(n.name):
             assert(material.albedo_texture != null, "PBR albedo lost")
+            var is_edge := "EdgeSatin" in str(material.resource_name)
             assert(material.normal_texture != null, "Normal slot lost")
-            assert(material.roughness_texture != null, "Roughness slot lost")
-            material.clearcoat_enabled=true
-            material.clearcoat=.20
-            material.clearcoat_roughness=.09
-            print("LEARNED_D20_MATERIAL_OBSIDIAN stone metallic=",material.metallic,
-                " coat=",material.clearcoat," roughness_tex=",material.roughness_texture!=null,
-                " ao=",material.ao_enabled)
+            if is_edge:
+                assert(material.roughness_texture == null, "Bevel is meant to have constant satin roughness")
+                material.roughness = .31
+                material.clearcoat_enabled = true
+                material.clearcoat = .05
+                material.clearcoat_roughness = .30
+            else:
+                assert(material.roughness_texture != null, "Primary face roughness map lost")
+                material.clearcoat_enabled = true
+                material.clearcoat = .20
+                material.clearcoat_roughness = .09
+            print("LEARNED_D20_FACET_EDGE_MATERIAL edge=",is_edge,
+                " material=",material.resource_name,
+                " roughness=",material.roughness," coat=",material.clearcoat,
+                " normal_tex=",material.normal_texture!=null)
         elif "Gold_" in str(n.name):
             material.clearcoat_enabled=true
             material.clearcoat=.06

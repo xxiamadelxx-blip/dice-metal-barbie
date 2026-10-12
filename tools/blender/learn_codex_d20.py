@@ -177,8 +177,21 @@ def build():
     stone=mat("PolishedObsidian",0.0,.17,(.015,.017,.020),.20)
     gold=mat("GoldRecessedNoEmission",1.0,.29,(.56,.335,.105),.06)
     place_maps(stone,ims)
+    # Key visual complaint: bright specular bevel reads as a raised metal
+    # picture-frame around each triangle. Real bevel must REMOVE stone, not
+    # add a ridge. Give only chamfer polygons a broader, darker microhighlight.
+    edge=stone.copy()
+    edge.name="PolishedObsidian_EdgeSatin"
+    edge_bs=edge.node_tree.nodes.get("Principled BSDF")
+    for link in list(edge_bs.inputs["Roughness"].links):
+        edge.node_tree.links.remove(link)
+    edge_bs.inputs["Roughness"].default_value=.31
+    edge_bs.inputs["Coat Weight"].default_value=.05
+    edge_bs.inputs["Coat Roughness"].default_value=.30
     bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=1)
-    shell=bpy.context.object;shell.name="D20_Engraved_Obsidian";shell.data.materials.append(stone)
+    shell=bpy.context.object;shell.name="D20_Engraved_Obsidian"
+    shell.data.materials.append(stone)
+    shell.data.materials.append(edge)
     assert len(shell.data.polygons)==20
     # Rotate one primary triangular face to the actual +Z inspection direction.
     top=max(shell.data.polygons,key=lambda p:p.normal.z)
@@ -215,11 +228,20 @@ def build():
         # consume v's opposite only once
         # iterator values may be unused; ensure distinct set at the end
     assert sorted(numbers)==list(range(1,21)),numbers
-    # 0.023 polished four-segment bevel, not smoothed triangular faces.
-    bev=shell.modifiers.new("Physical_edge_polish","BEVEL")
-    bev.width=.023;bev.segments=4;bev.limit_method="ANGLE";bev.angle_limit=.34
+    # Geometry A/B: original edge width .023/4 segments formed an overly
+    # bright apparent raised rim. Shrink the cut to .010/3 segments. Use
+    # index 1 satin dielectric only for chamfer polygons, leaving all 20
+    # triangular numbered face planes perfectly flat and polished.
+    bev=shell.modifiers.new("INWARD_10MM_EQUIVALENT_EDGE_CUT","BEVEL")
+    bev.width=.010;bev.segments=3;bev.limit_method="ANGLE";bev.angle_limit=.34
+    bev.material=1
     active(shell);bpy.ops.object.modifier_apply(modifier=bev.name)
-    for f in shell.data.polygons:f.use_smooth=False
+    edge_poly_count=sum(1 for f in shell.data.polygons if f.material_index==1)
+    assert edge_poly_count>15, "Bevel was not assigned to satin, ridge may remain"
+    for f in shell.data.polygons:
+        f.use_smooth = f.material_index==1
+    log("RECESSED_EDGE_PROFILE",{"bevel_width":.010,"segments":3,
+        "satin_bevel_polygons":edge_poly_count})
     fnt=Path("/usr/share/fonts/truetype/dejavu/DejaVuSerifCondensed-Bold.ttf")
     assert fnt.is_file(),"Codex-profile licensed typeface absent"
     font=bpy.data.fonts.load(str(fnt))
@@ -241,6 +263,14 @@ def build():
     active(shell);bpy.ops.object.modifier_apply(modifier=mod.name)
     bpy.data.objects.remove(union,do_unlink=True)
     assert len(shell.data.polygons)>100
+    # An actual raised border would project BEYOND any original flat face
+    # plane. Evaluate each source face halfspace against every FINAL Boolean
+    # vertex, not merely the apparent edge highlight on a PNG.
+    worst_protrusion=max(
+       (v.co-sp["center"]).dot(sp["normal"])
+       for v in shell.data.vertices for sp in face_specs)
+    assert worst_protrusion < .0002, ("BEVEL OUTSIDE ORIGINAL D20 SURFACE",worst_protrusion)
+    log("PASS_EDGES_NOT_ABOVE_FACE_PLANES",round(worst_protrusion,7))
     face_uv(shell.data,face_specs)
     # True AO through Cycles on active image node, non-fatal but honestly audited.
     ao=bpy.data.images.new("Learned_Actual_Cycles_AO",width=1024,height=1024,alpha=False)
@@ -290,6 +320,9 @@ def build():
     log("BLENDER_SOURCE_GLTF_ROUNDTRIP_RENDER",ROOT/"blender_cycles.png")
     receipt={"shader":"real authored PBR, dielectric metallic=0, coat=.20, coat rough=.09",
              "num_original_glyphs":glyph_count,"boolean_polygons":stone_polygon_count,
+             "edge_treatment":{"bevel_width":.010,"segments":3,"material":"PolishedObsidian_EdgeSatin",
+                 "edge_roughness":.31,"face_roughness_mean":.17,
+                 "raised_edge_geometry_positive_error":float(worst_protrusion)},
              "exported_pbr":repaired_orm,
              "face_numbers":numbers,"cycles_ao":ao_status,
              "source_glb_sha256":hashlib.sha256(glb.read_bytes()).hexdigest(),
