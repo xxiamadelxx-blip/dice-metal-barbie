@@ -4,6 +4,7 @@ on:
     branches: [experiment/m5-learn-codex-d20]
     paths:
       - "tools/visual/d20_hdr_alignment.py"
+      - "tools/visual/d20_narrow_studio.py"
       - "tools/visual/learn_codex_d20_capture.gd"
       - ".github/workflows/d20-hdr-axis-study.yml"
   workflow_dispatch:
@@ -43,6 +44,9 @@ jobs:
           python3 tools/visual/d20_hdr_alignment.py build/learned-d20/learned_studio.hdr build/learned-d20/learned_studio_mobile_aligned.hdr > build/learned-d20/hdr-alignment.log
           grep -F PASS_TRUE_RADIANCE_HDR_COORDINATE_REMAP build/learned-d20/hdr-alignment.log
           cp build/learned-d20/learned_studio_mobile_aligned.hdr src/assets/generated/learned_studio_mobile_aligned.hdr
+          python3 tools/visual/d20_narrow_studio.py build/learned-d20/learned_studio.hdr build/learned-d20/ > build/learned-d20/narrow-studio.log
+          grep -F PASS_AUTHORED_NARROW_STUDIO_CARD_MAPS build/learned-d20/narrow-studio.log
+          cp build/learned-d20/learned_studio_mobile_narrow*.hdr src/assets/generated/
           touch build/.gdignore
       - name: Import physical GLB and two real HDR files into Godot
         run: |
@@ -51,7 +55,7 @@ jobs:
       - name: Capture three actual Godot 4.6.3 Mobile Vulkan source frames
         run: |
           set -eu
-          for variant in ibl aligned aligned_boost; do
+          for variant in ibl aligned aligned_boost narrow50 narrow30; do
             timeout 90 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant="$variant" > "build/learned-d20/probe-$variant.log" 2>&1 || { tail -95 "build/learned-d20/probe-$variant.log"; exit 21; }
             grep -F LEARNED_D20_SEPARATE_SURFACES_OK "build/learned-d20/probe-$variant.log"
             grep -F LEARNED_D20_GODOT_REAL_FRAME "build/learned-d20/probe-$variant.log"
@@ -68,7 +72,9 @@ jobs:
           panels=[("BLENDER CYCLES",d/"blender_cycles.png"),
                   ("GODOT MOBILE / OLD HDR",d/"godot_ibl.png"),
                   ("GODOT MOBILE / AXES CORRECT",d/"godot_aligned.png"),
-                  ("GODOT MOBILE / AXES + 3x",d/"godot_aligned_boost.png")]
+                  ("GODOT MOBILE / AXES + 3x",d/"godot_aligned_boost.png"),
+                  ("MOBILE / NARROW CARD 50%",d/"godot_narrow50.png"),
+                  ("MOBILE / NARROW CARD 30%",d/"godot_narrow30.png")]
           images=[];metrics={}
           for label,p in panels:
             with Image.open(p) as r:
@@ -80,14 +86,15 @@ jobs:
             metrics[p.name]={"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"mean_luma":round(float(luma.mean()),2),"p90_luma":round(float(np.percentile(luma,90)),2),"bright_fraction_100":round(float((luma>100).mean()),4)}
             images.append(im)
           assert ImageChops.difference(images[1],images[2]).getbbox() is not None,"Axes fix had zero effect"
-          out=Image.new("RGB",(2030,1830),(15,19,22))
+          assert ImageChops.difference(images[2],images[4]).getbbox() is not None,"Narrow studio card had zero real engine pixel effect"
+          out=Image.new("RGB",(2030,2730),(15,19,22))
           draw=ImageDraw.Draw(out)
           font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",24)
           for i,((label,_),im) in enumerate(zip(panels,images)):
             x=10+(i%2)*1010;y=43+(i//2)*890
             draw.text((x,y-32),label,font=font,fill=(245,245,245))
             out.paste(im,(x,y))
-          out.save(d/"real_hdr_axis_ab.png")
+          out.save(d/"real_hdr_axis_and_card_size_ab.png")
           (d/"real_hdr_axis_manifest.json").write_text(json.dumps(metrics,indent=2)+"\n")
           print("PASS_REAL_GODOT_MOBILE_HDR_AXIS_EXPERIMENT",json.dumps(metrics))
           PY

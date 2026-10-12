@@ -2,6 +2,9 @@ name: D20 art-first learning from Codex (original mesh)
 on:
   push:
     branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/blender/learn_codex_d20.py"
+      - ".github/workflows/d20-learn-codex.yml"
   workflow_dispatch:
 permissions:
   contents: read
