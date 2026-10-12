@@ -1,0 +1,101 @@
+name: Real Godot Mobile HDR axes D20 diagnostic
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/visual/d20_hdr_alignment.py"
+      - "tools/visual/learn_codex_d20_capture.gd"
+      - ".github/workflows/d20-hdr-axis-study.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: real-d20-hdr-axis
+  cancel-in-progress: true
+jobs:
+  same-glb-axis:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install real Mesa software-rendering libraries
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          run-id: 38281898713
+          github-token: \${{ github.token }}
+          path: build/learned-d20
+      - name: Verify exact known source GLB and calculate remapped Radiance HDR
+        run: |
+          set -eu
+          sha256sum build/learned-d20/learned_d20.glb
+          echo "ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f  build/learned-d20/learned_d20.glb" | sha256sum --check
+          mkdir -p src/assets/generated
+          cp build/learned-d20/learned_d20.glb src/assets/generated/learned_d20.glb
+          cp build/learned-d20/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          python3 tools/visual/d20_hdr_alignment.py build/learned-d20/learned_studio.hdr build/learned-d20/learned_studio_mobile_aligned.hdr > build/learned-d20/hdr-alignment.log
+          grep -F PASS_TRUE_RADIANCE_HDR_COORDINATE_REMAP build/learned-d20/hdr-alignment.log
+          cp build/learned-d20/learned_studio_mobile_aligned.hdr src/assets/generated/learned_studio_mobile_aligned.hdr
+          touch build/.gdignore
+      - name: Import physical GLB and two real HDR files into Godot
+        run: |
+          timeout 100 godot --headless --path . --editor --import --quit > build/learned-d20/reimport.log 2>&1 || { tail -90 build/learned-d20/reimport.log; exit 1; }
+          if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' build/learned-d20/reimport.log; then tail -90 build/learned-d20/reimport.log; exit 20;fi
+      - name: Capture three actual Godot 4.6.3 Mobile Vulkan source frames
+        run: |
+          set -eu
+          for variant in ibl aligned aligned_boost; do
+            timeout 90 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant="$variant" > "build/learned-d20/probe-$variant.log" 2>&1 || { tail -95 "build/learned-d20/probe-$variant.log"; exit 21; }
+            grep -F LEARNED_D20_SEPARATE_SURFACES_OK "build/learned-d20/probe-$variant.log"
+            grep -F LEARNED_D20_GODOT_REAL_FRAME "build/learned-d20/probe-$variant.log"
+            test -s "build/learned-d20/godot_$variant.png"
+            if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' "build/learned-d20/probe-$variant.log";then exit 22;fi
+          done
+      - name: Compose only real engine pixels and provenance
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageDraw,ImageFont,ImageChops,ImageStat
+          import numpy as np,json,hashlib
+          from pathlib import Path
+          d=Path("build/learned-d20")
+          panels=[("BLENDER CYCLES",d/"blender_cycles.png"),
+                  ("GODOT MOBILE / OLD HDR",d/"godot_ibl.png"),
+                  ("GODOT MOBILE / AXES CORRECT",d/"godot_aligned.png"),
+                  ("GODOT MOBILE / AXES + 3x",d/"godot_aligned_boost.png")]
+          images=[];metrics={}
+          for label,p in panels:
+            with Image.open(p) as r:
+              assert r.size==(1000,850),(p,r.size)
+              im=r.convert('RGB')
+            assert max(ImageStat.Stat(im).stddev)>5,(p,"BLANK")
+            region=np.asarray(im)[150:730,250:780,:].astype(float)
+            luma=region.mean(axis=2)
+            metrics[p.name]={"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"mean_luma":round(float(luma.mean()),2),"p90_luma":round(float(np.percentile(luma,90)),2),"bright_fraction_100":round(float((luma>100).mean()),4)}
+            images.append(im)
+          assert ImageChops.difference(images[1],images[2]).getbbox() is not None,"Axes fix had zero effect"
+          out=Image.new("RGB",(2030,1830),(15,19,22))
+          draw=ImageDraw.Draw(out)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",24)
+          for i,((label,_),im) in enumerate(zip(panels,images)):
+            x=10+(i%2)*1010;y=43+(i//2)*890
+            draw.text((x,y-32),label,font=font,fill=(245,245,245))
+            out.paste(im,(x,y))
+          out.save(d/"real_hdr_axis_ab.png")
+          (d/"real_hdr_axis_manifest.json").write_text(json.dumps(metrics,indent=2)+"\n")
+          print("PASS_REAL_GODOT_MOBILE_HDR_AXIS_EXPERIMENT",json.dumps(metrics))
+          PY
+      - name: Publish real source engine images, independent manifest and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: REAL-Godot-Mobile-D20-HDR-axis
+          path: build/learned-d20/
+          retention-days: 14
+          if-no-files-found: warn
