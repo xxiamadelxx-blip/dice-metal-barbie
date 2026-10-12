@@ -24,7 +24,7 @@ jobs:
       - name: Install real Mesa software-rendering libraries
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core fontconfig libfontconfig1
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core fontconfig libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
           godot --version
       - uses: actions/download-artifact@v4
         with:
