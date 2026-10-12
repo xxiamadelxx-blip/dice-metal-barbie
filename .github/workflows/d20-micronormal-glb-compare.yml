@@ -1,4 +1,4 @@
-name: M5 D20 original GLB versus authored micronormal GLB - real Mobile
+name: M5 D20 prior striped vs C1-smooth authored normal GLBs - real Mobile three-yaw
 on:
   push:
     branches: [experiment/m5-learn-codex-d20]
@@ -28,13 +28,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: REAL-M5-D20-Blender-GLB-micronormal-Godot-Mobile
-          run-id: 38296322475
+          run-id: 38305802712
           github-token: ${{ github.token }}
           path: build/new
       - uses: actions/download-artifact@v4
         with:
-          name: REAL-D20-Godot-Mobile-micronormal-three-angle-roll-visual
-          run-id: 38295279142
+          name: M5-REAL-BLENDER-GLB-MICRONORMAL-ROTATION-A-B
+          run-id: 38303606399
           github-token: ${{ github.token }}
           path: build/old
       - name: Validate exact source GLBs and unchanged mesh positions
@@ -54,8 +54,8 @@ jobs:
               return h,obj,chunk
           old_sha,og,ob=unpack(d/'old/learned_d20.glb')
           new_sha,ng,nb=unpack(d/'new/learned_d20.glb')
-          assert old_sha=='ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f',old_sha
-          assert new_sha=='f9c7fe2403878e06e5fd7cab71bf80e3d4c05a7334073e30d232e7c09b678589',new_sha
+          assert old_sha=='f9c7fe2403878e06e5fd7cab71bf80e3d4c05a7334073e30d232e7c09b678589',old_sha
+          assert new_sha=='e83e2aa139752ad5640b09f6404c205742937ad24c3b7c35a8946ad7ebdb3431',new_sha
           def positions(g,blob):
               pts=set()
               for primitive in g['meshes'][0]['primitives']:
@@ -74,9 +74,9 @@ jobs:
           assert a.count('PolishedObsidian_EdgeSatin')>=1 and b.count('PolishedObsidian_EdgeSatin')>=1
           assert len([n for n in ng['nodes'] if n.get('name','').startswith('Gold_')])==20
           print('PASS_PROVEN_PHYSICALLY_IDENTICAL_D20_VERTICES',len(left),'before',a,'after',b)
-          manifest={'before_glb':old_sha,'authored_micronormal_glb':new_sha,
+          manifest={'striped_cusp_glb':old_sha,'smooth_radial_glb':new_sha,
               'mesh_unique_positions':len(left),'geometry_changed':False,
-              'before_primitives':a,'after_primitives':b,'reason_for_prior_failure':'bad assertion on primitive count, not damaged bevel'}
+              'before_primitives':a,'after_primitives':b,'normal_field_change':'piecewise min edge fade replaced by C1-soft radius .49 slope .18'}
           (d/'new/micronormal-comparison-source.json').write_text(json.dumps(manifest,indent=2)+'\n')
           PY
       - name: Import actual Blender authored GLB with real HDR, no runtime micro map
@@ -123,7 +123,7 @@ jobs:
                   assert im.size==(1000,850) and max(ImageStat.Stat(im).stddev)>5
                   frames.append(im)
                   x=8+col*1010; y=39+row*897
-                  draw.text((x,y-30),f'YAW {yaw} / '+('OLD GLB' if row==0 else 'NEW BLENDER GLB'),font=font,fill='white')
+                  draw.text((x,y-30),f'YAW {yaw} / '+('OLD STRIPED' if row==0 else 'NEW RADIAL'),font=font,fill='white')
                   out.paste(im,(x,y))
                   records[f'{row}_{fn}']={'png_sha256':hashlib.sha256(raw).hexdigest()}
               a=np.asarray(frames[0],np.int16);b=np.asarray(frames[1],np.int16)
@@ -132,7 +132,7 @@ jobs:
                                             'p90_absolute_rgb':round(float(np.percentile(roi,90)),3),
                                             'different_pixels':ImageChops.difference(*frames).getbbox() is not None}
               assert records[f'yaw_{yaw}_delta']['different_pixels'],f'GLB normal had zero real pixel effect yaw={yaw}'
-          fn=new/'real_blender_normal_glb_rotation_ab.png'
+          fn=new/'real_striped_vs_radial_three_yaw_ab.png'
           out.save(fn)
           records['sheet_png_sha256']=hashlib.sha256(fn.read_bytes()).hexdigest()
           (new/'real_glb_normal_rotation_evidence.json').write_text(json.dumps(records,indent=2)+'\n')
@@ -142,7 +142,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: M5-REAL-BLENDER-GLB-MICRONORMAL-ROTATION-A-B
+          name: M5-REAL-D20-STRIPED-VS-SMOOTH-THREE-YAW
           path: build/new/
           retention-days: 14
           if-no-files-found: warn
