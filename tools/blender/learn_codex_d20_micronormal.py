@@ -44,21 +44,21 @@ def maps():
     stone=np.stack((.090+tile*.006,.098+tile*.006,.110+tile*.007),axis=2).astype(np.float32)
     r=np.clip(.17 + tile*.025,.12,.225)
     mr=np.stack((np.ones_like(r),r,np.zeros_like(r)),axis=2).astype(np.float32)
-    # Artist's controlled study transferred FROM actual rotating Godot shots.
-    # Model geometry/corners/engraving never changed. The 5x4 UV0 atlas already
-    # groups each physically planar triangle in its own tile.
-    # Small, finite lapping normal slope .12 creates spatial specular gradient
-    # and fades to zero at UV tile borders, avoiding a raised contour seam.
-    slope=np.float32(.12)
+    # The former min(distance_to_tile_edge) ramp had diagonal first-derivative
+    # cusps wherever nearest edges swapped. On real Godot Mobile these read as
+    # diagonal striping. A circular C1-soft normal field removes that seam and
+    # remains a small, physically coherent tangent-plane height gradient.
+    # FACE GEOMETRY, boolean engraving and gilded inlays are unchanged.
+    from d20_micronormal_field import tangent_normal_field
+    slope=np.float32(.18)
     u=np.mod((x+.5)*5.0/n,1.0)
     v=np.mod((y+.5)*4.0/n,1.0)
-    ramp=np.clip(np.minimum.reduce([u,1-u,v,1-v])*4.0,0.0,1.0)
-    nx=(u-.5)*2*slope*ramp
-    ny=(v-.5)*2*slope*ramp
-    nz=np.sqrt(np.maximum(0.0,1-nx*nx-ny*ny))
-    normal=np.stack((.5+.5*nx,.5+.5*ny,.5+.5*nz),axis=2).astype(np.float32)
+    normal=tangent_normal_field(u,v,slope=slope).astype(np.float32)
     assert normal.shape==(n,n,3)
+    nx=2*normal[:,:,0]-1
+    ny=2*normal[:,:,1]-1
     log("ACTUAL_TANGENT_NORMAL_ATLAS",{"slope":float(slope),
+       "profile":"circular C1-soft radial, tile boundary neutral",
        "uv_tiles":"5x4","border_normal":"(0,0,1)",
        "xy_minmax":[float(nx.min()),float(nx.max()),float(ny.min()),float(ny.max())],
        "computed_not_painted_highlights":True})
@@ -352,8 +352,8 @@ def build():
     bpy.ops.render.render(write_still=True)
     log("BLENDER_SOURCE_GLTF_ROUNDTRIP_RENDER",ROOT/"blender_cycles.png")
     receipt={"shader":"real authored PBR, dielectric metallic=0, coat=.26, coat rough=.09",
-             "art_pass":"real 5x4 authored tangent-normal micro-lapping slope .12, after Godot yaw0/45/90 lab",
-             "glyph_size":.43, "gold_roughness":.35, "authored_micro_normal_slope":.12,
+             "art_pass":"real authored C1-soft circular normal field slope .18; diagonal atlas cusp removed; awaiting Godot/Cycles art signoff",
+             "glyph_size":.43, "gold_roughness":.35, "authored_micro_normal_slope":.18,
              "num_original_glyphs":glyph_count,"boolean_polygons":stone_polygon_count,
              "edge_treatment":{"bevel_width":.010,"segments":3,"material":"PolishedObsidian_EdgeSatin",
                  "edge_roughness":.31,"face_roughness_mean":.17,

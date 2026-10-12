@@ -4,6 +4,8 @@ on:
     branches: [experiment/m5-learn-codex-d20]
     paths:
       - "tools/blender/learn_codex_d20_micronormal.py"
+      - "tools/blender/d20_micronormal_field.py"
+      - "tests/test_d20_micronormal_field.py"
       - ".github/workflows/d20-micronormal-glb-roundtrip.yml"
   workflow_dispatch:
 permissions:
@@ -25,6 +27,9 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil fonts-dejavu-core xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
           blender -b --python-expr "import numpy; print('BLENDER_NUMPY',numpy.__version__)"
           godot --version
+      - name: Regression-test smooth radial normal field before costly Blender export
+        run: |
+          python3 -m unittest discover -s tests -p test_d20_micronormal_field.py -v
       - name: Independently sculpt and bake full D20, export GLB, delete and reimport in Blender
         run: |
           mkdir -p build/learned-d20 src/assets/generated
