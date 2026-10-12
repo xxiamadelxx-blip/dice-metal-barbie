@@ -466,12 +466,45 @@ def bake_true_d20_ao(shell, out):
         'D20 real Cycles AO must bake to the one true render UV0 atlas')
     material=shell.data.materials[0]
     nodes=material.node_tree.nodes
+    links=material.node_tree.links
     target=nodes.new('ShaderNodeTexImage')
     target.name='D20_ActualCyclesAOBakeTarget'
     target.image=baked
     nodes.active=target
+    # True physical short-range hemisphere rays from engraved geometry.
+    # The stock 'AO' bake produced a binary black face silhouette, not
+    # the actual 3D recess shading. Instead evaluate the documented
+    # Cycles AO shader with a local <0.14 unit radius and bake its output
+    # with EMIT (light-independent, not painted image, no external API).
+    output=next(n for n in nodes if n.type=='OUTPUT_MATERIAL' and n.is_active_output)
+    old_link=next(link for link in links if link.to_node==output
+                  and link.to_socket==output.inputs['Surface'])
+    old_surface=(old_link.from_socket,old_link.from_node)
+    links.remove(old_link)
+    occlusion=nodes.new('ShaderNodeAmbientOcclusion')
+    occlusion.name='D20_True_Local_Cavity_AO'
+    occlusion.only_local=True
+    occlusion.samples=24
+    occlusion.inside=False
+    distance_socket=occlusion.inputs.get('Distance')
+    assert distance_socket is not None, 'Cycles AO Distance socket missing'
+    distance_socket.default_value=.115
+    emission=nodes.new('ShaderNodeEmission')
+    emission.name='D20_AO_Light_Independent_Emission'
+    links.new(occlusion.outputs['AO'],emission.inputs['Color'])
+    links.new(emission.outputs['Emission'],output.inputs['Surface'])
+    # Bronze inserts can self-occlude entire surface under an unlimited
+    # AO bake. only_local=True explicitly excludes other scene objects.
     active(shell)
-    bpy.ops.object.bake(type='AO')
+    print('D20_CYCLES_LOCAL_AO: EMIT bake, 24 rays, radius=.115, '
+          'self shell only, no baked scene lighting',flush=True)
+    bpy.ops.object.bake(type='EMIT')
+    links.remove(next(l for l in links if l.to_node==output
+                      and l.to_socket==output.inputs['Surface']))
+    links.new(old_surface[0],output.inputs['Surface'])
+    nodes.remove(emission)
+    nodes.remove(occlusion)
+    nodes.remove(target)
     destination=out/'d20_cycles_baked_ao.png'
     baked.filepath_raw=str(destination)
     baked.file_format='PNG'
@@ -499,7 +532,7 @@ def bake_true_d20_ao(shell, out):
     print('D20_CYCLES_AO_BAKED: pixels=%d min=%.4f contrast=%.4f' %
           (len(touched),float(values.min()),contrast),flush=True)
     return {'file':destination.name,'resolution':1024,
-            'bake':'Blender Cycles AO from exact Boolean-cut render shell',
+            'bake':'Blender Cycles AO (local shader EMIT bake) from exact Boolean-cut render shell',
             'cavity_pixels':int(len(touched)),
             'cavity_min':float(values.min()),
             'luma_std':contrast,

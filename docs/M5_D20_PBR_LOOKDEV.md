@@ -21,3 +21,9 @@ User directive 2026-10-12: apply actual artist + AI-assisted texture production 
 ## Cycles bake first-run false-green found from raw PNG (2026-10-12)
 
 The real Blender #38183549384 D20 AO PNG was **ALL BLACK** on every 1,048,576 pixel, though Cycles claimed the bake finished and the earlier validator counted all black pixels as 'cavities'. This is a true content failure. New bake initializes a fully white image with no bake clear, then requires **both dark and bright areas**, significant image standard deviation and fewer than 65% pixels dark. The source remains RED if true AO is not generated. This changes only the visual lookdev tool, not the app physics. No 'AI created PBR art' claims.
+
+## Pixel-proven UV0 correction; new local AO production experiment
+
+Exact [Gauntlet #38186006813](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38186006813) confirmed all 20 numbered atlas cells on physical D20 GLB primary `TEXCOORD_0`, all PBR slots reading UV0: **PASS**. Its true image `d20_cycles_baked_ao.png` was still effectively a black-face silhouette with ~68.4% pure white, ~31.35% pure black and **only 0.236% midtone samples**, so the new independent spatial AO checker correctly failed. Not approved and no runtime AO.
+
+New source swaps stock `bpy.ops.object.bake(type='AO')` for a *real* Cycles `ShaderNodeAmbientOcclusion` hemisphere measurement (`only_local=True`, distance 0.115 world units, 24 ray samples) connected temporarily to emission, then baked via Cycles `EMIT`. This isolates actual engraving cavity geometry from unrestricted scene shadows and **restores the original authored PBR material links** before GLB export. Does NOT artificially paint black lines. Exact new Cycles bake PNG, histogram and real Godot screenshot remain pending until the next Gauntlet succeeds.

@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 approved zero-budget premium D20 + velvet research: repair primary UV0 and false binary Cycles AO",
+    "task": "M5 genuine Cycles D20 AO: replace binary silhouette with local cavity ray shading; preserve full physical pipeline",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Examine exact source unified Gauntlet after correcting D20 Blender face UV to glTF TEXCOORD_0, enforcing all 20 5x4 UV0 cells, and rejecting Cycles AO 1024x1024 horizontal black/white stripes with pixel spatial gradients. Original GLB actual atlas was second UV1, while baseColor/metallicRoughness/normal sampled UV0 placeholder. Actual AO had 443392 white + 604160 black + 1024 gray pixels and exactly ZERO horizontal gradients; previous image histogram falsely passed. New CI may legitimately be RED; inspect Blender logs, repair UV and true AO, do not disable checks. Then compare SAME 720x1280 Godot D20+velvet source A/B, 24fps and Android. User uploaded full no-cost research plan now stored in docs/research. Alpha4 UX only. Preserve Jolt/face outcomes.",
+    "next_action": "Run new exact-SHA Blender Gauntlet and inspect actual d20_cycles_baked_ao.png. Prior #38186006813 confirmed true 20-cell primary UV0 and GLB source PBR slots PASS but Cycles bake returned exact black face silhouettes with only 0.236% gray samples, so the strict spatial AO gate RED; Android/Jolt skipped by dependent matrix. Changed only visual AO bake to Blender Cycles ShaderNodeAmbientOcclusion local hemisphere distance .115, samples24 via EMIT into target UV0 image (save original material output connection and restore after bake). This is a physically sampled local occlusion measurement, NOT synthetic AI. Demand pbr validator and spatial AO gate before continuing original Godot screenshots, 24fps Jolt, AVD. If Blender red, check logged stack, adjust source. Do NOT modify the strict thresholds or Jolt to get green.",
     "blockers": [
-      "New exact-SHA D20 UV0 fix / Cycles 2D AO check NOT VERIFIED by CI; actual AO still unacceptable until new genuine gradients.",
-      "Prior exact #38184950122 native pixel and Android emulator RED, physical 24fps and Blender PASS; diagnose separate original failures after asset slice.",
-      "Real AI material candidate not visually accepted, source AO not wired into runtime glTF occlusion, user artistic approval OPEN.",
-      "Real OnePlus Nord3 FPS and signed release M6 NOT VERIFIED; no paid dependencies."
+      "Real #38186006813 new D20 UV0 PBR glTF fully PASS (all 20 cells), but native AO pixel content RED: material entirely black inside each numbered face, not real cavity penumbrae; proposed physically-local EMIT AO unverified.",
+      "Follow-on Godot/Mesa, true Jolt/ARM64, AVD and 24fps skipped in dependent matrix until blender art gate passes; former AVD drawer and D4 visual red still unresolved.",
+      "User M5 zero-price art target and AI experiment not approved as final visual; original plan preserved; D20 glTF runtime AO not yet imported.",
+      "OnePlus Nord3 hardware art/fps/signing NOT VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -88,13 +88,15 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38182322434/artifacts/11717812770",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38183549384/artifacts/11718920962",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38184950122"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38184950122",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38186006813",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38186006813/artifacts/11719229307"
     ],
-    "last_observed_sha": "906f7c5684234fbe5e0d3186d0472ab6b222b59b",
+    "last_observed_sha": "9a7e8aab4ecaf31929ecdfd07dec247437ce6cf8",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "User-provided premium-art research specification read verbatim and staged as docs/research. Grounded old glb glTF UV0 constant and 5x4 face atlas TEXCOORD_1, with material slots default texCoord0, real geometry 5,244 triangles. Old AO PIL exact band split and 0 horizontal gradient. New code fixes UV0 on only D20, extra GLB/real AO acceptance; no current Blender checkout executable, exact pipeline via Actions. NOT VERIFIED."
+    "verification_note": "Inspected original 1024 PNG from #38186006813: ~68.4% pure white, ~31.35% pure black, 0.236% midtones; exact black triangular face silhouettes, no realistic AO cavity. Source validated actual UV0. Blender 4.x ShaderNodeAmbientOcclusion supports only_local and samples, with Distance input; a local AO+Emission to Cycles EMIT bake can isolate short-range engraved self-occlusion, preserve original BSDF PBR graph by temporary connection restoration. New output NOT YET verified."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
