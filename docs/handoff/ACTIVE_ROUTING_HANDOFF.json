@@ -2,23 +2,22 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 Blender gold readability and game mapping audit",
+    "task": "M5 canonical Blender D20 rebuilt and all20 Godot faces verified",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "Blender D20 continuation",
-    "next_action": "Recover source generator and rebuild engraving for canonical game face IDs. Keep tested refined GLB private; then full same-source Gauntlet.",
+    "owner": "Blender canonical D20 continuation",
+    "next_action": "Reduce80352-triangle cost; integrate private canonical GLB into real game with unchanged collision/outcomes; full24fps/Android gates after architecture fix.",
     "blockers": [
-      "Authored numbering has no rigid alignment to canonical game numbers; do not change physics/result logic.",
-      "Architecture core to visual FAIL; Qwen local unavailable; Android and full24fps NOT_VERIFIED."
+      "Game integration, full24fps, Android/Nord3 and independent critic NOT_VERIFIED; architecture core->visual FAIL."
     ],
     "evidence": [
-      "Library libfile_556b8d15fda0819180fb586f4ef23acd prior proof; refined SHA410184fc2ec11e1de62151f25b9ee7ead313dfb0b99db06a964b8208dd51647b"
+      "GLB SHA25674c95b405414a8d5ca2a3eb5173262964a9347cef9c7f536e2b2347437c783d6"
     ],
     "last_observed_sha": "dfafc71670bebb60836ef4d64d3f609537462a02",
     "last_verified_sha": "",
     "branch": "fix/executable-engineering-entry",
-    "updated_at": "2026-10-12T23:28:20+00:00",
-    "verification_note": "Real Blender4.0.2 measured inlay recess .02985 reduced to .007; gold roughness .42. Original binary geometry/images preserved byte-for-byte. Real Godot4.6.3 Mobile llvmpipe/Jolt, 59276triangles, settled2.9333sec. Opposites sum21 PASS; canonical numbered-normal alignment FAIL. No art or phone acceptance."
+    "updated_at": "2026-10-12T23:36:42+00:00",
+    "verification_note": "All20 Godot face poses and exported glyph normals PASS; Boolean6/9 underbars, stone manifold, source UV fits max3.49e-8, embedded images exact. Godot4.6.3 Mobile llvmpipe/Jolt canonical collider settled3.2167s value11.80352triangles. Standalone proof only."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
