@@ -4,7 +4,7 @@ on:
     branches: [experiment/m5-d20-real-render-compare]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   real-compare:
     runs-on: ubuntu-24.04
@@ -45,17 +45,32 @@ jobs:
         continue-on-error: true
         run: |
           set +e
+          cp build/d20-compare/godot_source.png build/d20-compare/godot_source_backup.png
           timeout 120 xvfb-run -a -s "-screen 0 768x768x24" godot --path . --rendering-method mobile --script res://tools/visual/d20_comparison_capture.gd -- --variant=source > build/d20-compare/godot-mobile-attempt.log 2>&1
           result=$?
           if test "$result" -eq 0 && test -s build/d20-compare/godot_source.png; then
-            cp build/d20-compare/godot_source.png build/d20-compare/godot_mobile_source.png
+            mv build/d20-compare/godot_source.png build/d20-compare/godot_mobile_source.png
           fi
+          mv build/d20-compare/godot_source_backup.png build/d20-compare/godot_source.png
           echo "Mobile-on-desktop attempt exit=$result; NOT a physical Android GPU proof" | tee build/d20-compare/mobile-status.txt
           exit 0
       - name: Compose original unretouched panels with provenance, fail on blank frames
         run: |
           python3 tools/visual/compose_real_d20_compare.py
           sha256sum build/d20-compare/*.png > build/d20-compare/png-sha256.txt
+      - name: Commit REAL comparison PNG for direct viewing (experiment branch only)
+        if: success()
+        run: |
+          set -euo pipefail
+          test -s build/d20-compare/actual_blender_vs_godot.png
+          mkdir -p docs/evidence/m5-real-d20
+          cp build/d20-compare/actual_blender_vs_godot.png docs/evidence/m5-real-d20/actual_blender_vs_godot.png
+          cp build/d20-compare/evidence_manifest.json docs/evidence/m5-real-d20/evidence_manifest.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/evidence/m5-real-d20/
+          git commit -m 'evidence: actual same-GLB Blender Godot screenshots [skip ci]'
+          git push origin HEAD:refs/heads/experiment/m5-d20-real-render-compare
       - name: Publish REAL source images, side-by-side and logs even on failure
         if: always()
         uses: actions/upload-artifact@v4
