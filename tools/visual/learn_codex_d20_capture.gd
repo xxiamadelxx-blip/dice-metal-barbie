@@ -18,6 +18,10 @@ func _capture_main() -> void:
             variant = "ibl"
         elif arg == "--variant=ibl90":
             variant = "ibl90"
+        elif arg == "--variant=aligned":
+            variant = "aligned"
+        elif arg == "--variant=aligned_boost":
+            variant = "aligned_boost"
     DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))
     viewport = SubViewport.new()
     viewport.name = "RealGLBCapture"
@@ -59,7 +63,7 @@ func _capture_main() -> void:
     e.ambient_light_energy = 1.05
     e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     e.tonemap_mode = Environment.TONE_MAPPER_ACES
-    if variant in ["ibl", "ibl90"]:
+    if variant in ["ibl", "ibl90", "aligned", "aligned_boost"]:
         # Godot 4.6 documented sky ambient/AGX/exposure; follow Codex
         # real-runtime lessons instead of compensating black material via emission.
         e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
@@ -72,12 +76,19 @@ func _capture_main() -> void:
     # 256 radiance map allows free Mesa compatibility to finish on CPU.
     sky.radiance_size=Sky.RADIANCE_SIZE_256
     var smat := PanoramaSkyMaterial.new()
-    var same_studio_hdr := load("res://src/assets/generated/learned_studio.hdr") as Texture2D
+    var use_correct_axis_hdr := variant in ["aligned", "aligned_boost"]
+    var panorama_path := "res://src/assets/generated/learned_studio_mobile_aligned.hdr" if use_correct_axis_hdr else "res://src/assets/generated/learned_studio.hdr"
+    var same_studio_hdr := load(panorama_path) as Texture2D
     if same_studio_hdr == null:
         push_error("Shared Blender HDR studio environment did not import into Godot")
         quit(45)
         return
     smat.panorama = same_studio_hdr
+    if variant == "aligned_boost":
+        # Sky energy is increased, NOT stone emission or texture albedo.
+        smat.energy_multiplier = 3.0
+    print("D20_HDR_ALIGNMENT_VARIANT ",variant,
+        " source=",panorama_path," panorama_energy=",smat.energy_multiplier)
     sky.sky_material = smat
     e.sky = sky
     envi.environment = e
