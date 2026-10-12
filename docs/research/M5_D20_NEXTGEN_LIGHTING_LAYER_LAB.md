@@ -34,3 +34,28 @@ No extra full-physics/Android Gauntlet per lighting dial adjustment. Preserve th
 
 ## Status
 Until the new workflow completes: native laboratory capture **IN PROGRESS**, ReflectionProbe benefit **NOT VERIFIED**, owner art acceptance **FAIL**. Never report app runtime effect or mobile hardware performance from Mesa cloud frames alone.
+
+
+## First actual real-engine results, cloud run #38290410135
+
+Evidence: [original 8-pass Godot Mobile run](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38290410135), [original frames + logs artifact #11765217168](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38290410135/artifacts/11765217168). Original comparison contact sheet: `real_mobile_material_light_layers.png`. The scene contains the exact same recovered independent GLB; no model edits between captures.
+
+| Isolated captured layer | Image ROI luma mean, arbitrary 0..255 | Observed inference |
+| --- | ---: | --- |
+| Verified studio reference | 57.89 | Obsidian is gray on a few faces; art FAIL |
+| Neutral gray clay | 95.30 | Planar geometry and engraved numeric cut are visible without specular panels; earlier raised-edge issue is not a protruding 3D lip |
+| Real GDScript Normal RGB debug | 142.62 | Face planes have distinct normals, but this output is a diagnostic shader, not material |
+| Disable Normal Map | 57.89 | Numeric image difference vs baseline is only 0.034/255 average in source ROI; micro-normal map effectively immaterial to current silver-flatness |
+| Disable specular and coat, roughness 1.0 | 37.30 | Material reflection component dominates appearance; gold remains separate geometry |
+| Direct light only, no Sky reflection or ambient | **8.68** | Direct lights alone cannot provide polished obsidian shape |
+| Sky-only, Omni energy zero | 51.50 | Broad silver highlights persist from environment |
+| Local reflection probe with Sky reflections disabled | **1.70** | **FAILED as a material solution**; too dark. This first version also accidentally placed fixture coordinates outside probe size 5 (half-extents only ±2.5), and the old probe-vs-sky difference was a misleading comparison. Do not claim ReflectionProbe benefit |
+
+Mean ROI bounds x=250..779 and y=150..729 contain some background. They are useful for controlled A/B **not** perceived quality scores. Additional actual absolute difference ref-vs-normal-off mean 0.034/255 across ROI, bright altered pixels less than 0.02% with any-channel difference greater than 8.
+
+The first strict native full diagnostic workflow **passed renderer execution and screenshot checks**, not artistic acceptance. The probe case demonstrates why a change in pixels compared against the wrong control is not proof of a working feature.
+
+### Second controlled test
+- Branch `experiment/m5-learn-codex-d20` files `tools/visual/d20_probe_lab_capture.gd` and `.github/workflows/d20-probe-lab.yml` move probe box to 12m, actually include the 2 reflector emitters, switch on emissive color instead of relying on unshaded bright diffuse and capture 12 real frames for `UPDATE_ONCE`.
+- Compare same `lab_ibl` sky and `lab_probe_sky` with **Sky left enabled**; `lab_probe` with Sky reflection disabled remains only a negative control.
+- [Live run #38291232045](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38291232045). Until verified, actual improvement remains NOT_VERIFIED.
