@@ -117,7 +117,7 @@ def face_uv(mesh,face_specs):
     log("UV0 5x4 face tiles polys",count)
 
 
-def enforce_exported_pbr_channels(glb, mr_png):
+def enforce_exported_pbr_channels(glb, mr_png, albedo_png):
     """Fix real BIN-packed glTF ORM payload AFTER Blender exporter.
     The original source-image connection was silently exported as ORM
     R=0/G=255/B=0 (black AO + matte roughness) despite "all slots present".
@@ -156,6 +156,26 @@ def enforce_exported_pbr_channels(glb, mr_png):
     material["occlusionTexture"]={"index":mr_index,"strength":1}
     material["pbrMetallicRoughness"]["metallicFactor"]=0
     material["pbrMetallicRoughness"].pop("roughnessFactor",None)
+    # The exporter can ALSO silently pack an all-black albedo when a source
+    # texture is shared between a polished face and a copy of its edge shader.
+    # Repack exactly the authoring PNG bytes into the referenced glTF image.
+    # Both stone materials can refer to the SAME image source via distinct
+    # texture indices; patching its original bufferView keeps both correct.
+    color_id=doc["textures"][
+        material["pbrMetallicRoughness"]["baseColorTexture"]["index"]
+    ]["source"]
+    albedo_image=doc["images"][color_id]
+    source_albedo=albedo_png.read_bytes()
+    assert source_albedo[:8] == bytes((137,80,78,71,13,10,26,10)), "Author PNG not valid"
+    if len(blob)%4:blob.extend(b"\\x00"*((-len(blob))%4))
+    start=len(blob)
+    blob.extend(source_albedo)
+    if len(blob)%4:blob.extend(b"\\x00"*((-len(blob))%4))
+    albedo_view=doc["bufferViews"][albedo_image["bufferView"]]
+    albedo_view["byteOffset"]=start
+    albedo_view["byteLength"]=len(source_albedo)
+    albedo_image["name"]="SourceRGB_Verified_Obsidian"
+    albedo_image["mimeType"]="image/png"
     doc["buffers"][0]["byteLength"]=len(blob)
     jsondata=json.dumps(doc,separators=(",",":"),ensure_ascii=False).encode("utf-8")
     jsondata+=b" "*((-len(jsondata))%4)
@@ -166,10 +186,10 @@ def enforce_exported_pbr_channels(glb, mr_png):
     assert len(rebuilt)==total_len
     glb.write_bytes(rebuilt)
     log("REAL_GLTF_ORM_REPAIRED",'red AO neutral 1.0; GREEN authored roughness ~0.17; BLUE metallic 0',
-        "image_bytes",len(mr_bytes),"new_glb_sha",hashlib.sha256(rebuilt).hexdigest())
+        "image_bytes",len(mr_bytes),"albedo_bytes",len(source_albedo),"new_glb_sha",hashlib.sha256(rebuilt).hexdigest())
     return {"source_ao":"UNVERIFIED, neutral white R=1 fallback",
             "roughness":"AUTHORED numeric G channel, source range ~0.14..0.20",
-            "glb_image_buffer_repair":True}
+            "glb_image_buffer_repair":True, "albedo_packed_from_actual_png":True}
 
 def build():
     bpy.ops.object.select_all(action="SELECT");bpy.ops.object.delete(use_global=False)
@@ -306,7 +326,7 @@ def build():
     glb=ROOT/"learned_d20.glb"
     bpy.ops.export_scene.gltf(filepath=str(glb),export_format="GLB",use_selection=True,export_yup=True)
     log("GLB_EXPORT",glb,glb.stat().st_size)
-    repaired_orm=enforce_exported_pbr_channels(glb,ROOT/"learned_obsidian_metalrough.png")
+    repaired_orm=enforce_exported_pbr_channels(glb,ROOT/"learned_obsidian_metalrough.png",ROOT/"learned_obsidian_albedo.png")
     # Scene both for user's .blend and independent round-trip rendering.
     add_studio()
     bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/"authored.blend"))
