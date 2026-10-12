@@ -30,7 +30,7 @@ jobs:
         with:
           name: LEARNED-CODEX-D20-real-source-Blender-Godot
           run-id: 38281898713
-          github-token: \${{ github.token }}
+          github-token: ${{ github.token }}
           path: build/learned-d20
       - name: Verify exact known source GLB and calculate remapped Radiance HDR
         run: |
