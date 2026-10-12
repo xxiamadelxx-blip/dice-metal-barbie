@@ -1,0 +1,54 @@
+name: Publish original real D20 render comparison
+on:
+  push:
+    branches: [experiment/m5-d20-real-render-compare]
+    paths:
+      - '.github/workflows/publish-d20-real-evidence.yml'
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve original Blender/Godot generated PNGs, not AI images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 5d76db113bea1c23bd03fbd1b1ca89dd54af0cc4 HEAD
+          mkdir -p build/d20-compare
+          gh run download 38235766891 -R xxiamadelxx-blip/dice-metal-barbie -n REAL-blender-godot-d20-comparison -D build/d20-compare
+          test -s build/d20-compare/actual_blender_vs_godot.png
+          test -s build/d20-compare/evidence_manifest.json
+          python3 - <<'PY'
+          import json,hashlib,pathlib
+          p=pathlib.Path("build/d20-compare")
+          j=json.loads((p/"evidence_manifest.json").read_text())
+          assert hashlib.sha256((p/"actual_blender_vs_godot.png").read_bytes()).hexdigest()==j["montage_sha256"]
+          for item in j["panels"]:
+              f=p/item["source_png"]
+              assert f.is_file() and hashlib.sha256(f.read_bytes()).hexdigest()==item["sha256"], f
+          assert len(j["panels"]) >= 3
+          print("PASS saved ORIGINAL engine-rendered pixels, source hash match",len(j["panels"]))
+          PY
+      - name: Publish source originals and real comparison to experiment branch
+        run: |
+          set -euo pipefail
+          mkdir -p docs/evidence/m5-real-d20
+          cp build/d20-compare/actual_blender_vs_godot.png docs/evidence/m5-real-d20/
+          cp build/d20-compare/blender_cycles.png docs/evidence/m5-real-d20/
+          cp build/d20-compare/godot_source.png docs/evidence/m5-real-d20/
+          cp build/d20-compare/godot_production.png docs/evidence/m5-real-d20/
+          cp build/d20-compare/evidence_manifest.json docs/evidence/m5-real-d20/
+          if test -s build/d20-compare/godot_mobile_source.png; then
+            cp build/d20-compare/godot_mobile_source.png docs/evidence/m5-real-d20/
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/evidence/m5-real-d20
+          git commit -m 'evidence(m5): original Blender and Godot render files [skip ci]'
+          git push origin HEAD:refs/heads/experiment/m5-d20-real-render-compare
