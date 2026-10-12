@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 D20 obsidian next-gen layered diagnostics: BRDF and per-facet micro-normal trials passed actual Godot Mobile, candidate slope .12; Blender GLB and art signoff open",
+    "task": "M5 exact-source D20 Blender micro-normal GLB portability proven across Cycles and Godot Mobile; Codex-level obsidian artistic FAIL",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "isolated independent GLB art-first laboratory / Gauntlet",
-    "next_action": "Read docs/research/M5_D20_NEXTGEN_LIGHTING_LAYER_LAB.md. #38293631310 seven BRDF real Mobile shots: F0=.25 reduces flat silver; F0=.12 too dark, clearcoat and roughness ineffective. #38294641803 five normal tests, slope=.12 adds subtle spatial gradation; #38295279142 source vs slope=.12 at yaw 0/45/90 preserves visible geometry but mild stripes, no temporal Jolt. Next bake authored UV0 tangent-space normal map in Blender and actual GLB plus roundtrip Cycles; hold original GLB hash ec7bcee05..., .010 satin bevel, gold Boolean inlays and GLB pixel validation. Do not merge main/PR23 or claim approved art.",
+    "owner": "isolated authored Blender GLB lookdev, no production merge",
+    "next_action": "Read docs/research/M5_D20_AUTHORED_MICRONORMAL_GLB_ROUNDTRIP_2026-10-12.md, inspect original before/after GLB contact in #38303606399 and Blender Cycles #38296322475. Art still FAIL: real RGB delta only 1.419-2.218/255 across yaw 0/45/90, diagonal micro-normal stripes and silver facets persist despite successful portable authored glTF normal texture. Source original GLB ec7bcee05..., new f9c7fe24... have identical 4454 unique position coordinates; new glTF has 1 face + 2 satin bevel primitives, not invalid geometry. Tune *physical* specular light directions/normal atlas carefully; verify Cycles and Mobile native source PNGs, do not merge until owner accepts and Jolt/Android gates pass.",
     "blockers": [
-      "Codex-grade premium polish and user acceptance remain FAIL/NOT_VERIFIED; runtime procedural tangent normal .12 is only a candidate.",
-      "Art pipeline portable Blender source normal and GLB reimport/Cycles equivalence NOT VERIFIED.",
-      "Cycles saved AO remains black; actual glTF AO is neutral R=255 fallback, spatial AO NOT VERIFIED.",
-      "Complete 24fps full physical Jolt roll, real Android emulator/OnePlus Nord 3 evidence, GPU thermals/FPS and separate vision critic NOT VERIFIED. M4 PR23 acceptance boundary intact."
+      "Premium Codex-level black glossy obsidian still ART FAIL: gray/silver facets and mild diagonal normal stripes remain; user approval NOT_VERIFIED.",
+      "True spatial AO bake and proof of its import still NOT_VERIFIED, current GLB AO neutral R=255.",
+      "Independent Qwen visual critic not recorded as running on newest native screenshots; independent artistic signoff NOT_VERIFIED.",
+      "Full Jolt/24fps source face/roll physics, real Android AVD and OnePlus Nord 3 GPU/thermals NOT_VERIFIED; PR #23 M4 approval open."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -116,13 +116,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38292234674",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38293631310",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38294641803",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38295279142"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38295279142",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38296322475",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38303527219",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38303606399"
     ],
-    "last_observed_sha": "3afbf451f5ee894da2a39b5548db3adcf973d35a",
-    "last_verified_sha": "3afbf451f5ee894da2a39b5548db3adcf973d35a",
+    "last_observed_sha": "1819eb77b873029bb6bf6c536bf6a055517a6f6d",
+    "last_verified_sha": "1819eb77b873029bb6bf6c536bf6a055517a6f6d",
     "branch": "experiment/m5-learn-codex-d20",
     "updated_at": "2026-10-12",
-    "verification_note": "Exact source GLB ec7bcee05..., native Godot Mobile/Mesa seven-way BRDF PASS, 5-way runtime normal PASS, same-scene yaw 0/45/90 six frames PASS; slope .12 modest gradient on 17 plus mild striping. Full Blender/Cycles GLB textured parity and independent ART acceptance NOT_VERIFIED. Canonical CLI router NOT_VERIFIED (GitHub connector only)."
+    "verification_note": "Blender 4.0.2 source authored GLB SHA f9c7fe..., Blender delete/reimport Cycles, actual Godot Compatibility/Mobile successful. New GLB changes 2->3 glTF primitives due extra bevel partition, not changed positions (4454 unique shared). CI #38303606399 success 3 yaw paired source vs new GLB; mean abs ROI RGB 2.218, 2.167, 1.419/255. Art FAIL vs Codex; no production, hardware or Jolt claims."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
