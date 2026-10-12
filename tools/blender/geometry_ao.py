@@ -6,7 +6,7 @@ mesh from rays launched from sampled UV0 surface texels. The internal Cycles
 bake control failed white EMIT, and EXTERNAL returned no output file on the
 current Blender 4.0.2 Actions image; do not mislabel this as a Cycles bake.
 
-512x512 ray sampled geometry map is bilinearly expanded to 1024x1024 with
+512x512 36-ray sampled geometry map is bilinearly expanded to 1024x1024 with
 the same island UVs. Die physics hull, face mapping and Godot runtime untouched.
 """
 import math
@@ -18,8 +18,8 @@ from mathutils.bvhtree import BVHTree
 
 WORK=512
 SIZE=1024
-RAY_COUNT=20
-MAX_DISTANCE=.17
+RAY_COUNT=36
+MAX_DISTANCE=.24
 ORIGIN_EPSILON=.003
 
 def _sample_directions(normal):

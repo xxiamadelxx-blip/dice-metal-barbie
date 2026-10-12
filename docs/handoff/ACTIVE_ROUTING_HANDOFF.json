@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 premium D20: replace broken Blender 4.0 Cycles image bake with honest CPU BVH raycast geometry AO",
+    "task": "M5 D20 real Blender BVH AO: 1.117 million rays verified, improve material gradients without weakening art gate",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Dice engineering via authenticated GitHub, no local checkout CLI",
-    "next_action": "Check exact SHA new Gauntlet Blender output. Previous two Cycles image paths both BROKEN in runner: internal white emission bake had 0 RGB and alpha, external save_mode produced NO file despite operator success; do not declare actual Cycles. Implemented true Blender BVHTree ray intersection on Boolean-engraved D20 5x4 UV0, 512x512 geometry samples, cosine-weighted hemisphere 20 rays per texel to local 0.17 radius, bilinear 1024 map, strict real 2D AO pixel gate and glTF face atlas geometry. Inspect actual resulting PNG, manifest, baked 2D gradients, then Godot native original images and 24fps/Jolt/AVD/ARM64. If script red, fix actual source. No fake masks, no numeric bypass. Do not merge.",
+    "next_action": "Review fresh exact-head Gauntlet after increasing BVHTree geometric AO from 20 to 36 deterministic local hemisphere rays and probe range 0.17→0.24 model units. Previous #38212524817 genuinely ray traced 55,899 surface texels ×20, 13,440 geometry intersections (hit fraction 0.01202), std .03617, but physical midtones covered 0.00509 versus strict 0.008 image gate. Increase sampling and geometric radius, NOT numeric threshold. Verify real output PNG 1024² and 2D spatial content/manifest via blender-art job, then native Godot/Jolt/24fps/AVD. Ensure source artifacts are real and preserve all dice physical mapping. M5 premium artistic approval remains open.",
     "blockers": [
-      "Prior #38212023968 EXTERNAL Cycles bake returned FINISHED but output white calibration PNG NOT WRITTEN, strict Blender AO never passed.",
-      "New Blender BVH geometric AO implementation NOT VERIFIED; different documented provenance, retain failed Cycles experiment in handoff rather than mislabel.",
-      "M5 D20 atlas verified but advanced editor AVD tap and native D4 facet art still unresolved, Godot/Jolt cloud only tested after new asset passes.",
-      "Real OnePlus Nord 3 hardware and user premium art approval not verified."
+      "Real Blender BVH ray test succeeded and yielded nonzero genuine hits, but initial midtone fraction .00509 below unchanged QA .008; source candidate 36 rays/0.24 NOT VERIFIED.",
+      "AO image lookdev only, not linked to runtime; real game still uses authored PBR base/roughness/normal, no fake Cycles claim.",
+      "Dependent Godot/Android skipped until new strict asset gate succeeds; earlier AVD drawer and D4 readability unresolved.",
+      "Nord3 on-device hardware and user-approved premium visual quality still OPEN."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -93,13 +93,14 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38186006813/artifacts/11719229307",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38210618367",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38210618367/artifacts/11728463493",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38212023968"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38212023968",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38212524817"
     ],
-    "last_observed_sha": "4de656644e0df7e4f276ebc89b58d3a28a8dfaf2",
+    "last_observed_sha": "1ef291cfd0f4348edd412575b0a62286ff9f192f",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-11",
-    "verification_note": "Blender 4.0.2 stock AO produced UV-face binary silhouettes, local shader EMIT identical; black-initialized white emission control baked 0 RGB and 0 alpha; EXTERNAL bake did not write file. Switching honest algorithm to Blender BVHTree real ray tests on true Boolean-cut mesh, no AI, no rendering API. Source artifact expected 1024² raster from 512² actual ray samples. Strict content checks remain intact."
+    "verification_note": "BVHTree FromObject real Blender 4.0.2 runner 55,899 visible UV samples, 1,117,980 physical rays, 13,440 actual mesh ray hits. 0.00509 gray midtone pixels below 0.008 strict gate. New 36 rays/range0.24 samples actual neighboring geometry instead of synthesizing masks. No weakened check and no runtime AO hookup yet."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
