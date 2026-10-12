@@ -1,0 +1,110 @@
+name: M5 real Godot Mobile lighting layers lab
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/visual/d20_layer_lab_capture.gd"
+      - ".github/workflows/d20-layer-lab.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: real-d20-layer-lab
+  cancel-in-progress: true
+jobs:
+  same-glb-axis:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install real Mesa software-rendering libraries
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core fontconfig libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          run-id: 38281898713
+          github-token: ${{ github.token }}
+          path: build/learned-d20
+      - name: Verify exact known source GLB and calculate remapped Radiance HDR
+        run: |
+          set -eu
+          sha256sum build/learned-d20/learned_d20.glb
+          echo "ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f  build/learned-d20/learned_d20.glb" | sha256sum --check
+          mkdir -p src/assets/generated
+          cp build/learned-d20/learned_d20.glb src/assets/generated/learned_d20.glb
+          cp build/learned-d20/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          python3 tools/visual/d20_hdr_alignment.py build/learned-d20/learned_studio.hdr build/learned-d20/learned_studio_mobile_aligned.hdr > build/learned-d20/hdr-alignment.log
+          grep -F PASS_TRUE_RADIANCE_HDR_COORDINATE_REMAP build/learned-d20/hdr-alignment.log
+          cp build/learned-d20/learned_studio_mobile_aligned.hdr src/assets/generated/learned_studio_mobile_aligned.hdr
+          python3 tools/visual/d20_narrow_studio.py build/learned-d20/learned_studio.hdr build/learned-d20/ > build/learned-d20/narrow-studio.log
+          grep -F PASS_AUTHORED_NARROW_STUDIO_CARD_MAPS build/learned-d20/narrow-studio.log
+          cp build/learned-d20/learned_studio_mobile_narrow*.hdr src/assets/generated/
+          touch build/.gdignore
+      - name: Import physical GLB and two real HDR files into Godot
+        run: |
+          timeout 100 godot --headless --path . --editor --import --quit > build/learned-d20/reimport.log 2>&1 || { tail -90 build/learned-d20/reimport.log; exit 1; }
+          if grep -E 'ERROR:|SCRIPT ERROR:|Parse Error' build/learned-d20/reimport.log | grep -vF 'Unable to load fontconfig'; then tail -90 build/learned-d20/reimport.log; exit 20;fi
+      - name: Capture three actual Godot 4.6.3 Mobile Vulkan source frames
+        run: |
+          set -eu
+          for variant in lab_reference lab_clay lab_normals lab_normal_off lab_spec_off lab_direct lab_ibl lab_probe; do
+            timeout 145 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/d20_layer_lab_capture.gd -- --variant="$variant" > "build/learned-d20/probe-$variant.log" 2>&1 || { tail -95 "build/learned-d20/probe-$variant.log"; exit 21; }
+            grep -F LEARNED_D20_SEPARATE_SURFACES_OK "build/learned-d20/probe-$variant.log"
+            grep -F LEARNED_D20_GODOT_REAL_FRAME "build/learned-d20/probe-$variant.log"
+            test -s "build/learned-d20/godot_$variant.png"
+            if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' "build/learned-d20/probe-$variant.log";then exit 22;fi
+          done
+      - name: Compose only real engine pixels and provenance
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageDraw,ImageFont,ImageChops,ImageStat
+          import numpy as np,json,hashlib
+          from pathlib import Path
+          d=Path("build/learned-d20")
+          panels=[("A | REFERENCE",d/"godot_lab_reference.png"),
+                  ("B | CLAY GEOMETRY",d/"godot_lab_clay.png"),
+                  ("C | NORMALS",d/"godot_lab_normals.png"),
+                  ("D | NORMAL MAP OFF",d/"godot_lab_normal_off.png"),
+                  ("E | SPECULAR OFF",d/"godot_lab_spec_off.png"),
+                  ("F | DIRECT LIGHT ONLY",d/"godot_lab_direct.png"),
+                  ("G | SKY IBL ONLY",d/"godot_lab_ibl.png"),
+                  ("H | LOCAL REFLECTION PROBE",d/"godot_lab_probe.png")]
+          images=[];metrics={}
+          for label,p in panels:
+            with Image.open(p) as r:
+              assert r.size==(1000,850),(p,r.size)
+              im=r.convert('RGB')
+            assert max(ImageStat.Stat(im).stddev)>5,(p,"BLANK")
+            region=np.asarray(im)[150:730,250:780,:].astype(float)
+            luma=region.mean(axis=2)
+            metrics[p.name]={"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"mean_luma":round(float(luma.mean()),2),"p90_luma":round(float(np.percentile(luma,90)),2),"bright_fraction_100":round(float((luma>100).mean()),4)}
+            images.append(im)
+          for i in range(1,7):
+            assert ImageChops.difference(images[0],images[i]).getbbox() is not None,("DIAGNOSTIC HAD NO EFFECT",panels[i][0])
+          probe_difference=ImageChops.difference(images[6],images[7]).getbbox()
+          metrics["probe_vs_sky"]={"effect_visible":probe_difference is not None,"bbox":probe_difference}
+          out=Image.new("RGB",(4032,1820),(15,19,22))
+          draw=ImageDraw.Draw(out)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",24)
+          for i,((label,_),im) in enumerate(zip(panels,images)):
+            x=8+(i%4)*1006;y=43+(i//4)*896
+            draw.text((x,y-32),label,font=font,fill=(245,245,245))
+            out.paste(im,(x,y))
+          out.save(d/"real_mobile_material_light_layers.png")
+          (d/"real_material_light_layers.json").write_text(json.dumps(metrics,indent=2)+"\n")
+          print("PASS_REAL_GODOT_MOBILE_LAYER_LAB",json.dumps(metrics))
+          PY
+      - name: Publish real source engine images, independent manifest and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: REAL-D20-Godot-Mobile-lighting-layers
+          path: build/learned-d20/
+          retention-days: 14
+          if-no-files-found: warn
