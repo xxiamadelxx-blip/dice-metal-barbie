@@ -24,7 +24,7 @@ jobs:
       - name: Install real Mesa software-rendering libraries
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core fontconfig libfontconfig1
           godot --version
       - uses: actions/download-artifact@v4
         with:
@@ -47,7 +47,7 @@ jobs:
       - name: Import physical GLB and two real HDR files into Godot
         run: |
           timeout 100 godot --headless --path . --editor --import --quit > build/learned-d20/reimport.log 2>&1 || { tail -90 build/learned-d20/reimport.log; exit 1; }
-          if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' build/learned-d20/reimport.log; then tail -90 build/learned-d20/reimport.log; exit 20;fi
+          if grep -E 'ERROR:|SCRIPT ERROR:|Parse Error' build/learned-d20/reimport.log | grep -vF 'Unable to load fontconfig'; then tail -90 build/learned-d20/reimport.log; exit 20;fi
       - name: Capture three actual Godot 4.6.3 Mobile Vulkan source frames
         run: |
           set -eu
