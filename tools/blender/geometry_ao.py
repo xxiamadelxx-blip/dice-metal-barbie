@@ -119,7 +119,19 @@ def bake_d20_geometry_ao(shell, out):
 
     assert sampled>18000, ('Real D20 UV atlas had too few sampled texels: %d'
                           % sampled)
-    result=_interpolate_bilinear(atlas)
+    # AO texture baking requires subtexel area filtering: raw BVH ray
+    # visibility is discrete at 512px. A fixed 5-tap separable Gaussian
+    # removes Monte Carlo staircase edges before saving at 1024px.
+    # This uses ONLY real AO ray samples; no painted or invented shadows.
+    # Outside the actual UV islands stays white to avoid atlas bleeding.
+    raw_atlas=atlas
+    filt=np.array([1,4,6,4,1],dtype=np.float32)/16.0
+    padded=np.pad(raw_atlas,((0,0),(2,2)),constant_values=1.0)
+    blur_x=sum(filt[i]*padded[:,i:i+WORK] for i in range(5))
+    padded=np.pad(blur_x,((2,2),(0,0)),constant_values=1.0)
+    filtered=sum(filt[i]*padded[i:i+WORK,:] for i in range(5))
+    filtered[~touched]=1.0
+    result=_interpolate_bilinear(filtered)
     assert result.shape==(SIZE,SIZE)
     mid=((result>.075)&(result<.925))
     mid_fraction=float(mid.mean())
