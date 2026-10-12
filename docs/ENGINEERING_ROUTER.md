@@ -37,6 +37,11 @@ The router is **not another game engine**, model provider, CI orchestrator or du
 
 ## Mandatory recovery protocol
 
+### Executed entry, 2026-10-13
+The previous `enter` only printed a routing report; `audit` only found binaries. This was not execution of the toolchain or critic. `enter` now invokes `scripts/engineering_bootstrap.py`: actual router/Gauntlet contract tests, architecture/security scans, bounded version commands, and installed local Qwen7B source critique. It records exact SHA and raw output in `build/engineering-entry/`. `--inspect-only` is an explicitly unexecuted diagnostic path. No hidden install, push or gameplay mutation occurs.
+
+The existing `gauntlet-release-gate.yml` now starts with mandatory `engineering-entry`, installs the existing local Ollama setup and requires a real SHA-matched Qwen response. Only then do its original Blender/MeshLab -> native/temporal/Jolt/ARM64/AVD jobs run. Qwen is a source critic, not a vision critic. Findings require agent triage and concrete retests. Missing critic or failed preflight blocks CI; missing local tools require the cloud route and remain NOT_VERIFIED locally. Native/AVD remain authentic render gates; handset tests remain separate. This cannot force an unrelated chatbot to run commands, but complying agents now have a concrete executable entry instead of a printed checklist.
+
 1. On *every* new Dice agent session or task, read `AGENTS.md`, this file, the approved `docs/CONTEXT.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/GAUNTLET_LOOP.md`, and `docs/handoff/ACTIVE_ROUTING_HANDOFF.json`. This step is not skippable by saying “I remember it.”
 2. Execute `python3 scripts/engineering_router.py enter --intent "продолжай"` or replace the intent with the literal user instruction. This returns task/domain, exact local HEAD/branch/dirty worktree, stale handoff flag, tools, checks, artifacts and next actions.
 3. Independently inspect **current remote GitHub main and open feature PR branch HEAD**, recent failing/green CI, issue scope and approved milestone. A local or saved SHA is **not** proof of live remote state; chat context, screenshots, markdown and cached results do not supersede live Git.

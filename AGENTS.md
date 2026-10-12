@@ -2,6 +2,8 @@
 
 ## Mandatory unified engineering entrypoint (all tasks and recovery)
 
+**Executable entry correction (2026-10-13):** `python3 scripts/engineering_router.py enter --intent "<request>"` now EXECUTES router/Gauntlet contracts, architecture/security checks, installed tool version commands and a local Qwen7B source review when available. Read `build/engineering-entry/entry-report.json` and raw logs. Missing engines/models are NOT_VERIFIED; use the unified CI `engineering-entry` job which prepares Ollama and requires its actual response before asset jobs. `--inspect-only` prints routing but does NOT satisfy entry for implementation. Never call preflight PASS product/art acceptance. Every implementation revision uses the existing same-source full Gauntlet, including Qwen findings triage; no skipping failed required checks.
+
 For EVERY Dice coding, design, art, audio, security, architecture, performance, QA or release task, **and especially** when user says **«продолжай»**, **«завис»**, **«застрял»**, or asks to transfer to a **new agent**, use the **single canonical** `docs/ENGINEERING_ROUTER.md` and `config/engineering_routes.json` first.
 
 1. Read `docs/handoff/ACTIVE_ROUTING_HANDOFF.json` and real current GitHub branch, PR, CI and accepted milestone (the saved state is a pointer, not necessarily current truth).

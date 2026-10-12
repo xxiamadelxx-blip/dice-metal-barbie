@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Dice engineering-router: canonical entry/recovery and toolchain dispatch.
 
-No model calls, network, installs, hidden pushes or automatic feature edits.
+Executes bounded local checks and an installed local critic; no installs or hidden pushes.
 Entrypoint: python3 scripts/engineering_router.py enter --intent "продолжай"
 """
 from __future__ import annotations
@@ -345,6 +345,8 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
     enter = sub.add_parser("enter", help="single entry for continue/stuck/new agent/new task")
     enter.add_argument("--intent", required=True)
     enter.add_argument("--route", default=None)
+    enter.add_argument("--inspect-only", action="store_true", help="routing report only; NOT an executed engineering entry")
+    enter.add_argument("--out", default="build/engineering-entry", help="raw execution evidence directory")
     sub.add_parser("audit", help="probe actual binary presence without inventing installations")
     sub.add_parser("validate", help="validate registry and handoff contract")
     sub.add_parser("handoff", help="recover and print canonical next agent briefing")
@@ -385,6 +387,15 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
             output = report(args.intent if args.command == "enter" else "передача новому агенту",
                             reg, state, root, getattr(args, "route", None))
         print(json.dumps(output, ensure_ascii=False, indent=2))
+        if args.command == "enter" and not args.inspect_only:
+            try:
+                from scripts.engineering_bootstrap import bootstrap
+            except ModuleNotFoundError:
+                from engineering_bootstrap import bootstrap
+            execution = bootstrap(root, root / args.out, critic=True)
+            print(json.dumps(execution, ensure_ascii=False, indent=2))
+            if execution["verdict"] == "FAIL":
+                return 3
         return 0
     except RouterError as exc:
         print(json.dumps({"verdict": "FAIL", "reason": str(exc)}, ensure_ascii=False), file=sys.stderr)

@@ -13,8 +13,42 @@ permissions:
   contents: read
 
 jobs:
+  engineering-entry:
+    name: 0 - Executed router, toolchain, contracts and independent Qwen
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Prepare existing zero-key local critic
+        run: bash scripts/gauntlet_setup_local.sh
+      - name: Execute canonical engineering entry
+        run: python3 scripts/engineering_router.py enter --intent 'продолжай через тулчейн Gauntlet и Qwen'
+      - name: Require actual independent response, never source-present PASS
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('build/engineering-entry/entry-report.json').read_text())
+          assert data['critic']['status']=='REVIEW_RECEIVED', 'Qwen independent response NOT_VERIFIED'
+          assert data['critic']['reviewed_sha']==data['source_sha']
+          print('Source review received; findings require agent triage, NOT artistic acceptance')
+          PY
+      - name: Preserve every executed gate and raw Qwen review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engineering-entry-and-qwen
+          path: build/engineering-entry/
+          if-no-files-found: warn
+          retention-days: 30
+
   assets:
     name: 1 - Sculpt and verify fresh GLBs with Blender/MeshLab
+    needs: engineering-entry
     uses: ./.github/workflows/blender-assets.yml
     permissions:
       contents: read
@@ -101,11 +135,12 @@ jobs:
 
   report:
     name: 4 - One final verdict in Actions Summary
-    needs: [assets, native, temporal, android, avd, pin]
+    needs: [engineering-entry, assets, native, temporal, android, avd, pin]
     if: always()
     runs-on: ubuntu-24.04
     env:
       ASSETS: ${{ needs.assets.result }}
+      ENTRY: ${{ needs.engineering-entry.result }}
       NATIVE: ${{ needs.native.result }}
       TEMPORAL: ${{ needs.temporal.result }}
       ANDROID: ${{ needs.android.result }}
@@ -120,6 +155,7 @@ jobs:
             echo
             echo "| Gate | Result |"
             echo "| --- | --- |"
+            echo "| Executed engineering entry + independent Qwen source review | $ENTRY |"
             echo "| Offline Blender/MeshLab verified GLBs | $ASSETS |"
             echo "| Live Godot native screenshots/pixel critique | $NATIVE |"
             echo "| Complete eight-mode real-Jolt 24fps video/frame audit | $TEMPORAL |"
@@ -137,6 +173,7 @@ jobs:
             echo
             echo "No chat polling required; this is a durable asynchronous report."
           } >> "$GITHUB_STEP_SUMMARY"
+          test "$ENTRY" = success
           test "$ASSETS" = success
           test "$NATIVE" = success
           test "$TEMPORAL" = success
