@@ -74,8 +74,9 @@ func _capture_main() -> void:
     world.add_child(camera)
     camera.look_at(Vector3.ZERO,Vector3.UP)
     camera.make_current()
-    for i in range(38):
-        await process_frame
+    # The compatibility software renderer is slow at 1000x850.
+    # Wait a short wall-clock settle and a single *real* completed frame.
+    await create_timer(1.5).timeout
     await RenderingServer.frame_post_draw
     var image := viewport.get_texture().get_image()
     assert(image != null and image.get_size()==SIZE,"Source Godot frame wrong size")
