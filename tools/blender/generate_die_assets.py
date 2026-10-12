@@ -510,11 +510,16 @@ def bake_true_d20_ao(shell, out):
     probe_rgba=np.empty(256*256*4,dtype=np.float32)
     probe.pixels.foreach_get(probe_rgba)
     probes=probe_rgba.reshape((-1,4))
-    white_count=int(np.count_nonzero((probes[:,0]>.95)&(probes[:,3]>.95)))
-    print('D20_CYCLES_BAKE_WHITE_EMIT_PROBE white_opaque=%d' %
-          white_count,flush=True)
-    assert white_count>8000, (
-        'Cycles image bake target FAILED white emission control: do not fake AO')
+    white_rgb=int(np.count_nonzero(np.min(probes[:,:3],axis=1)>.95))
+    white_opaque=int(np.count_nonzero(
+        (np.min(probes[:,:3],axis=1)>.95)&(probes[:,3]>.95)))
+    print('D20_CYCLES_BAKE_WHITE_EMIT_PROBE rgb_white=%d opaque_white=%d '
+          'r_quantiles=%s alpha_quantiles=%s' %
+          (white_rgb,white_opaque,
+           np.quantile(probes[:,0],[0,.5,1]).tolist(),
+           np.quantile(probes[:,3],[0,.5,1]).tolist()),flush=True)
+    assert white_rgb>8000, (
+        'Cycles EMIT RGB white control bake missing: material/UV target broken')
     target.image=baked
     links.new(occlusion.outputs['AO'],emission.inputs['Color'])
     print('D20_CYCLES_LOCAL_AO: EMIT bake, 24 rays, radius=.115, '
@@ -531,12 +536,27 @@ def bake_true_d20_ao(shell, out):
     destination=out/'d20_cycles_baked_ao.png'
     baked.filepath_raw=str(destination)
     baked.file_format='PNG'
+    pixels=np.empty(1024*1024*4,dtype=np.float32)
+    baked.pixels.foreach_get(pixels)
+    rgba=pixels.reshape((-1,4))
+    # Independently log RAW RGB and alpha before PNG export. Previous AO
+    # visually looked black wherever Blender stored transparent alpha 0;
+    # this experiment only repairs opacity, NEVER paints fake RGB shadows.
+    original_zero_alpha=int(np.count_nonzero(rgba[:,3]<.01))
+    print('D20_CYCLES_AO_RAW before save alpha_zero=%d r_quantiles=%s '
+          'a_quantiles=%s' %
+          (original_zero_alpha,np.quantile(rgba[:,0],[0,.25,.5,.99,1]).tolist(),
+           np.quantile(rgba[:,3],[0,.25,.5,.99,1]).tolist()),flush=True)
+    rgba[:,3]=1.0
+    baked.pixels.foreach_set(pixels)
+    baked.update()
+    baked.alpha_mode='NONE'
     baked.save()
     assert destination.is_file() and destination.stat().st_size>10000, (
         'D20 true Cycles AO did not produce an image')
-    pixels=np.empty(1024*1024*4,dtype=np.float32)
-    baked.pixels.foreach_get(pixels)
-    values=pixels.reshape((-1,4))[:,0]
+    # Never accept all-opaque white or black: the strict 2D spatial
+    # gradient test in check_cycles_ao_content.py remains authoritative.
+    values=rgba[:,0]
     # Excluding untouched white atlas background: a real cavity on the
     # engraved render shell must contain occluded pixels.
     touched=values[values<.88]
