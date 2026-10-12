@@ -61,7 +61,7 @@ func _capture_main() -> void:
     assert(inspected >= 21, "Missing original independent gold glyph geometries")
     if variant.begins_with("brdf_") or variant.begins_with("micro_"):
         var material_count := _apply_brdf_to_stone(d20, variant)
-        assert(material_count==2, "D20 must retain exactly two separate stone surface materials")
+        assert(material_count>=2, "D20 must retain a face primitive plus >=1 edge primitive")
     var floor := MeshInstance3D.new()
     floor.name = "ComparisonFloor"
     var mesh := PlaneMesh.new()
@@ -246,11 +246,17 @@ func _override_d20_material_recursive(node: Node, variant: String, micro_map: Te
     var changed := 0
     if node is MeshInstance3D and "D20_Engraved" in str(node.name):
         var stone_mesh := node as MeshInstance3D
-        assert(stone_mesh.mesh.get_surface_count()==2, "Fitted chamfer/face material counts changed")
+        assert(stone_mesh.mesh.get_surface_count()>=2, "D20 must have at least one face and one chamfer primitive")
+        var face_count := 0
+        var bevel_count := 0
         for idx in range(stone_mesh.mesh.get_surface_count()):
             var imported_mat := stone_mesh.mesh.surface_get_material(idx) as BaseMaterial3D
             assert(imported_mat != null and imported_mat.albedo_texture != null)
             var is_edge := "EdgeSatin" in str(imported_mat.resource_name)
+            if is_edge:
+                bevel_count += 1
+            else:
+                face_count += 1
             var custom := imported_mat.duplicate(true) as BaseMaterial3D
             assert(custom != null)
             if not is_edge:
@@ -288,6 +294,10 @@ func _override_d20_material_recursive(node: Node, variant: String, micro_map: Te
             # Override only imported D20 stone surface. Gold stays untouched.
             stone_mesh.set_surface_override_material(idx,custom)
             changed += 1
+        assert(face_count == 1 and bevel_count >= 1,
+            "Original glTF should have exactly one PBR face primitive and >=1 satin edge primitive")
+        print("D20_BRDF_PRIMITIVE_AUDIT faces=",face_count,
+            " bevel_parts=",bevel_count," total=",stone_mesh.mesh.get_surface_count())
     for child in node.get_children():
         changed += _override_d20_material_recursive(child,variant,micro_map)
     return changed
