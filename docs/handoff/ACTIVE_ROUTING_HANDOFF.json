@@ -2,16 +2,17 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 free premium-materials source audit + render fidelity; M4 release gate remains open",
+    "task": "M5 real Codex D20 GLB recovered: source-first art integration; M4 source-reroll AVD still open",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "GitHub-connected audit, cloud Gauntlet evidence (no local Blender/Godot executable)",
-    "next_action": "Exact-source #38213538757: BVHTree D20 geometric AO passed (2,012,364 rays, 0.01054 midtones) but NOT loaded as Godot runtime AO; D4 facet 6.63<8 FAIL; AVD reroll drawer original screenshot 0 changed pixels FAIL. Triage D4 lighting in Mobile with same source pose, fix Android source-reroll frame/event readiness without relaxing visual gates, inspect actual screenshots. Follow docs/research/M5_FREE_PREMIUM_MATERIALS_ACTIONABLE_AUDIT_2026-10-12.md. Keep PR draft and M4 scope; DO NOT merge.",
+    "owner": "GitHub-connected M5 recovery; exact user-provided Library binary locally inspected; no Godot installed locally",
+    "next_action": "DO NOT REBUILD inferior procedural reference: real Codex original GLB SHA c5d97137 and candidate SHA 80bd2337 are privately preserved. Read feat/m5-d20-reference-godot-proof/docs/research/D20_REFERENCE_GODOT_PROOF_2026-10-12.md and actual Godot Mobile images. Use its validated source/candidate/clearcoat adapter on a dedicated visual integration branch after authorized binary transfer, audit actual face->Jolt mapping, unchanged physics, 24fps real roll and Android Mobile. Previous alternate A/B run #38239424270 visually FAIL despite correct executable screenshots. M4 AVD source-reroll UI and phone still OPEN, PR23 draft main untouched.",
     "blockers": [
-      "Original Godot D4 facet source FAIL: dynamic range 6.63 versus required 8 at exact source 51612370a980; requires true light/normal A/B, no threshold relaxation.",
-      "Android emulator source-reroll selector drawer FAIL: 0 changed pixels after UI action; do not claim gesture or frame correctness.",
-      "D20 Blender BVHTree AO source PASS but not bound to runtime occlusion; Compatibility OpenGL screenshot is not Mobile/Nord 3 evidence.",
-      "Owner premium art approval and real Nord 3 install/FPS/thermal/offline still NOT_VERIFIED."
+      "Exact Codex original & inlay-refined user assets are in PRIVATE Library, not the public repository; no unauthorized binary upload; CI cannot access private Library by GitHub alone.",
+      "Current 5-model procedural D20 differs visibly and materially from Codex authored source; do not relabel false-parity material experiments as M5 art acceptance.",
+      "Codex source successful isolated Godot Mobile proof exists, but source GLB has NOT been wired into genuine physical Jolt runtime, full-roll 24fps, Android AVD or target Nord 3.",
+      "M4 original Android source-reroll selector drawer still failed its prior independent pixel gate; never merge PR23 with red M4 gates.",
+      "Human premium aesthetics and Nord 3 install/FPS/thermal/upgrade remain NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -97,13 +98,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38212524817",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38213538757",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38213538413",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38213538419"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38213538419",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/tree/feat/m5-d20-reference-godot-proof",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/feat/m5-d20-reference-godot-proof/docs/research/D20_REFERENCE_GODOT_PROOF_2026-10-12.md",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38239424270"
     ],
-    "last_observed_sha": "51612370a980e1355d897e84cdcd4503930f79c7",
+    "last_observed_sha": "41edebe01a8a74bfccfcf21dad478e48b02f9910",
     "last_verified_sha": "6b2a3f0c2404b459cee27fd703b79d8270ddde71",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
     "updated_at": "2026-10-12",
-    "verification_note": "Source logs confirm 2,012,364 real BVHTree rays and numeric AO PASS; native D4 source still RED; Android reroll UI RED. This JSON checkpoint observes parent SHA and must be reconciled with exact new commit/CI. No local engine execution or hardware acceptance claimed."
+    "verification_note": "User-provided Library original GLB inspected directly: 23 meshes, explicit AO/PBR and dielectric source; private refined candidate shares 4774 unique stone positions and 9544 triangles, gold node offsets .023. Existing real Godot proof branch linked; our procedural D20 sky/probe still visually FAIL; no phone claim."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
