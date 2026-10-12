@@ -114,3 +114,18 @@ The test generated a deterministic 5x4 per-face **tangent-space normal field in 
 **Visual critic:** slope=.12 shows a softer spatial gradation on the central `17` facet where the source PBR reflected a uniform panel; .06 is barely noticeable, .20 over-darkens and develops noticeable diagonally striped shading. The `11` side face still receives a large gray highlight. `0.12` is the controlled **lookdev candidate only**, not premium acceptance; it is not proved consistent in Blender Cycles nor during a real physical throw. The slight micro-gradient must not be described as raised face geometry.
 
 **Next gated verification:** `tools/visual/d20_micronormal_rotation_capture.gd` + `.github/workflows/d20-micronormal-rotation.yml` compare source `spec=.25` with micro-normal `slope=.12` at yaw 0/45/90 degrees under the same real Mobile camera/light. Look for visible edge seams, faceted geometry reading, gold numeral integrity, and whether the gradient follows the physical surface rather than the display. Explicitly keep this experiment isolated; no change to `main`, PR23, actual packaged die skin or Jolt physics.
+
+
+## Rotating D20 real-engine surface coherence Gauntlet (2026-10-12)
+
+[Exact source run #38295279142](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38295279142), artifact `11768027273`, file `real_mobile_d20_micronormal_yaw_ab.png`, and 6 independent original Godot 4.6.3 Mobile/Mesa PNGs named `godot_brdf_spec025_yaw000/045/090.png` and `godot_micro_012_yaw000/045/090.png`. Original source GLB hash still `ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f`, camera, narrow50 HDR, gold and actual stone geometry unchanged. Static yaw orientations are NOT equivalent to full physical roll/Jolt/24fps or Android.
+
+| Original pose | Source F0=.25 image ROI mean | Added tangent normal slope=.12 ROI mean | Visual result |
+| --- | ---: | ---: | --- |
+| Yaw 0° | 42.81 | 41.72 | Actual central `17` facet has subtle spatial gradient, but mild diagonal striping remains |
+| Yaw 45° | 42.51 | 41.96 | Inspected original frames: gold numerals and triangle edges remain intact; effect subtle |
+| Yaw 90° | 37.79 | 37.64 | No obvious UV island seam visible in this static frame; very small lighting change |
+
+All six PNGs were reported as real engine captures and are 1000x850 each. Exact original per-frame PNG hashes and pixel-difference booleans recorded in `real_d20_micronormal_yaw_evidence.json`; at each yaw image differs from the same-yaw source normal. No visual shattering of geometry, no new raised border and no obvious full-tile discontinuity at these three *static* yaw samples. However, visible mild striping and absence of temporal proof mean **NO ART SIGNOFF / KEEP EXPERIMENTAL**. Full free-spin physical playback, Android, thermal/FPS, real Blender/Cycles/GLB normal baking and independent external visual critic are all NOT_VERIFIED.
+
+**Actionable route next:** port only the controlled slope=.12 tangent normal atlas to the Blender authoring tool as a real normal asset, preserve original GLB as regression control, generate a genuinely new GLB, verify numerical PBR/normal texture channels after glTF roundtrip and create paired Blender Cycles/Godot Mobile previews with fixed pose and light. Accept or reject based on actual contrast, preserved flat facets, no UV seams and user visual approval. No production art or physics merge before that gate.

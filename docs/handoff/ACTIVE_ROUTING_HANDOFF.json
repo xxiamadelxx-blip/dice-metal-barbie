@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 D20: console-grade lighting component isolation and local ReflectionProbe tested; source PBR and model valid, local probe artistic FAIL",
+    "task": "M5 D20 obsidian next-gen layered diagnostics: BRDF and per-facet micro-normal trials passed actual Godot Mobile, candidate slope .12; Blender GLB and art signoff open",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "isolated real Godot 4.6.3 Mobile/Mesa D20 native render diagnostic",
-    "next_action": "Read docs/research/M5_D20_NEXTGEN_LIGHTING_LAYER_LAB.md. First 8-layer native Godot test #38290410135 PASS execution; reflected gray facets caused by IBL/spec, not fake protruding edge or normal map. Three ReflectionProbe followup runs #38291232045 #38291827376 #38292234674 completed with strict artistic FAIL; even after real GPU frames and emitting cyclorama local probe 21.65 average vs Sky-only 51.50. Preserve SKY narrow50, no new probe integration. Next controlled BRDF/specular light card A/B with fixed GLB and verified owner art evaluation. No physics/main/PR23 changes.",
+    "owner": "isolated independent GLB art-first laboratory / Gauntlet",
+    "next_action": "Read docs/research/M5_D20_NEXTGEN_LIGHTING_LAYER_LAB.md. #38293631310 seven BRDF real Mobile shots: F0=.25 reduces flat silver; F0=.12 too dark, clearcoat and roughness ineffective. #38294641803 five normal tests, slope=.12 adds subtle spatial gradation; #38295279142 source vs slope=.12 at yaw 0/45/90 preserves visible geometry but mild stripes, no temporal Jolt. Next bake authored UV0 tangent-space normal map in Blender and actual GLB plus roundtrip Cycles; hold original GLB hash ec7bcee05..., .010 satin bevel, gold Boolean inlays and GLB pixel validation. Do not merge main/PR23 or claim approved art.",
     "blockers": [
-      "Premium obsidian still below Codex and user art approval NOT_VERIFIED; source D20 has silver Sky-only facets.",
-      "Godot local ReflectionProbe captures real fixtures but 3 tests all ART FAIL: last studio cyclorama result only 21.65/255 mean source ROI vs Sky-only 51.50.",
-      "Spatial AO map remains invalid, neutral R=255 fallback; real nonblack spatial AO NOT_VERIFIED.",
-      "Independent Qwen visual critic, D20 physical Jolt face mapping, 24fps temporal motion, Android AVD and actual OnePlus Nord 3 NOT_VERIFIED; M4 PR23 independent Android gate open."
+      "Codex-grade premium polish and user acceptance remain FAIL/NOT_VERIFIED; runtime procedural tangent normal .12 is only a candidate.",
+      "Art pipeline portable Blender source normal and GLB reimport/Cycles equivalence NOT VERIFIED.",
+      "Cycles saved AO remains black; actual glTF AO is neutral R=255 fallback, spatial AO NOT VERIFIED.",
+      "Complete 24fps full physical Jolt roll, real Android emulator/OnePlus Nord 3 evidence, GPU thermals/FPS and separate vision critic NOT VERIFIED. M4 PR23 acceptance boundary intact."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -113,13 +113,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38290410135",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38291232045",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38291827376",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38292234674"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38292234674",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38293631310",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38294641803",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38295279142"
     ],
-    "last_observed_sha": "b5d50ee6c3cb6910ab15e4b3ca5554643d16332a",
-    "last_verified_sha": "b5d50ee6c3cb6910ab15e4b3ca5554643d16332a",
+    "last_observed_sha": "3afbf451f5ee894da2a39b5548db3adcf973d35a",
+    "last_verified_sha": "3afbf451f5ee894da2a39b5548db3adcf973d35a",
     "branch": "experiment/m5-learn-codex-d20",
     "updated_at": "2026-10-12",
-    "verification_note": "Native Mesa real diagnostic PNGs and hashes: original D20 GLB ec7bcee05f9..., clay/normals/no-normal/spec-off/direct/IBL/probe captures. Probe trials supported technically but art FAIL. Sky-only ROI 51.50 vs studio probe v3 21.65. No device or app production evidence. CLI router NOT_VERIFIED (no local repository network)."
+    "verification_note": "Exact source GLB ec7bcee05..., native Godot Mobile/Mesa seven-way BRDF PASS, 5-way runtime normal PASS, same-scene yaw 0/45/90 six frames PASS; slope .12 modest gradient on 17 plus mild striping. Full Blender/Cycles GLB textured parity and independent ART acceptance NOT_VERIFIED. Canonical CLI router NOT_VERIFIED (GitHub connector only)."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

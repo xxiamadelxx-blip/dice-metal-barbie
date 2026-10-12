@@ -198,7 +198,8 @@
         "src/assets/",
         "src/visual/",
         "tools/blender/",
-        "docs/CREATIVE_TOOLCHAIN.md"
+        "docs/CREATIVE_TOOLCHAIN.md",
+        "docs/research/M5_D20_NEXTGEN_LIGHTING_LAYER_LAB.md"
       ],
       "tools": [
         {
@@ -221,7 +222,10 @@
       "checks": [
         "GLB geometry/material checks where available",
         "Real Godot/Jolt render and full temporal 24fps frame audit where applicable",
-        "Compare approved look and visible face"
+        "Compare approved look and visible face",
+        "On visual material defects isolate clay/normal/PBR/specular/direct/Sky probe passes with a fixed GLB SHA before tuning",
+        "Run native Blender roundtrip and genuine Godot Mobile originals; keep separated engine evidence and screenshot hashes",
+        "Never promote runtime-only normal map, ReflectionProbe or a green CI as approved offline Android GLB art"
       ],
       "artifacts": [
         "GLB manifest and source generator",
