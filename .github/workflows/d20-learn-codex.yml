@@ -110,7 +110,7 @@ jobs:
             timeout 85 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant="$flavor" > "build/learned-d20/mobile-$flavor.log" 2>&1 || { tail -90 "build/learned-d20/mobile-$flavor.log"; exit 1; }
             test -s "build/learned-d20/godot_$flavor.png"
           done
-          for file in build/learned-d20/mobile-{base,ibl,ibl90}.log; do
+          for file in build/learned-d20/mobile-base.log build/learned-d20/mobile-ibl.log build/learned-d20/mobile-ibl90.log; do
             grep -F "LEARNED_D20_SEPARATE_SURFACES_OK" "$file"
             grep -F "LEARNED_D20_GODOT_REAL_FRAME" "$file"
             if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' "$file"; then
