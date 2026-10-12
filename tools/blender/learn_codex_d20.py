@@ -271,16 +271,35 @@ def make_studio_hdr():
         feather=np.clip(np.minimum((width-rx)/.09,(height-ry)/.09),0,1)
         feather*=np.clip(facing*10,0,1)
         radiance+=feather[:,:,None]*np.asarray(color,dtype=np.float32)
-    img=bpy.data.images.new("Learned_shared_studio_HDR",width=w,height=h,alpha=False,float_buffer=True)
-    rgba=np.ones((h,w,4),dtype=np.float32)
-    rgba[:,:,:3]=radiance
-    img.pixels.foreach_set(rgba.ravel())
+    # Image.save() in Ubuntu Blender 4.0 wrote a PNG payload even though the
+    # filename ended in .hdr. Godot correctly rejected it. Encode actual
+    # Radiance RGBE with valid per-scanline RLE packets, then reopen FROM DISK.
+    # No external image generator, no painted-specular workaround.
+    peak=radiance.max(axis=2)
+    mant,expo=np.frexp(peak)
+    rgbe=np.zeros((h,w,4),dtype=np.uint8)
+    enabled=peak>1.e-30
+    scale=np.zeros_like(peak)
+    scale[enabled]=np.ldexp(np.ones_like(peak[enabled]),8-expo[enabled])
+    rgbe[:,:,:3]=np.clip(radiance*scale[:,:,None],0,255).astype(np.uint8)
+    rgbe[:,:,3]=np.where(enabled,expo+128,0).astype(np.uint8)
+    path=ROOT/"learned_studio.hdr"
+    with path.open("wb") as stream:
+        stream.write(("#?RADIANCE\\nFORMAT=32-bit_rle_rgbe\\n\\n-Y %d +X %d\\n" % (h,w)).replace("\\n","\n").encode())
+        for y in range(h):
+            stream.write(bytes((2,2,w>>8,w&255)))
+            for ch in range(4):
+                channel=rgbe[y,:,ch]
+                for start in range(0,w,128):
+                    chunk=channel[start:start+128]
+                    stream.write(bytes((len(chunk),)))
+                    stream.write(chunk.tobytes())
+    assert path.read_bytes().startswith(b"#?RADIANCE"), "HDR encoding regression"
+    img=bpy.data.images.load(str(path),check_existing=False)
+    img.name="Learned_shared_studio_HDR"
     img.colorspace_settings.name="Non-Color"
-    img.filepath_raw=str(ROOT/"learned_studio.hdr")
-    img.file_format="HDR"
-    img.save()
     img.pack()
-    log("ACTUAL_STUDIO_HDR",img.filepath_raw,(w,h))
+    log("ACTUAL_STUDIO_HDR",path,(w,h),path.stat().st_size)
     return img
 
 def add_studio():
