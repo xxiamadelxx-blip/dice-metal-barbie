@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 independent D20 art-first: SKY/AGX A/B improves Mobile readability; actual polished obsidian still below Codex reference",
+    "task": "M5 independent D20: corrected physically aligned HDR; narrowed 50% studio is current experimental lookdev, Codex-equivalent polish ART FAIL",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "exact-source isolated GitHub cloud Blender 4.0.2 / Godot 4.6.3 Mobile Mesa",
-    "next_action": "Read docs/research/M5_D20_SKY_AGX_MOBILE_AB_2026-10-12.md and run #38281898713. Source D20 20 separate gold glyphs, .010 edge unchanged. Godot Mobile same GLB: base ROI 35.36, SKY+AGX 53.49, sky90 53.62; use unrotated SKY+AGX preview as best. Still needs HDR Y-up reprojection and actual specular softbox; preserve both original surface PBRs, fix invalid real Cycles AO and 6/9 punctuation. No Jolt/Android until art gate. Do not merge PR23 or main.",
+    "owner": "experimental branch; exact original Blender GLB + native Godot Mobile/Mesa actual PNGs",
+    "next_action": "Read docs/research/M5_D20_HDR_PHYSICAL_STUDIO_AUDIT_2026-10-12.md and GitHub runs #38285582615 #38286307673 #38286853449. Physical HDR axis U_B=(.25-U_G)%1 verified; full-size aligned causes whole-face gray reflections, 3x worse; 50% studio cards best provisional balance, 30% too dark. Omni-off barely changes bright gray facets, thus Sky IBL dominant. Preserve .010 satin edge, G~.17, dielectric stone and original GLB SHA ec7bcee05f9d...; next isolate directions of bevel normals vs face normals, aim narrow real specular highlights. No Android/Jolt until art approval.",
     "blockers": [
-      "Independent D20 still looks less polished than Codex in real Blender/Godot frames; original side-by-side accepted only as diagnostic, premium ART FAIL.",
-      "Real Cycles AO PNG remains black; AO R=255 neutral fallback until true spatial map validated.",
-      "6/9 physical glyph punctuation, D20 Jolt mapping and full production handoff still NOT_VERIFIED.",
-      "Real Android OnePlus Nord3 and M4 UI source reroll AVD gate NOT_VERIFIED; main / PR23 untouched."
+      "Real Godot 4.6.3 Mobile/Mesa screenshots still show flat broad silver side facets rather than high-end polished black obsidian; Codex parity and user visual acceptance FAIL.",
+      "Spatial AO not actually baked in final glTF: neutral white packed R=255; source Cycles AO image remains invalid.",
+      "Independent vision critic, 6/9 punctuation, full Jolt face mapping and 24fps physics visual review NOT VERIFIED.",
+      "Android AVD and OnePlus Nord 3 live art/performance/install NOT VERIFIED; main and draft PR #23 unchanged."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -106,13 +106,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38278837373",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38278837373/artifacts/11760546884",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38281898713",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38281898713/artifacts/11762120818"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38281898713/artifacts/11762120818",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38285582615",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38286307673",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38286853449"
     ],
-    "last_observed_sha": "41d435c20ebc05e3e9847eb1c6bb26635ec6f875",
-    "last_verified_sha": "41d435c20ebc05e3e9847eb1c6bb26635ec6f875",
+    "last_observed_sha": "db86888018555b2e3a2b08cf391c2dbd661519fb",
+    "last_verified_sha": "db86888018555b2e3a2b08cf391c2dbd661519fb",
     "branch": "experiment/m5-learn-codex-d20",
     "updated_at": "2026-10-12",
-    "verification_note": "Exact #38281898713: Blender->GLB->Godot Mobile/Mesa original frames PASS, glTF source SHA ec7bcee05..., two actual stone surfaces preserved; experimental SKY+AGX ROI mean +51%; image art still FAIL vs Codex, no spatial AO, Android device not tested."
+    "verification_note": "Exact self-authored GLB SHA ec7bcee...; three real Godot Mobile mesa runs all success, full HDR aligned brightens whole facets, narrow50 mid 57.89 vs narrow30 51.4, Omni disabled narrow50 remains gray ROI 51.50. No user art signoff."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
