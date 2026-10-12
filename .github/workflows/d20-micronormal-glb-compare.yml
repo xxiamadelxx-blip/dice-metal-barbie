@@ -98,6 +98,9 @@ jobs:
             grep -F "D20_BRDF_PRIMITIVE_AUDIT faces=1 bevel_parts=2 total=3" "$log"
             grep -F "D20_BRDF_APPLIED mode=brdf_spec025 stone_surfaces=3" "$log"
             if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|GDScript backtrace|ERROR:' "$log";then tail -80 "$log";exit 32;fi
+            original_png="build/learned-d20/godot_brdf_spec025_yaw$(printf '%03d' "$yaw").png"
+            test -s "$original_png"
+            cp "$original_png" "build/new/"
             test -s "build/new/godot_brdf_spec025_yaw$(printf '%03d' "$yaw").png"
           done
       - name: Original screenshot pairs at matching angles, provable source pixels
