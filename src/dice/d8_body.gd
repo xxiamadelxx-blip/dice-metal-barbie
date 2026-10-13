@@ -5,6 +5,7 @@ signal roll_failed(reason: String)
 
 const Octa = preload("res://src/core/octahedron.gd")
 const DiceRng = preload("res://src/core/dice_rng.gd")
+const Sculpt = preload("res://src/visual/sculpted_d20.gd")
 const MAX_ROLL_SECONDS := 9.0
 
 var rolling := false
@@ -36,22 +37,28 @@ func _ready() -> void:
 
 func _create_visual() -> void:
     var positions := Octa.vertices()
-    var surface := SurfaceTool.new()
-    surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-    for face_id in range(8):
-        var normal: Vector3 = Octa.face_normal(face_id)
-        for point_id in Octa.face_indices(face_id):
-            surface.set_normal(normal)
-            surface.add_vertex(positions[point_id])
+    var face_indices: Array = []
+    for facet in range(8):
+        face_indices.append(Octa.face_indices(facet))
     var body := MeshInstance3D.new()
     body.name = "ObsidianD8"
-    body.mesh = surface.commit()
+    body.mesh = Sculpt.face_planes(Octa.vertices(), face_indices)
     var obsidian := StandardMaterial3D.new()
     obsidian.albedo_color = Color(0.023, 0.031, 0.049)
     obsidian.metallic = 0.24
     obsidian.roughness = 0.20
     body.material_override = obsidian
     add_child(body)
+    var bevel := MeshInstance3D.new()
+    bevel.name = "ActualSculptedBevels"
+    bevel.mesh = Sculpt.chamfers(Octa.vertices(), face_indices)
+    bevel.material_override = Sculpt.bevel_material()
+    add_child(bevel)
+    var inlay := MeshInstance3D.new()
+    inlay.name = "FaceInsetBronzeHairlines"
+    inlay.mesh = Sculpt.inlaid_tracery(Octa.vertices(), face_indices)
+    inlay.material_override = Sculpt.gold_groove_material()
+    add_child(inlay)
 
     var values := Octa.numbers()
     for face_id in range(8):
@@ -61,7 +68,7 @@ func _create_visual() -> void:
         label.name = "Face_%d" % number
         label.text = str(number)
         label.font_size = 50
-        label.pixel_size = 0.005
+        label.pixel_size = 0.0056
         label.outline_size = 6
         label.modulate = Color(0.95, 0.88, 0.74)
         label.outline_modulate = Color(0.06, 0.07, 0.10)

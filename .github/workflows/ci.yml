@@ -2,7 +2,12 @@ name: Godot M3 validation and Android debug
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_call:
+    inputs:
+      fresh_assets:
+        type: boolean
+        required: false
+        default: false
   workflow_dispatch:
 
 permissions:
@@ -20,12 +25,83 @@ jobs:
       image: barichello/godot-ci:4.6.3
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Consume same-run fresh GLBs (not stale repository binaries)
+        if: inputs.fresh_assets
+        uses: actions/download-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb
+      - name: Check GLB SHA256 and install before Godot import
+        if: inputs.fresh_assets
+        run: |
+          set -eu
+          (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
+          mkdir -p src/assets/generated
+          for die in d4 d6 d8 d12 d20; do
+            test -s "build/gauntlet-glb/${die}_boolean_engraved.glb"
+            cp "build/gauntlet-glb/${die}_boolean_engraved.glb" "src/assets/generated/${die}_boolean_engraved.glb"
+          done
       - name: Initialize Godot import
         run: godot --headless --path . --editor --quit
+      - name: Preflight compile every GDScript test before Jolt simulation
+        run: |
+          set -eu
+          for gdscript in tests/*.gd; do
+            godot --headless --path . --check-only --script "res://$gdscript"
+          done
       - name: Deterministic mechanics tests
         run: godot --headless --path . --script res://tests/smoke.gd
+      - name: M4 actual-face mixed formula, modifiers, selected D20 and D100 trace tests
+        run: godot --headless --path . --script res://tests/m4_roll_formula.gd
+      - name: M4 offline versioned results/presets with integrity and corruption QA
+        run: godot --headless --path . --script res://tests/m4_roll_persistence.gd
+      - name: M4 offline history receipt statistics do not claim physical fairness
+        run: godot --headless --path . --script res://tests/m4_roll_statistics.gd
+      - name: M4 genuine Jolt mixed physical dice and paired percentile
+        run: godot --headless --path . --script res://tests/m4_physical_pool.gd
+      - name: M4 D20 edge recovery - 12 real signed mixed Jolt throws, genuine top faces
+        run: godot --headless --path . --script res://tests/m4_d20_edge_stress.gd
+      - name: M4 actual drawer click plus genuine mixed Jolt and offline history
+        run: godot --headless --path . --script res://tests/m4_advanced_ui_integration.gd
+      - name: M4 real pool composer buttons, guarded expression and Jolt history
+        run: godot --headless --path . --script res://tests/m4_pool_composer_jolt.gd
+      - name: M4 selectively reroll actual Jolt body and retain all untouched real faces
+        run: godot --headless --path . --script res://tests/m4_physical_reroll.gd
+      - name: M4 click physical source picker, reroll and audit local history
+        run: godot --headless --path . --script res://tests/m4_reroll_ui_integration.gd
+      - name: M4 complete physical history plus verified real Android telemetry contract
+        run: |
+          godot --headless --path . --script res://tests/m4_full_history_browser.gd > m4-history-actual.log 2>&1 || { tail -100 m4-history-actual.log; exit 1; }
+          grep -F 'M4_REAL_UI_ALL_HISTORY checks=' m4-history-actual.log
+          grep -E 'DICE_M4_HISTORY_OPEN records=([2-9]|[1-9][0-9]+)' m4-history-actual.log
+      - name: M5 seven working dice inside one real mobile dock; genuine D100 mode selector
+        run: godot --headless --path . --script res://tests/m5_compact_dock.gd
+      - name: M5 Alpha4-inspired launch UX, accessible physical shortcuts and real offline history
+        run: godot --headless --path . --script res://tests/m5_alpha4_home_ui.gd
+      - name: M5 true Jolt table contact makes local velvet recover, untouched floor collider
+        run: godot --headless --path . --script res://tests/m5_real_felt_contact.gd
+      - name: M5 premium chamfered ebony rails with unchanged Jolt collision boxes
+        run: godot --headless --path . --script res://tests/m5_ebony_rails.gd
       - name: Physical scene integration smoke
         run: godot --headless --path . --script res://tests/physics_smoke.gd
+      - name: Natural D20-only non-colliding spatial critical aura
+        run: godot --headless --path . --script res://tests/critical_aura.gd
+      # Exercise new D10/D100 before stochastic legacy regressions, so a
+      # rare unrelated D6 edge-rest does not hide new-shape diagnostics.
+      - name: M3 D10/D100 true kite-face convex geometry and result normals
+        run: godot --headless --path . --script res://tests/trapezohedron_geometry.gd
+      - name: M3 exhaustive 100 outcome two-D10 mapping
+        run: godot --headless --path . --script res://tests/percentile_pair_mapping.gd
+      - name: M3 D10, single D100, dual-D10 percentile real Jolt integration
+        run: godot --headless --path . --script res://tests/trapezohedron_physics.gd
+      - name: M3 rapid repeated percentile pair Jolt lifecycle regression
+        run: godot --headless --path . --script res://tests/m3_pair_lifecycle.gd
+      - name: M3 secure source RNG frequency sanity (not physical fairness proof)
+        run: godot --headless --path . --script res://tests/m3_secure_rng_sanity.gd
+      - name: M3 extended Jolt endurance with real D10, D100 and percentile pair
+        run: godot --headless --path . --script res://tests/m3_trapezohedron_endurance.gd
       - name: M3 D6 mathematical symmetry proof
         run: godot --headless --path . --script res://tests/cube_symmetry.gd
       - name: M3 real numbered D6 physics and result agreement
@@ -46,6 +122,14 @@ jobs:
         run: godot --headless --path . --script res://tests/d4_geometry.gd
       - name: M3 numbered tetrahedral D4 Jolt physics
         run: godot --headless --path . --script res://tests/numbered_d4_physics.gd
+      - name: Upload physical endurance evidence even if trials fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-physical-jolt-endurance
+          path: qa-evidence/m3-stress/endurance.json
+          if-no-files-found: warn
+          retention-days: 14
 
   android-debug:
     name: Android ARM64 debug export
@@ -55,6 +139,24 @@ jobs:
       image: barichello/godot-ci:4.6.3
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Consume same-run fresh GLBs (not stale repository binaries)
+        if: inputs.fresh_assets
+        uses: actions/download-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb
+      - name: Check GLB SHA256 and install before Godot import
+        if: inputs.fresh_assets
+        run: |
+          set -eu
+          (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
+          mkdir -p src/assets/generated
+          for die in d4 d6 d8 d12 d20; do
+            test -s "build/gauntlet-glb/${die}_boolean_engraved.glb"
+            cp "build/gauntlet-glb/${die}_boolean_engraved.glb" "src/assets/generated/${die}_boolean_engraved.glb"
+          done
       - name: Prepare export templates and debug credentials
         run: |
           mkdir -p ~/.local/share/godot/export_templates

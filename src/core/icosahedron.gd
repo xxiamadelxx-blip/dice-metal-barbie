@@ -3,7 +3,7 @@ extends RefCounted
 ## 20 outward-wound triangular faces and 60 proper rotational symmetries.
 
 const PHI := 1.618033988749895
-const RADIUS := 0.58
+const RADIUS := 0.88
 const FACES = [
     [0,11,5], [0,5,1], [0,1,7], [0,7,10], [0,10,11],
     [1,5,9], [5,11,4], [11,10,2], [10,7,6], [7,1,8],

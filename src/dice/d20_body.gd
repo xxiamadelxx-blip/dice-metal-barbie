@@ -6,8 +6,12 @@ signal roll_completed(value: int)
 signal roll_failed(reason: String)
 
 const Ico = preload("res://src/core/icosahedron.gd")
+const Sculpt = preload("res://src/visual/sculpted_d20.gd")
 const DiceRng = preload("res://src/core/dice_rng.gd")
 const MAX_ROLL_SECONDS := 9.0
+# Actual Jolt recovery when sleeping on an ambiguous EDGE, never face
+# snapping or value substitution. Preserve 9s overall physics time budget.
+const MAX_EDGE_RECOVERY_ATTEMPTS := 6
 
 var rolling := false
 var result := -1
@@ -41,22 +45,26 @@ func _create_geometry_and_numerals() -> void:
     var vertices := Ico.vertices()
     var labels := Ico.numbers()
 
-    var surface := SurfaceTool.new()
-    surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-    for face_id in range(20):
-        var normal: Vector3 = Ico.face_normal(face_id)
-        for vertex_id in Ico.FACES[face_id]:
-            surface.set_normal(normal)
-            surface.add_vertex(vertices[vertex_id])
     var mesh_node := MeshInstance3D.new()
     mesh_node.name = "ObsidianD20"
-    mesh_node.mesh = surface.commit()
+    mesh_node.mesh = Sculpt.face_planes(vertices, Ico.FACES)
     var obsidian := StandardMaterial3D.new()
     obsidian.albedo_color = Color(0.026, 0.033, 0.052)
     obsidian.metallic = 0.26
     obsidian.roughness = 0.18
     mesh_node.material_override = obsidian
     add_child(mesh_node)
+
+    var shoulders := MeshInstance3D.new()
+    shoulders.name = "ActualSculptedBevels"
+    shoulders.mesh = Sculpt.chamfers(vertices, Ico.FACES)
+    shoulders.material_override = Sculpt.bevel_material()
+    add_child(shoulders)
+    var traces := MeshInstance3D.new()
+    traces.name = "FaceInsetBronzeHairlines"
+    traces.mesh = Sculpt.inlaid_tracery(vertices, Ico.FACES)
+    traces.material_override = Sculpt.gold_groove_material()
+    add_child(traces)
 
     for face_id in range(20):
         var normal: Vector3 = Ico.face_normal(face_id)
@@ -65,7 +73,7 @@ func _create_geometry_and_numerals() -> void:
         label.name = "Face_%d" % number
         label.text = str(number)
         label.font_size = 50
-        label.pixel_size = 0.0040
+        label.pixel_size = 0.0056
         label.outline_size = 5
         label.modulate = Color(0.95, 0.89, 0.74)
         label.outline_modulate = Color(0.05, 0.06, 0.095)
@@ -119,13 +127,28 @@ func _physics_process(delta: float) -> void:
         best_alignment = maxf(best_alignment, dot_up)
     if face < 0 or best_alignment < 0.88:
         ## Real world-frame impulse only; never twist to a selected number.
-        if edge_recovery_count < 3 and elapsed < MAX_ROLL_SECONDS - 1.5:
+        if edge_recovery_count < MAX_EDGE_RECOVERY_ATTEMPTS and elapsed < MAX_ROLL_SECONDS - 0.75:
+            # A symmetric alternating *real Jolt* nudge dislodges a
+            # multi-body D20 leaning between faces. Increasing impulse by
+            # bounded attempts is independent of the printed face label.
+            # Never rotate/freeze the body or generate a synthetic result.
             edge_recovery_count += 1
+            var phase := float(edge_recovery_count)
+            var direction := -1.0 if edge_recovery_count % 2 == 0 else 1.0
             sleeping = false
-            apply_central_impulse(Vector3(0.005, 0.007, 0.004))
-            apply_torque_impulse(Vector3(0.004, 0.003, -0.004))
+            apply_central_impulse(Vector3(
+                direction * (0.005 + 0.0015 * phase),
+                0.007 + 0.001 * phase,
+                -direction * (0.004 + 0.001 * phase)))
+            apply_torque_impulse(Vector3(
+                direction * (0.004 + 0.0014 * phase),
+                0.003,
+                -direction * (0.004 + 0.0014 * phase)))
+            if OS.is_debug_build():
+                print("DICE_D20_REAL_EDGE_RECOVERY attempt=%d alignment=%.4f elapsed=%.2f" % [
+                    edge_recovery_count,best_alignment,elapsed])
             return
-        _abort("D20 не смог устойчиво остановиться на грани")
+        _abort("D20 не смог устойчиво остановиться на грани после %d реальных импульсов" % edge_recovery_count)
         return
     rolling = false
     result = Ico.numbers()[face]

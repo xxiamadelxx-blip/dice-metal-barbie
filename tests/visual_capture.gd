@@ -1,4 +1,11 @@
 extends SceneTree
+const CriticalAura = preload("res://src/visual/critical_aura.gd")
+const Ico = preload("res://src/core/icosahedron.gd")
+const RealD20 = preload("res://src/dice/d20_body.gd")
+const Premium = preload("res://src/visual/premium_finish.gd")
+const Octa = preload("res://src/core/octahedron.gd")
+const Dodeca = preload("res://src/core/dodecahedron.gd")
+const Tetra = preload("res://src/core/tetrahedron.gd")
 ## Cloud native visual fallback for inspecting the actual Godot render output.
 ## Runs under Xvfb/Mesa, not an Android APK. NEVER claim handset equivalence.
 
@@ -30,11 +37,208 @@ func _run() -> void:
     var scene: Node3D = packed.instantiate()
     root.add_child(scene)
     await create_timer(1.5).timeout
+    # Hero previews are presentation objects, not mutated gameplay dice.
+    var showcase := scene.get_node_or_null("IdleDiceDisplay") as Node3D
+    if showcase == null or showcase.get_child_count() != 4:
+        push_error("Launch composition must include precisely four real previews")
+        quit(15)
+        return
+    for preview_sides in [20, 12, 6, 4]:
+        var showcase_die := showcase.get_node_or_null("PreviewD%d" % preview_sides) as RigidBody3D
+        if showcase_die == null or not showcase_die.freeze:
+            push_error("Showcase missing frozen D%d" % preview_sides)
+            quit(16)
+            return
+        if showcase_die.collision_layer != 0 or showcase_die.collision_mask != 0:
+            push_error("Showcase D%d must never participate in physics" % preview_sides)
+            quit(17)
+            return
+        if not is_equal_approx(showcase_die.scale.x, 1.38) or not is_equal_approx(showcase_die.scale.y, 1.38):
+            push_error("Showcase D%d lost its readable preview-only scale" % preview_sides)
+            quit(18)
+            return
     await _capture("native-01-launch")
     scene.call("_throw_physical_d6")
-    await create_timer(0.7).timeout
+    # User-requested soft table response: an ORIGINAL frame exactly after
+    # the first REAL Jolt contact, then one after felt recovery. Never call
+    # register_impact here; art QA must not manufacture the trigger.
+    var felt := scene.get_node_or_null("M5VelvetContactSurface") as Node3D
+    if felt == null:
+        push_error("M5 real-contact felt is not present in real scene")
+        quit(19)
+        return
+    var saw_real_contact := false
+    for frame in range(230):
+        await process_frame
+        if int(felt.get("impact_count")) > 0 and bool(felt.get("active")):
+            saw_real_contact = true
+            break
+    if not saw_real_contact:
+        push_error("Real physical D6 did not actually impact the felt floor")
+        quit(20)
+        return
+    await _capture("native-17-jolt-contact-felt")
+    await create_timer(0.10).timeout
     await _capture("native-02-moving")
-    await create_timer(5.0).timeout
+    # Legitimate D6 throws bounce MORE THAN ONCE. Last Gauntlet failed
+    # incorrectly after 350ms: a real second impact reactivated the felt.
+    # Wait for the genuine physical roll_completed/settled state first.
+    var rolling_die := scene.get_node_or_null("PhysicalD6") as RigidBody3D
+    if rolling_die == null:
+        push_error("Real D6 missing after reported floor collision")
+        quit(21)
+        return
+    var settled := false
+    for tick in range(800):
+        await process_frame
+        if not bool(rolling_die.get("rolling")):
+            settled = int(scene.get("last_result")) >= 1
+            break
+    if not settled:
+        push_error("Physical D6 never finished before visual recovery QA")
+        quit(22)
+        return
+    var impacts_before_recovery := int(felt.get("impact_count"))
+    await create_timer(0.36).timeout
+    if bool(felt.get("active")):
+        push_error("Felt stayed displaced 0.36s after settled last Jolt impact")
+        quit(23)
+        return
+    if int(felt.get("impact_count")) != impacts_before_recovery:
+        push_error("New floor contact after Jolt D6 settled: scene did not quiesce")
+        quit(24)
+        return
+    await _capture("native-18-recovered-felt")
+    await create_timer(0.15).timeout
     await _capture("native-03-after")
-    print("Native Godot visual capture completed; must inspect pixels separately.")
+    # The user-approved concept emphasizes sculptural polyhedra. The old
+    # screenshot suite showed D6 only, which looks square from 90° overhead.
+    # Also inspect the real faceted D20, not a staged illustration.
+    scene.call("_select_die_type", 20)
+    scene.call("_throw_physical_d20")
+    await create_timer(0.7).timeout
+    await _capture("native-04-d20-moving")
+    await create_timer(5.0).timeout
+    await _capture("native-05-d20-after")
+    # This genuine overhead detail view is essential for evaluating whether
+    # 3D text and pocket geometry hold up beyond the tiny full-table preview.
+    var closeup_camera := scene.get_node_or_null("FixedOverheadCamera") as Camera3D
+    var closeup_die := scene.get_node_or_null("PhysicalD20") as RigidBody3D
+    if closeup_camera == null or closeup_die == null:
+        push_error("Cannot make a truthful native D20 detail capture")
+        quit(6)
+        return
+    var d20_face_value: int = Ico.top_value(closeup_die.global_transform.basis.orthonormalized(), 0.02)
+    var d20_hud_value: int = int(scene.get("last_result"))
+    if d20_face_value < 1 or d20_face_value != d20_hud_value:
+        push_error("Actual D20 Jolt upper face %d != HUD %d" % [d20_face_value, d20_hud_value])
+        quit(12)
+        return
+    print("PASS actual D20 upper physical face = HUD %d" % d20_face_value)
+    closeup_camera.size = 3.8
+    closeup_camera.position = Vector3(closeup_die.position.x, 18.0, closeup_die.position.z)
+    await create_timer(0.5).timeout
+    await _capture("native-06-d20-detail")
+    # Controlled *visual-only* effect staging on a genuine settled die.
+    # NOT evidence that the random physical result was a natural crit.
+    # Physics result triggering is separately guarded in main.gd and unit tests.
+    var gold_aura := CriticalAura.spawn(closeup_die, 20, 20)
+    if gold_aura == null:
+        push_error("Unable to stage golden spatial D20 aura in native renderer")
+        quit(7)
+        return
+    await create_timer(0.18).timeout
+    await _capture("native-07-staged-gold-pulse")
+    await create_timer(1.1).timeout
+    var red_aura := CriticalAura.spawn(closeup_die, 20, 1)
+    if red_aura == null:
+        push_error("Unable to stage crimson spatial D20 aura in native renderer")
+        quit(8)
+        return
+    await create_timer(0.18).timeout
+    await _capture("native-08-staged-crimson-pulse")
+    print("Staged D20 critical wave previews complete; not natural throw evidence.")
+    # New authored Blender D8/D12 art MUST be inspected inside real Godot,
+    # not only as standalone Blender camera renders. Real physical throws.
+    await create_timer(1.0).timeout
+    for sides in [8,12,4]:
+        closeup_camera.size = 14.2
+        closeup_camera.position = Vector3(0, 18.0, 1.5)
+        scene.call("_select_die_type", sides)
+        scene.call("_throw_selected_die")
+        await create_timer(7.0).timeout
+        var die := scene.get_node_or_null("PhysicalD%d" % sides) as RigidBody3D
+        if die == null:
+            push_error("Missing real physical D%d for imported GLB macro QA" % sides)
+            quit(9)
+            return
+        # The image must reflect a completed physical result, not a random
+        # airborne pose; the legacy HUD result is the oracle for all five dice.
+        var rolled_number: int = int(scene.get("last_result"))
+        if rolled_number < 1 or rolled_number > sides:
+            push_error("D%d visual QA requires a completed physical roll, got %d" % [sides, rolled_number])
+            quit(11)
+            return
+        # Native 14.2 orthographic camera after real Jolt roll; no staged pose.
+        var normal_name: String = {8:"native-12-d8-normal",12:"native-13-d12-normal",
+            4:"native-14-d4-normal"}[sides]
+        await _capture(normal_name)
+        print("NORMAL_VIEW Jolt D%d physically settled result = %d, camera size 14.2" % [sides, rolled_number])
+        var pose: Basis = die.global_transform.basis.orthonormalized()
+        var physical_face_value := -1
+        match sides:
+            4: physical_face_value = Tetra.top_value(pose)
+            8: physical_face_value = Octa.top_value(pose)
+            12: physical_face_value = Dodeca.top_value(pose)
+        if physical_face_value != rolled_number:
+            push_error("D%d actual top value %d differs from displayed %d" % [
+                sides, physical_face_value, rolled_number])
+            quit(13)
+            return
+        print("PASS physical D%d upper face/apex == HUD value %d" % [sides, rolled_number])
+        var imported := die.get_node_or_null("BlenderRecessedGLB") as Node3D
+        if imported == null:
+            push_error("D%d is showing old procedural fallback, not new Blender GLB" % sides)
+            quit(10)
+            return
+        closeup_camera.size = 3.8
+        closeup_camera.position = Vector3(die.position.x, 18.0, die.position.z)
+        await create_timer(0.4).timeout
+        var output: String = {8:"native-09-d8-detail",12:"native-10-d12-detail",
+            4:"native-11-d4-apex-detail"}[sides]
+        await _capture(output)
+    # Staged art visibility proof only. The clone is NOT thrown and cannot
+    # emit a roll_completed event or influence game results. It isolates
+    # physical 6/9 underline legibility in the actual Godot renderer.
+    var staged := RealD20.new() as RigidBody3D
+    staged.name = "STAGED_UnderlineInspection_Only"
+    staged.freeze = true
+    staged.collision_layer = 0
+    staged.collision_mask = 0
+    scene.add_child(staged)
+    staged.position = Vector3(0, 1.1, 0)
+    Premium.decorate_die(staged, 20)
+    var previous_d4 := scene.get_node_or_null("PhysicalD4") as RigidBody3D
+    if previous_d4 != null:
+        previous_d4.visible = false
+    closeup_camera.size = 3.8
+    closeup_camera.position = Vector3(0, 18.0, 0)
+    # Make it explicit these frames are staged art previews. Previously the
+    # D4/3 result HUD remained visible while a non-rolled D20 was displayed.
+    scene.call("_select_die_type", 20)
+    var label := scene.get("status_label") as Label
+    for target in [6, 9]:
+        if label != null:
+            label.text = "D20 · ДЕМО ГРАВИРОВКИ %d" % target
+        var face_index: int = Ico.numbers().find(target)
+        if face_index == -1:
+            push_error("Staged 6/9 proof has no numeric face %d" % target)
+            quit(14)
+            return
+        var up_axis: Vector3 = Ico.face_normal(face_index)
+        staged.basis = Basis(Quaternion(up_axis, Vector3.UP))
+        await create_timer(0.35).timeout
+        await _capture("native-15-staged-d20-six-underbar" if target == 6 else
+                       "native-16-staged-d20-nine-underbar")
+    print("Native Godot QA complete: 5 physical dice and STAGED (not rolled) 6/9 engraving views.")
     quit(0)

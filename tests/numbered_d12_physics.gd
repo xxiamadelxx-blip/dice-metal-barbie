@@ -27,6 +27,8 @@ func _run() -> void:
     _expect(collision.shape.points.size() == 20, "D12 collider must have 20 vertices")
     var body: MeshInstance3D = die.get_node("ObsidianD12")
     _expect(body.mesh.get_faces().size() == 108, "12 pentagons triangulate to 36 mesh triangles")
+    _expect((die.get_node("ActualSculptedBevels") as MeshInstance3D).mesh.get_faces().size() == 360, "D12 needs five actual bevel shoulder quads per pentagon")
+    _expect((die.get_node("FaceInsetBronzeHairlines") as MeshInstance3D).mesh.get_faces().size() == 360, "D12 needs real pentagonal in-face bronze tracery")
 
     var values := Dodeca.numbers()
     for i in range(12):

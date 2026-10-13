@@ -1,0 +1,188 @@
+name: Dice Gauntlet unified build and release gate
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# One run per PR revision, automatically cancelling obsolete source revisions.
+concurrency:
+  group: dice-gauntlet-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  engineering-entry:
+    name: 0 - Executed router, toolchain, contracts and independent Qwen
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Prepare existing zero-key local critic
+        run: bash scripts/gauntlet_setup_local.sh
+      - name: Execute canonical engineering entry
+        run: python3 scripts/engineering_router.py enter --intent 'продолжай через тулчейн Gauntlet и Qwen'
+      - name: Require actual independent response, never source-present PASS
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('build/engineering-entry/entry-report.json').read_text())
+          assert data['critic']['status']=='REVIEW_RECEIVED', 'Qwen independent response NOT_VERIFIED'
+          assert data['critic']['reviewed_sha']==data['source_sha']
+          print('Source review received; findings require agent triage, NOT artistic acceptance')
+          PY
+      - name: Preserve every executed gate and raw Qwen review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engineering-entry-and-qwen
+          path: build/engineering-entry/
+          if-no-files-found: warn
+          retention-days: 30
+
+  assets:
+    name: 1 - Sculpt and verify fresh GLBs with Blender/MeshLab
+    needs: engineering-entry
+    uses: ./.github/workflows/blender-assets.yml
+    permissions:
+      contents: read
+
+  native:
+    name: 2a - Real Godot/Mesa scene and pixel checks
+    needs: assets
+    uses: ./.github/workflows/godot-native-visual.yml
+    with:
+      fresh_assets: true
+    permissions:
+      contents: read
+
+  temporal:
+    name: 2b - Complete physical throws and every 24fps recorded frame
+    needs: assets
+    uses: ./.github/workflows/temporal-roll-24fps.yml
+    with:
+      fresh_assets: true
+    permissions:
+      contents: read
+
+  android:
+    name: 2c - Physical Jolt regressions and ARM64 APK
+    needs: assets
+    uses: ./.github/workflows/ci.yml
+    with:
+      fresh_assets: true
+    permissions:
+      contents: read
+
+  avd:
+    name: 2d - Android emulator real-screen capture (diagnostic)
+    needs: assets
+    uses: ./.github/workflows/android-avd-24fps.yml
+    with:
+      fresh_assets: true
+    permissions:
+      contents: read
+
+  pin:
+    name: 3 - Pin only GLBs accepted by ALL source consumers, including AVD
+    needs: [assets, native, temporal, android, avd]
+    # Do not pin/push fresh assets until real Android screenshots and videos
+    # have finished, preserving their evidence from concurrency cancellation.
+    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.assets.result == 'success' && needs.native.result == 'success' && needs.temporal.result == 'success' && needs.android.result == 'success' && needs.avd.result == 'success' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+      - uses: actions/download-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb
+      - name: Pin matching GLBs only if PR branch did not move during QA
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          SOURCE_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
+          actual="$(git ls-remote origin "refs/heads/$SOURCE_BRANCH" | awk '{print $1}')"
+          if test "$actual" != "$SOURCE_SHA"; then
+            echo "FAIL: branch moved during QA; cannot pin stale model files"
+            exit 11
+          fi
+          mkdir -p src/assets/generated
+          for die in d4 d6 d8 d12 d20; do
+            cp "build/gauntlet-glb/${die}_boolean_engraved.glb" "src/assets/generated/${die}_boolean_engraved.glb"
+          done
+          git add src/assets/generated/*_boolean_engraved.glb
+          if git diff --cached --quiet; then
+            echo "All pinned models already match exact verified GLB bytes"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "assets: pin complete Gauntlet-verified GLBs [skip ci]"
+          git push origin "HEAD:refs/heads/$SOURCE_BRANCH"
+
+  report:
+    name: 4 - One final verdict in Actions Summary
+    needs: [engineering-entry, assets, native, temporal, android, avd, pin]
+    if: always()
+    runs-on: ubuntu-24.04
+    env:
+      ASSETS: ${{ needs.assets.result }}
+      ENTRY: ${{ needs.engineering-entry.result }}
+      NATIVE: ${{ needs.native.result }}
+      TEMPORAL: ${{ needs.temporal.result }}
+      ANDROID: ${{ needs.android.result }}
+      AVD: ${{ needs.avd.result }}
+      PIN: ${{ needs.pin.result }}
+      EVENT: ${{ github.event_name }}
+    steps:
+      - name: Publish final matrix, failed gates and remaining device limitations
+        run: |
+          {
+            echo "## Dice Gauntlet: exact-source end-to-end verdict"
+            echo
+            echo "| Gate | Result |"
+            echo "| --- | --- |"
+            echo "| Executed engineering entry + independent Qwen source review | $ENTRY |"
+            echo "| Offline Blender/MeshLab verified GLBs | $ASSETS |"
+            echo "| Live Godot native screenshots/pixel critique | $NATIVE |"
+            echo "| Complete eight-mode real-Jolt 24fps video/frame audit | $TEMPORAL |"
+            echo "| Physics tests and signed Android ARM64 APK | $ANDROID |"
+            echo "| Android AVD live capture (diagnostic, separate from phone gate) | $AVD |"
+            echo "| Pin verified GLB bytes to PR (same repository only) | $PIN |"
+            echo
+            echo "Artifacts in THIS run: generated mesh bytes, original native PNGs, full videos"
+            echo "and frame JSONLs, Android debug APK. No cross-run artifact assumptions."
+            echo
+            echo "Android AVD FAIL is an unresolved rendering/driver diagnostic; it never"
+            echo "becomes a claimed Android screenshot PASS because native Godot passed."
+            echo "NOT VERIFIED by cloud CI: OnePlus Nord 3 installation/FPS and independent"
+            echo "premium aesthetic approval. These remain real-world acceptance gates."
+            echo
+            echo "No chat polling required; this is a durable asynchronous report."
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "$ENTRY" = success
+          test "$ASSETS" = success
+          test "$NATIVE" = success
+          test "$TEMPORAL" = success
+          test "$ANDROID" = success
+          if test "$AVD" != success; then
+            echo "FAIL: real Android AVD five-die visual Gauntlet incomplete."
+            exit 12
+          fi
+          if test "$EVENT" = pull_request && test "$PIN" = failure; then
+            echo "FAIL: verified art could not be pinned to the feature branch"
+            exit 9
+          fi

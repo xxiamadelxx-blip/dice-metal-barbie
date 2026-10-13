@@ -29,7 +29,13 @@ func _run() -> void:
     _check(shape.shape.points.size() == 12, "D20 collision must use 12 golden-ratio vertices")
 
     var visual: MeshInstance3D = die.get_node("ObsidianD20")
-    _check(visual.mesh.get_faces().size() == 60, "D20 mesh must have 20 triangles = 60 vertices")
+    _check(visual.mesh.get_faces().size() == 60, "D20 should have 20 numbered planar face cores")
+    var chamfers: MeshInstance3D = die.get_node("ActualSculptedBevels")
+    var brass: MeshInstance3D = die.get_node("FaceInsetBronzeHairlines")
+    _check(chamfers.mesh.get_faces().size() == 360, "Sculpted icosahedron must have real chamfer quads")
+    _check(brass.mesh.get_faces().size() == 360, "Bronze must lie inset into actual triangular faces")
+    _check(die.get_node_or_null("NonCollidingMetalInlay") == null, "D20 cannot use floating cylinder wireframe")
+    _check(die.get_node("IcosahedronCollision").shape.points.size() == 12, "Premium art must never alter Jolt hull")
     var numbers := Ico.numbers()
     for face_id in range(20):
         var face: int = numbers[face_id]
@@ -63,7 +69,7 @@ func _run() -> void:
         if not finished:
             break
         _check(active.failure == "", "D20 failed: %s" % active.failure)
-        _check(active.edge_recovery_count <= 3, "D20 physical recovery exceeded budget")
+        _check(active.edge_recovery_count <= D20.MAX_EDGE_RECOVERY_ATTEMPTS, "D20 physical recovery exceeded budget")
         if active.failure != "":
             break
         var top: int = Ico.top_value(active.global_transform.basis.orthonormalized(), 0.02)

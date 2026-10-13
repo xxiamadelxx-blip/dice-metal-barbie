@@ -1,0 +1,42 @@
+# Installation and execution probe: creative desktop editors
+
+**Target:** ephemeral GitHub Actions `ubuntu-24.04` x86_64 runner, **not** the Android device. Run [`creative-toolchain-probe.yml`](../.github/workflows/creative-toolchain-probe.yml), then inspect its `creative-toolchain-probe` artifact (`probe-report.json`, `apt-install.log`, command outputs, official Material Maker release download and checksum). This file does **not** assert success until actual CI logs prove it.
+
+## Four new tools
+| Tool | Installation candidate | Actual probe status at authoring | Runtime rule |
+|---|---|---|---|
+| Material Maker | Official release `RodZill4/material-maker` **1.7** Linux tarball pinned by upstream published SHA256 `c8e3b6f1993540875d26fe49645c91511bba36cda0412c715bd13249f7141647` | **FIRST RUN: installed, SHA-256 PASS, `--version` PASS** | Use only with verified executable + headless export of `.ptex`; else Blender/Python. Do NOT run unverified archive executables. |
+| MeshLab | Ubuntu 24.04 official `meshlab` apt package (Universe) | **VERIFIED: APT installed 2020.09, `xvfb-run meshlab -h` exit 0** | Mesh inspection/cleanup only after package/runtime smoke; else Trimesh/Blender. |
+| Krita | Ubuntu 24.04 official `krita` apt package (Universe) | **VERIFIED: APT installed 5.2.2, `xvfb-run krita --version` exit 0** | Optional painted texture/mask tool only after install/export proof; else GIMP/Python. |
+| GIMP | Ubuntu 24.04 official `gimp` apt package | **FIRST RUN: APT installed 2.10.36, CLI `--version` PASS** | Optional image edit and batch workflow only after command and noninteractive proof; else ImageMagick/Pillow. |
+
+## Existing established pipeline
+Prior PR CI has independently exercised Blender 4.x generator/GLB/PNG, Godot 4.6.3 native renderer/Jolt/ARM64 export, and Python image critic. In this assistant's present ephemeral container (Debian 13), **OpenSCAD 2021.01, Inkscape, ImageMagick, FFmpeg and Trimesh 4.11.1** binaries/import were found. These checks confirm local availability only, *not* that they are installed on GitHub Actions Ubuntu 24.04 or inside Android. Existing Blender/Godot are driven in **GitHub Actions**; availability varies by runtime.
+
+## Evidence levels
+- `not_found`: package or executable not found.
+- `install_failed`: apt/download/hash failure; no capability assumed.
+- `installed`: package or unpacked executable present.
+- `cli_ok`: bounded `--version` returns exit 0. GUI export/headless feature NOT YET VERIFIED.
+- `gui_smoke_ok`: explicitly started under Xvfb; not necessarily useful for production.
+- `headless_export_ok`: an authored test asset exported and validated. Required before unattended production use.
+- `production_verified`: includes imported Godot scene and on-device release gates when relevant.
+
+The probe must be allowed to **record failures rather than hide them**. It must never install packages on the user's phone, commit third-party executables into repository, or expose tokens. Material Maker official CLI syntax is `--export-material --target Godot -o <output_path> <input.ptex>` documented in [Material Maker command line docs](https://rodzill4.github.io/material-maker/doc/command_line.html). Without a real `.ptex` test asset, mark material export NOT VERIFIED.
+
+## Sources
+[Official Material Maker releases](https://github.com/RodZill4/material-maker/releases/tag/1.7) · [Official Material Maker CLI](https://rodzill4.github.io/material-maker/doc/command_line.html) · [Godot CLI](https://docs.godotengine.org/en/4.6/tutorials/editor/command_line_tutorial.html).
+
+## First actual GitHub Actions evidence
+[Ubuntu install and execution probe #38075529457](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38075529457) finished **SUCCESS**, with uploaded artifact `creative-toolchain-probe` containing the complete `probe-report.json`, official archive SHA256 log and APT logs (not vendor binaries). Results: **GIMP** `cli_ok` version 2.10.36, **Krita** package version 5.2.2 with startup error `qt.qpa.xcb: could not connect to display`, **MeshLab** package version 2020.09 with same DISPLAY error, **Material Maker** 1.7 archive checksum match and `xvfb-run material_maker.x86_64 --version` exit 0 (reports Godot engine 4.7.stable.official.5b4e0cb0f). The Qt no-DISPLAY errors are *not* missing packages; second run checks Xvfb-assisted startup. Still no proof of successful GUI painting or unattended export. 
+
+## Second cloud GUI compatibility test: verified
+[GitHub Actions #38075709599](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38075709599) **SUCCESS**. Actual downloaded `probe-report.json` results: **GIMP 2.10.36** `cli_ok` without display; **Krita 5.2.2** `cli_ok_xvfb` with `xvfb-run krita --version` exit 0; **MeshLab 2020.09** `cli_ok_xvfb` with `xvfb-run meshlab -h` exit 0, which prints valid MeshLab usage and plugin/shader directory; **Material Maker** official 1.7 archive SHA256 verified and `xvfb-run material_maker.x86_64 --version` exit 0 (the printed `4.7.stable...` is its **Godot engine version**, not the Material Maker application version). `meshlabserver` was **installed** at `/usr/bin/meshlabserver`, but `meshlabserver -h` *without display* failed on the Qt XCB backend; next step for actual batch mesh conversion is to run server under Xvfb and validate a real OBJ/PLY output. The current successful version/usage probes **do not** prove that GUI editors exported an asset.
+
+**Agent operational outcome:** GIMP executable available in runner; Krita and MeshLab are installed and usable for GUI/CLI entrypoints with Xvfb; Material Maker 1.7 installed from SHA-pinned archive and its version command starts, but `.ptex` export is NOT VERIFIED. Before relying on any of these for release artwork, prove actual asset export, color-space and model import. Existing Blender/Python pipeline remains canonical until then.
+
+## M5 explicit production execution (2026-10-11)
+
+Prior full [M4 Gauntlet #38171350517](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38171350517) **PASS** establishes actual Blender authored Boolean meshes, five real GLB exports, MeshLab/Xvfb conversion of five QA PLY meshes to nonempty OBJ, ImageMagick 256×256 inspection of PBR textures, Godot source import/24fps native and Android Jolt + ARM64. This is a successful *asset-production pipeline* for the test scope, not user's premium visual acceptance.
+
+The first M5 update to `.github/workflows/blender-assets.yml` adds APT Inkscape+FFmpeg, actual export `src/assets/ui/m5_roll_action.svg` → `build/premium-glb/m5_roll_action_256.png`, size proof, actual generated GLB/OBJ/texture hashes in `m5-route-manifest.json`. **At authoring this new Inkscape/M5 manifest step is a CANDIDATE, NOT VERIFIED until a new exact-source GitHub run and artifacts are examined.** `ffmpeg`/FFprobe version proof is not itself rendered game proof; the separate continuous Godot/Jolt FFmpeg jobs provide real video. Material Maker remains `cli_ok`, headless PTEX export NOT_VERIFIED; Krita and GIMP remain optional until task-relevant artifact export. The Android device acceptance and visual art quality gate are separate.

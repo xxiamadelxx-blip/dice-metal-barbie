@@ -22,8 +22,6 @@ Approach A: physical final orientation determines face, then check each face dis
 ### Android
 Headless engine/editor validation, pure tests, Android ARM64 debug export in GitHub Actions. Stable signing and update-over-install smoke test after selecting protected release secrets. Never commit a keystore. CI artifacts are temporary and debug-key signed; release uploads are separate.
 
-## Build-time engineering architecture (2026-10-11)
 
-The approved Android **runtime stack above remains unchanged**. To develop it safely, use the [Unified Engineering Router](ENGINEERING_ROUTER.md): `AGENTS.md` → `config/engineering_routes.json` → `scripts/engineering_router.py` → selected Godot/Blender/audio/architecture/security/performance specialist → `docs/GAUNTLET_LOOP.md` and real evidence → tracked `docs/handoff/ACTIVE_ROUTING_HANDOFF.json`. This routes tools for code/asset production; none of those authoring tools is a dependency of the offline APK.
-
-A genuine external critic is optional only when unavailable and then must be marked `NOT_VERIFIED`; real Android hardware/device performance remains a distinct M6 gate. A source architecture graph is audited with `scripts/engineering_checks.py architecture` rather than trusting a drawing alone.
+## Offline creative toolchain separation (M5 development only)
+See [toolchain architecture](TOOLCHAIN_ARCHITECTURE.md) and [routing matrix](CREATIVE_TOOLCHAIN.md). Blender/Material Maker/2D art tools/MeshLab run **only at build time**, never inside the Android app. They produce static licensed assets with manifests and provenance. Source of truth for physical face outcome and collisions remains Godot/Jolt. Optional design integrations operate outside the Android runtime, can be bypassed with offline tools and require current user authorization. All model/art decisions are checked by autonomous Gauntlet Loop and recorded as evidence. `main` must remain untouched until acceptance.

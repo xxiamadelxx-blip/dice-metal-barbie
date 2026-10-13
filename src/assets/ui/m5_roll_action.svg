@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <title>Dice M5 throw action glyph, original offline SVG</title>
+  <desc>Angular seven-facet physical die drawn as reusable UI prototype, without external fonts or media.</desc>
+  <g fill="none" stroke="#ECDEB9" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 17 223 70 221 181 128 239 35 181 33 70Z"/>
+    <path d="m128 17-33 82 33 140 34-140Z"/>
+    <path d="m33 70 62 29 67 0 61-29M35 181l93-51 93 51"/>
+    <path d="m95 99 33 31 34-31"/>
+  </g>
+</svg>

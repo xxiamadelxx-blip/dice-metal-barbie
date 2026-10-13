@@ -6,6 +6,7 @@ signal roll_failed(reason: String)
 
 const Dodeca = preload("res://src/core/dodecahedron.gd")
 const DiceRng = preload("res://src/core/dice_rng.gd")
+const Sculpt = preload("res://src/visual/sculpted_d20.gd")
 const MAX_ROLL_SECONDS := 9.0
 
 var rolling := false
@@ -36,24 +37,28 @@ func _ready() -> void:
 
 func _create_visual() -> void:
     var points := Dodeca.vertices()
-    var mesh := SurfaceTool.new()
-    mesh.begin(Mesh.PRIMITIVE_TRIANGLES)
-    for face_id in range(12):
-        var indices := Dodeca.face_indices(face_id)
-        var normal := Dodeca.face_normal(face_id)
-        for triangle in range(1, indices.size() - 1):
-            for vertex_id in [indices[0], indices[triangle], indices[triangle + 1]]:
-                mesh.set_normal(normal)
-                mesh.add_vertex(points[vertex_id])
+    var face_indices: Array = []
+    for facet in range(12):
+        face_indices.append(Dodeca.face_indices(facet))
     var body := MeshInstance3D.new()
     body.name = "ObsidianD12"
-    body.mesh = mesh.commit()
+    body.mesh = Sculpt.face_planes(Dodeca.vertices(), face_indices)
     var stone := StandardMaterial3D.new()
     stone.albedo_color = Color(0.023, 0.031, 0.051)
     stone.metallic = 0.24
     stone.roughness = 0.20
     body.material_override = stone
     add_child(body)
+    var bevel := MeshInstance3D.new()
+    bevel.name = "ActualSculptedBevels"
+    bevel.mesh = Sculpt.chamfers(Dodeca.vertices(), face_indices)
+    bevel.material_override = Sculpt.bevel_material()
+    add_child(bevel)
+    var inlay := MeshInstance3D.new()
+    inlay.name = "FaceInsetBronzeHairlines"
+    inlay.mesh = Sculpt.inlaid_tracery(Dodeca.vertices(), face_indices)
+    inlay.material_override = Sculpt.gold_groove_material()
+    add_child(inlay)
 
     var numbered := Dodeca.numbers()
     for i in range(12):
@@ -63,7 +68,7 @@ func _create_visual() -> void:
         glyph.name = "Face_%d" % value
         glyph.text = str(value)
         glyph.font_size = 51
-        glyph.pixel_size = 0.005
+        glyph.pixel_size = 0.0056
         glyph.outline_size = 6
         glyph.modulate = Color(0.94, 0.87, 0.74)
         glyph.outline_modulate = Color(0.05, 0.07, 0.10)

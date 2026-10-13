@@ -1,0 +1,11 @@
+# Canonical Blender D20 proof — 2026-10-13
+
+Resolved the previous numbered-face alignment blocker in an isolated visual candidate. Recovered earlier archive did not contain the active authored generator, so reconstructed it from the existing private authored.blend: retained original glyph meshes and materials, rebuilt regular radius0.88 shell from canonical game vertices/faces, bevel0.0088, twenty Boolean pockets and6/9 physical underbars. Inlay top recession0.00616; gold roughness0.42, no emission. Game source/physics/outcomes unchanged.
+
+Final GLB SHA25674c95b405414a8d5ca2a3eb5173262964a9347cef9c7f536e2b2347437c783d6. Stone exact mesh QA is in private package; nonmanifold edges0.21 meshes and80352triangles at actual Godot import. Per-face original UV affine fits max3.49e-8; original three embedded PBR image payloads copied exactly after exporter. All20 exported glyph normals pass maxPCAresidual0.000279, threshold0.001 (<0.06degree; initial tighter0.0001 rejected glTF split-vertex sampling and was explicitly recalibrated). Gold lies inside canonical hull, max signed violation-0.006158.
+
+Godot4.6.3 Mobile/Vulkan llvmpipe: twenty actual overhead poses photographed, canonical top_value matches expected in20/20. Adversarial self-review read full contact sheet and6/9 macro; no independent visual critic claimed. Real Jolt fixture uses unchanged Icosahedron.vertices() collider, settled3.2167physicsseconds with actual top11. Blender4.0.2 CPU Cycles final32sample render captured separately; lighting differs, not renderer equality.
+
+Private Library: package libfile_697a983883d081918e35562b528785a5, comparison libfile_611b74ae9f2481918f15f3ee8a7925d2, all20 sheet libfile_eb2a70d178c08191b9e87ad743db0c3c. Contains original private input blend/GLB, generator, final blend/GLB, repro scripts, all20 PNGs, actual logs/receipts. No private binaries published to repository.
+
+OPEN: visual cost80352triangles, actual game integration, full continuous24fps suite, Android/Nord3, artistic acceptance and independent critic. Architecture gate still FAIL existing core->visual; router/Gauntlet contracts and security PASS. Next optimize then game integration with exact canonical physics and full same-source gates. Previous routing handoff preserved historical evidence; newer checkpoint resolves only geometric numbering blocker.

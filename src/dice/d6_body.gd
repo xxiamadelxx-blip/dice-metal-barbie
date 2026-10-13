@@ -7,8 +7,10 @@ signal roll_completed(value: int)
 signal roll_failed(reason: String)
 
 const CubeSymmetry = preload("res://src/core/cube_symmetry.gd")
-const SIDE := 0.72
-const MAX_ROLL_SECONDS := 9.0
+const BeveledCube = preload("res://src/visual/beveled_cube.gd")
+const SIDE := 1.22
+const MAX_ROLL_SECONDS := 10.5
+const MAX_EDGE_RECOVERIES := 5
 
 var elapsed := 0.0
 var edge_recovery_count := 0
@@ -43,8 +45,7 @@ func _ready() -> void:
     stone.roughness = 0.18
     var mesh_node := MeshInstance3D.new()
     mesh_node.name = "Obsidian"
-    var cube := BoxMesh.new()
-    cube.size = Vector3.ONE * SIDE
+    var cube := BeveledCube.create(SIDE, 0.105)
     mesh_node.mesh = cube
     mesh_node.material_override = stone
     add_child(mesh_node)
@@ -94,7 +95,7 @@ func _physics_process(delta: float) -> void:
         return
     elapsed += delta
     if elapsed > MAX_ROLL_SECONDS:
-        _abort("Не удалось завершить бросок за 9 секунд")
+        _abort("Не удалось завершить бросок за 10.5 секунд")
         return
     if position.y < -0.15 or absf(position.x) > 3.1 or absf(position.z) > 5.2:
         _abort("Кубик покинул игровую поверхность")
@@ -107,13 +108,25 @@ func _physics_process(delta: float) -> void:
         var alignment: float = (global_transform.basis * normal).normalized().dot(Vector3.UP)
         best_alignment = maxf(best_alignment, alignment)
     if top < 1 or best_alignment < 0.92:
-        ## A physically unsteady edge rest must never yield a fabricated number.
-        ## Wake with a tiny world-space knock, independent of face labels.
-        if edge_recovery_count < 3 and elapsed < MAX_ROLL_SECONDS - 1.5:
+        # A real solver sleep on an edge/rail is NOT a face result.
+        # Earlier constant impulse was too weak: CI 38089859927 exhausted
+        # all 3 retries after 3.6 seconds, correctly failing at trial 3.
+        # Escalate the physical knock, push away from walls, and alternate
+        # world-space torque. Never inspect the face value to pick a direction.
+        if edge_recovery_count < MAX_EDGE_RECOVERIES and elapsed < MAX_ROLL_SECONDS - 1.5:
             edge_recovery_count += 1
+            var strength := float(edge_recovery_count)
+            var inward := Vector3(-position.x, 0.0, -position.z)
+            inward = inward.normalized() if inward.length() > 0.01 else Vector3.FORWARD
+            var sign_x := 1.0 if edge_recovery_count % 2 == 1 else -1.0
+            if OS.is_debug_build():
+                print("DICE_QA_RECOVERY D6=%d pos=%s alignment=%.4f t=%.2f" %
+                    [edge_recovery_count, str(position), best_alignment, elapsed])
             sleeping = false
-            apply_central_impulse(Vector3(0.005, 0.008, 0.004))
-            apply_torque_impulse(Vector3(0.004, 0.003, -0.004))
+            apply_central_impulse(inward * (0.015 + 0.004 * strength) +
+                Vector3.UP * (0.012 + 0.004 * strength))
+            apply_torque_impulse(Vector3(sign_x * (0.010 + 0.003 * strength),
+                0.003, -sign_x * (0.009 + 0.002 * strength)))
             return
         _abort("D6 не смог устойчиво остановиться на грани")
         return

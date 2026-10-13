@@ -1,31 +1,15 @@
 # D&D 3D Dice 🎲
 
-## Unified Engineering Router · mandatory agent entry
-
-The **single canonical engineering architecture** routes development across code, Godot/Jolt, 3D, materials, UI, **audio/haptics**, architecture/C4/ADR, security, performance, Android release, supply chain and agent recovery.
-
-Every new Dice agent and every **«продолжай» / «завис» / handoff** must start with [AGENTS.md](AGENTS.md) → [ENGINEERING_ROUTER.md](docs/ENGINEERING_ROUTER.md) → [engineering routes registry](config/engineering_routes.json) and [durable handoff](docs/handoff/ACTIVE_ROUTING_HANDOFF.json). An authorized terminal runs:
-
-```sh
-python3 scripts/engineering_router.py enter --intent "продолжай"
-python3 scripts/engineering_router.py enter --intent "завис"
-python3 scripts/engineering_router.py handoff
-python3 scripts/engineering_router.py audit
-python3 scripts/engineering_router.py validate
-```
-
-The default independent critic uses **local Ollama in GitHub Actions** without an API key (see [Gauntlet Autopilot](docs/GAUNTLET_AUTOPILOT.md)). The router checks local git state, chooses a relevant evidence path, provides alternatives and never pretends an uninstalled tool or reviewer ran. To persist progress for another agent, create an evidence-backed `checkpoint`, **commit and push** the handoff JSON. Actual scope-specific tests and independent critique are performed through the pre-existing [Gauntlet Loop](docs/GAUNTLET_LOOP.md), not faked by the routing CLI. This infrastructure does not install every creative/security program and is not itself product feature completion.
-
 Offline Dungeons & Dragons 3D dice for Android (initial target OnePlus Nord 3). Godot 4.6.3 / Jolt Physics / GDScript.
 
-## Current stage · 2026-10-10
+## Current stage · 2026-10-11
 
 - **M0 and M1:** user-approved requirements, minimalist overhead concept and Godot/Jolt architecture.
 - **M2:** automated foundation PASS, phone hardware QA NOT VERIFIED.
-- **M3:** PARTIAL PASS / IN PROGRESS. Five real, numbered 3D polyhedra **D4, D6, D8, D12, D20**, convex Jolt colliders, dice stay inside velvet table, actual face-derived result (top apex for D4) after physical sleep, no artificial end-of-roll face snap.
-- **M4–M6:** full rules/history/presets, polished UI/audio/haptics/VFX, production signing and release QA NOT completed.
+- **M3:** CLOUD PHYSICS + VISUAL QA PASS; actual-phone and individual D100 face-probability QA OPEN. Seven real physical types **D4/D6/D8/D10/D12/D20/D100** and **D100_PAIR** (two independent D10) map genuine Jolt upper faces to outcomes, with no forced result. [Unified Gauntlet #38095490855](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38095490855): Blender/MeshLab, full eight native/Android 24fps recordings, physical Jolt/ARM64 all PASS. [Long-run 450-throw Jolt experiment #38095307038](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38095307038): 150 D10, 200 physical D100, 100 paired D100, 2,001 checks, zero failures, no large 10-group frequency anomaly. Statistical equality across EACH of 100 faces and real OnePlus device FPS/legibility NOT VERIFIED. Do not mistake successful mechanical tests for premium M5 design sign-off.
+- **M4: CLOUD-FUNCTIONAL PASS.** Full [Gauntlet #38171350517](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38171350517) passed original AVD touch/pixel editor flow, source face Jolt, real D100 pair, local history and same-run Blender/ARM64; exact Android report analyzed 8,958 captured frames, 0 black. OnePlus Nord 3 device installation/FPS NOT VERIFIED. **M5: ACTIVE, not artistically accepted.** User-approved creative router drives actual Blender/MeshLab/ImageMagick/Inkscape output and original real Godot/Jolt/FFmpeg captures. Material Maker/Krita/GIMP only when actual export is proven and useful, not as performative launch checks. **M6:** device/signing/release still open.
 
-Choose one of **D4 / D6 / D8 / D12 / D20**, throw, watch the body bounce and settle on the fixed overhead table, see/copy its numeric result. Natural 1/20 D20 critical **text** exists, aura/flash not yet implemented. This is a developer physics testbed, not the approved final UI.
+Choose one of **D4 / D6 / D8 / D10 / D12 / D20 / D100** (D100 additionally offers single physical D100 vs two physical percentile D10), throw, watch a genuine Jolt body bounce and settle on the fixed overhead table, see/copy its numeric result. Draft PR #23 now includes an experimental die-origin 3D natural-1/natural-20 D20 pulse, verified in Godot native cloud captures; production visual/phone acceptance remains OPEN. This is a developer physics testbed, not the approved final UI.
 
 ### Real evidence
 
@@ -40,7 +24,7 @@ Choose one of **D4 / D6 / D8 / D12 / D20**, throw, watch the body bounce and set
 
 The Gauntlet cycles exposed D6/D8/D20 edge-rest cases, which were repaired with bounded world-space *physical* nudges. An ambiguous face is **not** treated as a valid result. Tests still cover too few throws to establish statistically powered fairness.
 
-**NOT VERIFIED:** Nord 3 installation, actual label rendering/legibility and FPS, independently audited visual quality, physics fairness under large-N trials, final UI, realistic audio/haptics, D10/D100, mixed dice, production release signing. See [M3 Issues #12](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/12) and [#13](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/13).
+**NOT VERIFIED:** Nord 3 installation, actual label rendering/legibility and FPS, independent premium visual acceptance, all-face physical fairness at sufficient statistical power, finalized M5 UI/audio/haptics, production signing and upgrade-over-install. Mixed physical dice and the M4 editor have passing native/AVD interaction evidence, but the most recent strict Android pixel audit failed pending a new exact-SHA Gauntlet. See [M3 Issues #12](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/12) and [#13](https://github.com/xxiamadelxx-blip/dice-metal-barbie/issues/13).
 
 ## Test commands
 
@@ -69,3 +53,27 @@ Package: `org.dicemetalbarbie.dnddice`; M3 debug versionCode **6**, versionName 
 ## Canonical documents
 
 [PRD](docs/PRD.md) · [ARCHITECTURE](docs/ARCHITECTURE.md) · [CONTEXT](docs/CONTEXT.md) · [DESIGN](docs/DESIGN.md) · [MILESTONES](docs/MILESTONES.md) · [ROADMAP](docs/ROADMAP.md) · [GAUNTLET_LOOP](docs/GAUNTLET_LOOP.md) · [TEST_PLAN](docs/TEST_PLAN.md) · [PHYSICS_DESIGN](docs/PHYSICS_DESIGN.md) · [D12 research](docs/research/M3_NUMBERED_D12.md) · [D4 research](docs/research/M3_NUMBERED_D4.md).
+
+## Creative production toolchain and automatic routing
+**Canonical agent policy:** [AGENTS.md](AGENTS.md) and [creative tool routing](docs/CREATIVE_TOOLCHAIN.md). [Tool installation audit](docs/TOOL_INSTALL_AUDIT.md) records what is really available, while [architecture diagram](docs/TOOLCHAIN_ARCHITECTURE.md) shows the dependency and acceptance gates. [Cloud installation probe](.github/workflows/creative-toolchain-probe.yml) tests Material Maker, MeshLab, Krita and GIMP on disposable Ubuntu GitHub Actions runners and publishes evidence.
+
+**Task-specific choices:** Blender sculpts and exports visual GLBs; OpenSCAD handles dimensional prototypes; Inkscape supplies SVG ornaments; Material Maker or Python generates PBR maps; Krita/GIMP retouch art; ImageMagick/Pillow pack/test textures; MeshLab/Trimesh check mesh complexity; Godot is the sole runtime for Jolt physics/UI/VFX and exports Android; FFmpeg analyzes actual clips; Figma/Canva/Adobe Express/to3D are optional authorized external workflows, not release dependencies.
+
+**Never silently treat an integration as authorized or an install probe as production-ready.** No paid API or external account is required. A green cloud job never replaces real Nord 3 performance/art review. All development remains in draft PR #23, not `main`.
+
+**Install audit snapshot (2026-10-10):** all four optional Linux editors were installed on Ubuntu 24.04 in [run #38075529457](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38075529457). GIMP and Material Maker passed bounded CLI commands; Krita and MeshLab require Xvfb; their version/help commands now PASS under Xvfb in [run #38075709599](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38075709599). Installation is not a claim of production-capable automation. See [detailed audit](docs/TOOL_INSTALL_AUDIT.md).
+
+## M5 authored-asset test checkpoint (2026-10-10)
+Five independently numbered, collision-decoupled GLB dice are now on draft PR #23: **D4 apex-reading with 12 physical engravings, D6, D8, D12 and D20**, using the same Blender PBR maps and real Bronze inset geometry. [Five-model Blender/MeshLab #38077736895](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38077736895) passed; [native Godot/Mesa visual #38078034043](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38078034043) passed with **90 sculpted-asset checks, 0 fails**, real physical macro frames for D4/D8/D12 and genuine D20/D6 throws. [ARM64 APK and Jolt #38078033946](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38078033946) passed all CI tests and debug export. This is **not final artistic or Nord 3 handset acceptance**; device install/FPS and signed upgrade remain NOT VERIFIED. Script-specific Blender CI gate prevents unrelated PR docs/QA edits from rewriting GLB assets or restarting an expensive sculpt step.
+
+## Full-throw visual Gauntlet, 24 frames/s
+[Cloud workflow](.github/workflows/temporal-roll-24fps.yml) now **attempts eight full, distinct physical recordings** for D4/D6/D8/D10/D12/D20/single-D100/D100_PAIR. Expected evidence: authentic full throw MP4, one JSONL row per decoded frame, real Jolt result markers, full exhaustive contact sheets of **24 consecutive screenshots per video second**. For D100_PAIR the top faces of BOTH independently settling D10 are verified against the percentile total. Implementation uses Godot/Jolt, FFmpeg, Pillow, Blender/MeshLab for the existing five authored visual GLBs. The complete eight-mode native and Android runs **PASSED and archived** on [Gauntlet #38095490855](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38095490855). Independent frame evidence: 1,042 native decoded frames/46 full-second contact sheets and 3,539 actual Android screenshots/151 full-second contact sheets, with zero black frames. This is an **emulator**, not device FPS or approved final art. Linux Mesa is NOT Android; normal 24fps recording is not 24 actual unique GPU renders/second. See [the mandatory screenshot frame setlist](docs/QA_M3_FRAME_SETLIST.md).
+
+## Unified end-to-end CI: one run, one final verdict
+[Gauntlet release gate](.github/workflows/gauntlet-release-gate.yml) is the **only automated PR pipeline**. Each revision produces fresh Blender/MeshLab verified GLBs and provides those exact files with SHA256 checks to live Godot screenshots, complete eight-mode 24fps frame reviews and numeric Jolt/ARM64 APK tests in parallel. Successful evidence precedes any pin of binary assets in the draft PR. The GitHub run **Summary** and **Artifacts** are the report: there is no repeated chat-level status polling, no stale GLB race, and no dependence on a follow-up GitHub-bot-triggered workflow. The previous CI entries can still be dispatched manually for targeted diagnostics; core CI also runs on pushes to `main`. This does not replace the real Android device acceptance gate.
+
+## New M4 authentic mixed-pool interaction (interim design)
+The advanced formula drawer is hidden by default behind the upper-left ≡ button; it has a real formula edit field, normal/D20 advantage/disadvantage switch, a choice between one physical D100 and a simultaneous pair of physical D10, offline named presets and abbreviated recent history. Submitting a formula launches **all actual Jolt rigid bodies simultaneously** in separated physical start lanes (including independent percentile pairs), reconciles each body's real uppermost face/sleep/signal and leaves the whole pile of settled dice on the table until the next throw. All observed face traces (including both percentile D10 digits) are stored in versioned local `user://`. During a throw the drawer closes so the complete Godot table is visible and controls are locked. No fake outcomes or scene snapping. The advanced drawer now lets the user choose a **specific already settled die** for an entirely new physical Jolt reroll while every other true die stays visibly on the table. Versioned offline history preserves both the original and updated real face and recalculates the complete formula total. A new scrollable **ИСТОРИЯ** viewer lists every retained offline result (up to 200), filters by formula/number/critical, and shows the actual ordered source faces, individual reroll traces, selected D20 mode and original percentile D10 source digits. It is fully read-only except for the existing separately confirmed Clear action. Paired D100 percentile DIGIT rerolls are intentionally excluded until a dual-source trace protocol is approved. This is a functional M4 intermediate, **not** the final approved M5 premium artwork or completed detailed history UI. [M4 toolchain and QA boundaries](docs/M4_LIVE_JOLT_UX_GAUNTLET.md).
+
+## Legacy Alpha 3 interface reference
+The user-provided `AdelDiceRoll_ALPHA_3_OBSIDIAN_ATELIER.html` has been exercised with real UI clicks and actual 24fps-cadenced 2D fallback screen capture. [Transferable UX behaviors](docs/references/ALPHA3_OBSIDIAN_ATELIER_UX_AUDIT.md) are queued for M4/M5, NOT a replacement for approved minimalist Concept 3 or evidence of real WebGL physics. No unfinished shop/placeholders enter this offline MVP.

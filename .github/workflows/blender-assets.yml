@@ -1,0 +1,142 @@
+name: Blender sculpted dice assets (experimental)
+on:
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sculpt:
+    name: Offline GLB sculpt and actual render evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Pin exact PR source SHA. fetch-depth=1 hides HEAD^ from git diff-tree,
+          # allowing empty "changed" output and a false GREEN sculpt build.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - name: Always regenerate exact-source art, never trust a stale pinned GLB
+        id: art_source
+        run: echo "run=true" >> "$GITHUB_OUTPUT"
+      - name: Install reproducible offline modeling dependencies
+        if: steps.art_source.outputs.run == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy python3-pil fonts-dejavu-core meshlab xvfb imagemagick inkscape ffmpeg
+      - name: Verify Blender glTF Python dependencies
+        if: steps.art_source.outputs.run == 'true'
+        run: blender --background -noaudio --python-exit-code 2 --python-expr "import numpy; print('NumPy import OK:', numpy.__version__)"
+      - name: Generate truly cut numeral meshes and glTF exports
+        if: steps.art_source.outputs.run == 'true'
+        run: |
+          mkdir -p build/premium-glb
+          blender --background -noaudio --python-exit-code 2 --python tools/blender/generate_die_assets.py -- --output build/premium-glb > build/premium-glb/generator.log 2>&1 || { tail -160 build/premium-glb/generator.log; exit 1; }
+          tail -35 build/premium-glb/generator.log
+          grep -F "PASS Blender true digit Boolean engraving + GLB export, D20 D6 D8 D12 D4" build/premium-glb/generator.log
+          for tex in obsidian_albedo obsidian_roughness obsidian_normal; do
+            test -s "build/premium-glb/${tex}.png"
+          done
+          for name in d20_obsidian_albedo d20_obsidian_roughness d20_obsidian_normal d20_geometry_baked_ao; do
+            test -s "build/premium-glb/${name}.png"
+          done
+          grep -F "D20_FACE_UV_ATLAS: 5x4 islands" build/premium-glb/generator.log
+          grep -F "D20_GEOMETRY_AO_BAKED:" build/premium-glb/generator.log
+          for die in d20 d6 d8 d12 d4; do
+            test -s "build/premium-glb/${die}_boolean_engraved.glb"
+            test -s "build/premium-glb/${die}_boolean_preview.png"
+            test -s "build/premium-glb/${die}_stone_qa.ply"
+          done
+      - name: Verify asset manifest with no gameplay injection
+        if: steps.art_source.outputs.run == 'true'
+        run: |
+          python3 tools/blender/validate_glb.py build/premium-glb
+      - name: Verify actual D20 geometric AO has 2D cavity gradients, not fake binary stripes
+        if: steps.art_source.outputs.run == 'true'
+        run: python3 tools/materials/check_cycles_ao_content.py build/premium-glb/d20_geometry_baked_ao.png
+      - name: M5 AI-texture material adapter geometry-safety regression (synthetic, no external GPU/API)
+        run: |
+          set -euo pipefail
+          python3 tools/materials/test_ai_d20_glb_experiment.py build/premium-glb/d20_boolean_engraved.glb
+      - name: Inspect authored Boolean stone with Meshlab CLI and ImageMagick
+        if: steps.art_source.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          for die in d20 d6 d8 d12 d4; do
+            xvfb-run -a meshlabserver -i "build/premium-glb/${die}_stone_qa.ply" -o "build/premium-glb/${die}_checked.obj" > "build/premium-glb/${die}_meshlab.log" 2>&1 || { tail -50 "build/premium-glb/${die}_meshlab.log"; exit 1; }
+            test -s "build/premium-glb/${die}_checked.obj"
+          done
+          for tex in obsidian_albedo obsidian_roughness obsidian_normal; do
+            identify -format "%f %wx%h %[colorspace]\\n" "build/premium-glb/${tex}.png"
+            test "$(identify -format '%wx%h' "build/premium-glb/${tex}.png")" = "256x256"
+          done
+          for tex in d20_obsidian_albedo d20_obsidian_roughness d20_obsidian_normal d20_geometry_baked_ao; do
+            identify -format "%f %wx%h %[colorspace]\\n" "build/premium-glb/${tex}.png"
+            test "$(identify -format '%wx%h' "build/premium-glb/${tex}.png")" = "1024x1024"
+          done
+      - name: M5 real Inkscape SVG export and verified source-to-output proof
+        if: steps.art_source.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          inkscape --version
+          ffmpeg -hide_banner -version > build/premium-glb/ffmpeg-version.txt
+          ffprobe -hide_banner -version > build/premium-glb/ffprobe-version.txt
+          sed -n '1p' build/premium-glb/ffmpeg-version.txt
+          sed -n '1p' build/premium-glb/ffprobe-version.txt
+          test -s src/assets/ui/m5_roll_action.svg
+          inkscape src/assets/ui/m5_roll_action.svg --export-filename=build/premium-glb/m5_roll_action_256.png --export-width=256 --export-height=256
+          test -s build/premium-glb/m5_roll_action_256.png
+          test "$(identify -format '%wx%h' build/premium-glb/m5_roll_action_256.png)" = "256x256"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, subprocess
+          root=Path("build/premium-glb")
+          names=["m5_roll_action_256.png", "obsidian_albedo.png",
+                 "obsidian_roughness.png", "obsidian_normal.png",
+                 "d20_obsidian_albedo.png", "d20_obsidian_roughness.png",
+                 "d20_obsidian_normal.png", "d20_geometry_baked_ao.png"]
+          names += [f"{d}_boolean_engraved.glb" for d in ("d4","d6","d8","d12","d20")]
+          names += [f"{d}_checked.obj" for d in ("d4","d6","d8","d12","d20")]
+          manifest={"scope":"M5 offline tool-routing and executable artifact proof",
+                    "independent_premium_art_approval":"NOT_VERIFIED",
+                    "oneplus_nord3_hardware":"NOT_VERIFIED",
+                    "blender":"actual sculpt+true Boolean numerals+GLB export",
+                    "meshlab":"real PLY import and OBJ export under Xvfb",
+                    "imagemagick":"real 256px legacy PBR + 1024px D20 atlas and Blender BVHTree geometry AO image dimensions",
+                    "inkscape":"original SVG to 256x256 rendered PNG",
+                    "ffmpeg":"available for authentic Godot video QA in temporal job; no synthetic gameplay",
+                    "material_maker":"optional only if actual PTEX export is proven; Python/Blender fallback",
+                    "artifacts":{}}
+          for n in names:
+              p=root/n
+              if not p.is_file() or p.stat().st_size == 0:
+                  raise SystemExit("M5 route actual asset missing: "+n)
+              manifest["artifacts"][n]={"bytes":p.stat().st_size,
+                  "sha256":hashlib.sha256(p.read_bytes()).hexdigest()}
+          (root/"m5-route-manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
+          print("PASS M5 Blender MeshLab ImageMagick Inkscape real artifact chain:",len(names))
+          PY
+      - name: Package exactly the five tested GLBs for downstream jobs
+        run: |
+          set -euo pipefail
+          mkdir -p build/gauntlet-glb
+          for die in d4 d6 d8 d12 d20; do
+            cp "build/premium-glb/${die}_boolean_engraved.glb" "build/gauntlet-glb/${die}_boolean_engraved.glb"
+          done
+          (cd build/gauntlet-glb && sha256sum *.glb > glb-sha256.txt)
+      - name: Publish fresh model artifacts to this SAME Actions run
+        uses: actions/upload-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Preserve real Blender GLB and preview evidence
+        if: ${{ always() && steps.art_source.outputs.run == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: experimental-blender-boolean-sculpted-assets
+          path: build/premium-glb/
+          retention-days: 14
+          if-no-files-found: warn
+

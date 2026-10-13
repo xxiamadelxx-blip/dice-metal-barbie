@@ -1,0 +1,60 @@
+name: Creative toolchain install + execution probe
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux-desktop:
+    name: Ubuntu 24.04 installed CLI evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install and probe official APT packages
+        shell: bash
+        run: |
+          mkdir -p build/tool-probe
+          sudo apt-get update -qq > build/tool-probe/apt-update.log 2>&1
+          # Probe result is recorded even if the desktop package install fails.
+          set +e
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends             gimp krita meshlab xvfb libgl1 libopengl0 > build/tool-probe/apt-install.log 2>&1
+          code=$?
+          echo "$code" > build/tool-probe/apt-install.exit
+          echo "APT install exit: $code"
+          tail -20 build/tool-probe/apt-install.log
+          exit 0
+      - name: Download official Material Maker 1.7 archive and pin SHA256
+        shell: bash
+        run: |
+          set +e
+          url="https://github.com/RodZill4/material-maker/releases/download/1.7/material_maker_1_7_linux.tar.gz"
+          mkdir -p build/tool-probe/material-maker
+          curl -fL --retry 2 --connect-timeout 15 --max-time 180 "$url"             -o build/tool-probe/material-maker.tar.gz > build/tool-probe/material-maker-download.log 2>&1
+          result=$?
+          if test "$result" -eq 0; then
+            (echo "c8e3b6f1993540875d26fe49645c91511bba36cda0412c715bd13249f7141647  build/tool-probe/material-maker.tar.gz" | sha256sum -c -) > build/tool-probe/material-maker-sha256.log 2>&1
+            result=$?
+          fi
+          if test "$result" -eq 0; then
+            tar -xzf build/tool-probe/material-maker.tar.gz -C build/tool-probe/material-maker               --no-same-owner > build/tool-probe/material-maker-extract.log 2>&1
+            result=$?
+          fi
+          echo "$result" > build/tool-probe/material-maker.exit
+          echo "Material Maker official archive result: $result"
+          rm -f build/tool-probe/material-maker.tar.gz
+          exit 0
+      - name: Bounded executable and install-status probes
+        run: python3 tools/toolchain/probe_creative_tools.py build/tool-probe
+      - name: Remove extracted vendor binaries from artifact
+        if: always()
+        run: |
+          rm -rf build/tool-probe/material-maker
+          rm -f build/tool-probe/material-maker.tar.gz
+      - name: Publish exact logs and verdicts even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: creative-toolchain-probe
+          path: build/tool-probe/
+          if-no-files-found: warn
+          retention-days: 14

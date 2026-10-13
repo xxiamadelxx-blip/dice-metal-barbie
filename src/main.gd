@@ -2,15 +2,33 @@ extends Node3D
 ## M3 physical D4 / D6 / D8 / D12 / D20 testbed. A numeral is shown only after Jolt settles.
 ## Not final UX, not yet approved as statistical fairness evidence.
 
+const Premium = preload("res://src/visual/premium_finish.gd")
+const CriticalAura = preload("res://src/visual/critical_aura.gd")
+const VelvetImpact = preload("res://src/visual/velvet_impact.gd")
+const BeveledBox = preload("res://src/visual/beveled_box.gd")
 const DieScript = preload("res://src/dice/d6_body.gd")
 const D20Script = preload("res://src/dice/d20_body.gd")
 const D8Script = preload("res://src/dice/d8_body.gd")
 const D12Script = preload("res://src/dice/d12_body.gd")
 const D4Script = preload("res://src/dice/d4_body.gd")
+const TrapezohedronDie = preload("res://src/dice/trapezohedron_body.gd")
+const DiceRules = preload("res://src/core/dice_rules.gd")
+const RollFormula = preload("res://src/core/roll_formula.gd")
+const RollStore = preload("res://src/core/roll_persistence.gd")
+const PhysicalPool = preload("res://src/core/physical_roll_pool.gd")
+const AdvancedDrawer = preload("res://src/ui/m4_advanced_roll_drawer.gd")
+const HistoryBrowser = preload("res://src/ui/m4_history_dialog.gd")
 const TABLE_WIDTH := 6.8
 const TABLE_LENGTH := 10.8
+# Launch display only. Never scale physically simulated dice or Jolt colliders.
+const IDLE_HERO_SCALE := 1.38
 
 var active_die: RigidBody3D
+var active_percentile: Node3D
+var percentile_tens := -1
+var percentile_ones := -1
+var d100_mode_button: Button
+var percentile_pair_enabled := true
 var status_label: Label
 var throw_button: Button
 var copy_button: Button
@@ -18,10 +36,300 @@ var selected_chooser: OptionButton
 var selected_die := 6
 var active_sides := 6
 var last_result := -1
+var die_buttons: Dictionary = {}
+var idle_display: Node3D
+var advanced_panel: PanelContainer
+var physical_pool: Node3D
+var roll_store: RefCounted
+var advanced_open_button: Button
+var m5_history_button: Button
+var m5_compose_button: Button
+var m5_live_formula: Label
+var history_dialog: AcceptDialog
+var velvet_impact: Node3D
+var last_advanced_formula := ""
 
 func _ready() -> void:
     _make_world()
+    _make_idle_showcase()
     _make_overlay()
+    _setup_m4_local_and_drawer()
+    # Real production scene/UI constructed. Android debug Gauntlet must wait
+    # for THIS fresh process after force-stop, not reuse its prior surface.
+    if OS.is_debug_build():
+        print("DICE_QA_MAIN_SCENE_READY")
+
+func _setup_m4_local_and_drawer() -> void:
+    # Functional M4 bottom-sheet substitute; M5 will do final skin/navigation.
+    roll_store = RollStore.new()
+    var loaded: Dictionary = roll_store.call("load_state")
+    var overlay := get_node("GameHUD/OverlayRoot") as Control
+    advanced_open_button = Button.new()
+    advanced_open_button.name = "OpenAdvancedRules"
+    advanced_open_button.text = "≡"
+    advanced_open_button.tooltip_text = "Составные броски, история и пресеты"
+    advanced_open_button.position = Vector2(25, 73)
+    advanced_open_button.custom_minimum_size = Vector2(51, 48)
+    advanced_open_button.pressed.connect(_toggle_advanced_rules)
+    overlay.add_child(advanced_open_button)
+    # The user's live Alpha 4.0.0 hero UX: actual history and pool entry,
+    # not static decorations. All are disabled through existing roll guards.
+    m5_history_button = Button.new()
+    m5_history_button.name = "M5HistoryShortcut"
+    m5_history_button.text = "◷"
+    m5_history_button.tooltip_text = "Журнал физических бросков"
+    m5_history_button.position = Vector2(637, 73)
+    m5_history_button.custom_minimum_size = Vector2(58, 48)
+    m5_history_button.add_theme_font_size_override("font_size", 25)
+    m5_history_button.pressed.connect(_open_m4_history)
+    overlay.add_child(m5_history_button)
+    m5_compose_button = Button.new()
+    m5_compose_button.name = "M5ComposeShortcut"
+    m5_compose_button.text = "+ СОСТАВ"
+    m5_compose_button.tooltip_text = "Собрать физические кубики в один бросок"
+    m5_compose_button.position = Vector2(441, 73)
+    m5_compose_button.custom_minimum_size = Vector2(164, 48)
+    m5_compose_button.add_theme_font_size_override("font_size", 15)
+    m5_compose_button.pressed.connect(_open_m5_composer)
+    overlay.add_child(m5_compose_button)
+    advanced_panel = AdvancedDrawer.new()
+    overlay.add_child(advanced_panel)
+    advanced_panel.connect("physical_roll_requested",Callable(self,"_request_advanced_throw"))
+    advanced_panel.connect("physical_reroll_requested",Callable(self,"_request_m4_physical_reroll"))
+    advanced_panel.connect("preset_save_requested",Callable(self,"_save_m4_preset"))
+    advanced_panel.connect("preset_delete_requested",Callable(self,"_delete_m4_preset"))
+    advanced_panel.connect("history_clear_requested",Callable(self,"_confirm_m4_history_clear"))
+    advanced_panel.connect("history_open_requested",Callable(self,"_open_m4_history"))
+    advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+    if not bool(loaded.get("ok",false)):
+        advanced_panel.call("show_message","Локальный файл требует восстановления; запись заблокирована")
+
+func _toggle_advanced_rules() -> void:
+    if advanced_panel == null or throw_button.disabled:
+        return
+    advanced_panel.visible = not advanced_panel.visible
+
+func _open_m5_composer() -> void:
+    if advanced_panel == null or throw_button.disabled:
+        return
+    advanced_panel.visible = true
+    advanced_panel.call("_open_pool_composer")
+
+func _update_m5_live_formula(expression: String = "") -> void:
+    if not is_instance_valid(m5_live_formula):
+        return
+    if expression != "":
+        m5_live_formula.text = expression
+    elif selected_die == 100:
+        m5_live_formula.text = "1d100 · 2 × D10" if percentile_pair_enabled else "1d100 · 1 × D100"
+    else:
+        m5_live_formula.text = "1d%d · обычный" % selected_die
+
+func _record_m4_result(result: Dictionary) -> void:
+    if roll_store == null or not bool(result.get("ok",false)):
+        return
+    var saved: Dictionary = roll_store.call("append_physical_result",result)
+    if advanced_panel != null:
+        advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+        if not bool(saved.get("ok",false)):
+            advanced_panel.call("show_message",str(saved.get("error","Не удалось сохранить историю")))
+
+func _clear_pool_for_basic_throw() -> void:
+    if advanced_panel != null:
+        advanced_panel.call("set_real_roll_result",{})
+    if is_instance_valid(physical_pool):
+        if bool(physical_pool.get("busy")):
+            return
+        if physical_pool.get_parent() == self:
+            remove_child(physical_pool)
+        physical_pool.queue_free()
+        physical_pool = null
+
+func _request_advanced_throw(expression: String, mode: String, d100_mode: String) -> void:
+    if throw_button.disabled:
+        return
+    if is_instance_valid(physical_pool) and bool(physical_pool.get("busy")):
+        return
+    # Validate BEFORE clearing the existing physical scene or result.
+    var parsed: Dictionary = RollFormula.parse(expression)
+    if not bool(parsed.get("ok",false)):
+        advanced_panel.call("show_message",str(parsed.get("error","Неверная формула")))
+        return
+    if int(parsed.get("physical_dice",0)) > 8:
+        advanced_panel.call("show_message","Для стола доступно до восьми физических кубиков")
+        return
+    if mode != "normal":
+        var qualified := 0
+        for group in parsed["groups"]:
+            if int(group["sides"]) == 20 and int(group["count"]) == 1:
+                qualified += 1
+        if qualified != 1:
+            advanced_panel.call("show_message","Преимущество требует ровно один выбранный D20")
+            return
+    _clear_pool_for_basic_throw()
+    if is_instance_valid(active_die):
+        if active_die.get_parent() == self:
+            remove_child(active_die)
+        active_die.queue_free()
+        active_die = null
+    if is_instance_valid(active_percentile):
+        if active_percentile.get_parent() == self:
+            remove_child(active_percentile)
+        active_percentile.queue_free()
+        active_percentile = null
+    if is_instance_valid(idle_display):
+        if idle_display.get_parent() == self:
+            remove_child(idle_display)
+        idle_display.queue_free()
+        idle_display = null
+    physical_pool = PhysicalPool.new()
+    physical_pool.name = "M4PhysicalDicePool"
+    add_child(physical_pool)
+    physical_pool.connect("pool_completed",Callable(self,"_m4_physical_completed"))
+    physical_pool.connect("pool_failed",Callable(self,"_m4_physical_failed"))
+    # Attach to each genuine Jolt RigidBody before its launch. Rerolls reuse
+    # the same body and contact connection; no visual fake impact timer.
+    physical_pool.connect("physical_die_spawned",Callable(self,"_on_pool_die_spawned"))
+    physical_pool.connect("critical_visual_requested",Callable(self,"_show_pool_critical"))
+    var accepted: bool = physical_pool.call("begin",expression,mode,d100_mode)
+    if not accepted:
+        return
+    last_result = -1
+    last_advanced_formula = expression
+    _update_m5_live_formula(expression)
+    status_label.text = "СОСТАВНОЙ БРОСОК…"
+    throw_button.disabled = true
+    selected_chooser.disabled = true
+    copy_button.visible = false
+    copy_button.disabled = true
+    advanced_panel.call("set_roll_locked",true)
+    advanced_panel.call("show_message","Jolt: выполняются реальные физические броски")
+    # Return the table to full visibility and lock the drawer while physics
+    # runs. The user can reopen history after the genuine settled result.
+    advanced_panel.visible = false
+    advanced_open_button.disabled = true
+    if OS.is_debug_build():
+        print("DICE_M4_PHYSICAL_STARTED "+expression)
+
+func _request_m4_physical_reroll(group_index: int, die_index: int,
+        digit: String = "") -> void:
+    if throw_button.disabled or not is_instance_valid(physical_pool):
+        return
+    var accepted: bool = physical_pool.call("reroll_one",group_index,die_index,digit)
+    if not accepted:
+        advanced_panel.call("show_message",str(physical_pool.get("last_physical_error")))
+        return
+    # Previous valid source outcomes remain on table; only the explicitly
+    # selected physical body returns to the launch lane for a new Jolt roll.
+    last_result = -1
+    status_label.text = "ПЕРЕБРОС ВЫБРАННОГО КУБИКА…"
+    throw_button.disabled = true
+    selected_chooser.disabled = true
+    copy_button.visible = false
+    copy_button.disabled = true
+    advanced_panel.call("set_roll_locked",true)
+    advanced_panel.call("show_message","Jolt: выбранный кубик бросается заново")
+    advanced_panel.visible = false
+    advanced_open_button.disabled = true
+    if OS.is_debug_build():
+        print("DICE_M4_REAL_REROLL_STARTED group=%d die=%d digit=%s" % [group_index,die_index,digit])
+
+func _on_pool_die_spawned(die: RigidBody3D) -> void:
+    _watch_table_contact(die)
+    if die.get_node_or_null("IcosahedronCollision") != null:
+        Premium.decorate_die(die, 20)
+
+func _show_pool_critical(die: RigidBody3D, sides: int, value: int) -> void:
+    CriticalAura.spawn(die, sides, value)
+
+func _m4_physical_completed(result: Dictionary) -> void:
+    if not bool(result.get("ok",false)):
+        _m4_physical_failed("Итоговый расчёт недействителен")
+        return
+    last_result = int(result.get("total",0))
+    active_sides = 0
+    last_advanced_formula = str(result.get("formula",""))
+    _update_m5_live_formula(last_advanced_formula)
+    status_label.text = "%s = %d" % [last_advanced_formula,last_result]
+    copy_button.visible = true
+    copy_button.disabled = false
+    throw_button.disabled = false
+    selected_chooser.disabled = false
+    advanced_panel.call("set_roll_locked",false)
+    advanced_open_button.disabled = false
+    advanced_panel.call("show_message","Итог по настоящим физическим граням: %d" % last_result)
+    _record_m4_result(result)
+    advanced_panel.call("set_real_roll_result",result)
+    if OS.is_debug_build():
+        print("DICE_M4_PHYSICAL_COMPLETED %s=%d" % [last_advanced_formula,last_result])
+
+func _m4_physical_failed(message: String) -> void:
+    status_label.text = "Составной бросок не засчитан"
+    throw_button.disabled = false
+    selected_chooser.disabled = false
+    copy_button.visible = false
+    copy_button.disabled = true
+    if advanced_panel != null:
+        advanced_panel.call("set_roll_locked",false)
+        advanced_open_button.disabled = false
+        advanced_panel.call("show_message",message)
+    if OS.is_debug_build():
+        print("DICE_M4_PHYSICAL_FAILED "+message)
+
+func _save_m4_preset(title: String, formula: String, mode: String,
+        d100_mode: String) -> void:
+    var saved: Dictionary = roll_store.call("upsert_preset",title,formula,mode,d100_mode)
+    advanced_panel.call("show_message","Пресет сохранён" if bool(saved.get("ok",false))
+        else str(saved.get("error","Не удалось сохранить")))
+    advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+
+func _delete_m4_preset(title: String) -> void:
+    var ask := ConfirmationDialog.new()
+    ask.title = "Удалить пресет?"
+    ask.dialog_text = "Удалить «%s» из памяти устройства?" % title
+    add_child(ask)
+    ask.confirmed.connect(func():
+        var deleted: Dictionary = roll_store.call("delete_preset",title,true)
+        advanced_panel.call("show_message","Пресет удалён" if bool(deleted.get("ok",false))
+            else str(deleted.get("error","Не удалось удалить")))
+        advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+        ask.queue_free())
+    ask.canceled.connect(func(): ask.queue_free())
+    ask.popup_centered()
+
+func _open_m4_history() -> void:
+    if throw_button.disabled or roll_store == null:
+        return
+    if not is_instance_valid(history_dialog):
+        history_dialog = HistoryBrowser.new()
+        add_child(history_dialog)
+    var state: Dictionary = roll_store.call("snapshot")
+    var entries: Array = state.get("history",[])
+    history_dialog.call("set_history",entries)
+    history_dialog.popup_centered_ratio(0.88)
+    # Emit a PROVENANCE marker only AFTER the real modal is visible and its
+    # on-screen rows match the offline store. Android ADB frame QA requires
+    # BOTH this live Godot event and actual before/after screenshot pixels.
+    if history_dialog.visible and (
+            int(history_dialog.call("visible_record_count")) == entries.size()):
+        if OS.is_debug_build():
+            print("DICE_M4_HISTORY_OPEN records=%d" % entries.size())
+    else:
+        push_error("M4 full history popup did not display every saved physical result")
+
+func _confirm_m4_history_clear() -> void:
+    var ask := ConfirmationDialog.new()
+    ask.title = "Очистить историю?"
+    ask.dialog_text = "Все сохранённые броски будут удалены с устройства."
+    add_child(ask)
+    ask.confirmed.connect(func():
+        var cleared: Dictionary = roll_store.call("clear_history",true)
+        advanced_panel.call("show_message","История очищена" if bool(cleared.get("ok",false))
+            else str(cleared.get("error","Не удалось очистить")))
+        advanced_panel.call("refresh_local_state",roll_store.call("snapshot"))
+        ask.queue_free())
+    ask.canceled.connect(func(): ask.queue_free())
+    ask.popup_centered()
 
 func _make_world() -> void:
     var camera := Camera3D.new()
@@ -29,38 +337,110 @@ func _make_world() -> void:
     camera.position = Vector3(0.0, 18.0, 1.5)
     camera.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 16.2
+    # Fill more of a 720x1280 phone screen while preserving every table rail
+    # in the 90-degree overhead orthographic frame.
+    camera.size = 14.2
     camera.current = true
     add_child(camera)
 
     var environment := WorldEnvironment.new()
     var env := Environment.new()
     env.background_mode = Environment.BG_COLOR
-    env.background_color = Color(0.012, 0.012, 0.018)
+    env.background_color = Color(0.006, 0.007, 0.011)
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_color = Color(0.5, 0.55, 0.66)
-    env.ambient_light_energy = 0.65
+    env.ambient_light_color = Color(0.51, 0.57, 0.67)
+    env.ambient_light_energy = 0.78
+    # Studio environment light is reflected in the obsidian but NOT displayed
+    # as a sky/background. Dark table and clean void stay user-approved.
+    var studio_sky := Sky.new()
+    var studio := ProceduralSkyMaterial.new()
+    studio.sky_top_color = Color(0.20, 0.25, 0.35)
+    studio.sky_horizon_color = Color(0.48, 0.42, 0.34)
+    studio.ground_bottom_color = Color(0.05, 0.06, 0.08)
+    studio.ground_horizon_color = Color(0.12, 0.14, 0.19)
+    studio_sky.sky_material = studio
+    env.sky = studio_sky
+    env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+    var selected_obsidian_look := Premium.apply_selected_obsidian_lighting(env)
     environment.environment = env
     add_child(environment)
 
     var light := DirectionalLight3D.new()
-    light.rotation_degrees = Vector3(-55.0, 20.0, 0.0)
-    light.light_energy = 1.3
+    light.rotation_degrees = Vector3(-55.0, -25.0, 0.0) if selected_obsidian_look else Vector3(-63.0, 24.0, 0.0)
+    light.light_energy = 0.8 if selected_obsidian_look else 1.35
     light.shadow_enabled = true
     add_child(light)
 
-    var velvet := StandardMaterial3D.new()
-    velvet.albedo_color = Color(0.028, 0.031, 0.039)
-    velvet.roughness = 0.96
-    _make_static_box("VelvetTable", Vector3(0, -0.24, 0), Vector3(TABLE_WIDTH, 0.4, TABLE_LENGTH), velvet)
+    # Opposing, broad-spectrum studio bounce lifts faceted shadows without
+    # changing the approved 90-degree camera or adding white rim tubes.
+    # Intentional secondary light, not a second shadow caster: mobile friendly.
+    var fill := DirectionalLight3D.new()
+    fill.name = "SoftStudioBounce"
+    fill.rotation_degrees = Vector3(-35.0, 145.0, 0.0) if selected_obsidian_look else Vector3(-46.0, -133.0, 0.0)
+    fill.light_color = Color.WHITE if selected_obsidian_look else Color(0.72, 0.83, 1.0)
+    fill.light_energy = 0.35 if selected_obsidian_look else 0.48
+    fill.shadow_enabled = false
+    add_child(fill)
 
-    var rail_material := StandardMaterial3D.new()
-    rail_material.albedo_color = Color(0.054, 0.059, 0.069)
-    rail_material.roughness = 0.78
+    var velvet := Premium.velvet_material()
+    _make_static_box("VelvetTable", Vector3(0, -0.24, 0), Vector3(TABLE_WIDTH, 0.4, TABLE_LENGTH), velvet)
+    # Only this VISUAL box surface sits 12mm below an independently
+    # tessellated felt skin. The true Jolt floor remains at y=-0.04.
+    var floor_visual := get_node_or_null("VelvetTable/StaticBoxVisual") as MeshInstance3D
+    assert(floor_visual != null, "Physical table must have a separately named VISUAL box")
+    floor_visual.position.y = -0.012
+    velvet_impact = VelvetImpact.new()
+    velvet_impact.name = "M5VelvetContactSurface"
+    velvet_impact.call("configure",TABLE_WIDTH - 0.38,TABLE_LENGTH - 0.38,
+        velvet.albedo_texture,velvet.normal_texture)
+    add_child(velvet_impact)
+
+    # Separate glossy-black lacquered ebony geometry with light-catching
+    # chamfered edges. Old square StaticBody3D collision remains unchanged.
+    var rail_material := Premium.ebony_rail_material()
     _make_static_box("RailLeft", Vector3(-TABLE_WIDTH * 0.5, 0.34, 0), Vector3(0.35, 0.9, TABLE_LENGTH), rail_material)
     _make_static_box("RailRight", Vector3(TABLE_WIDTH * 0.5, 0.34, 0), Vector3(0.35, 0.9, TABLE_LENGTH), rail_material)
     _make_static_box("RailTop", Vector3(0, 0.34, -TABLE_LENGTH * 0.5), Vector3(TABLE_WIDTH, 0.9, 0.35), rail_material)
     _make_static_box("RailBottom", Vector3(0, 0.34, TABLE_LENGTH * 0.5), Vector3(TABLE_WIDTH, 0.9, 0.35), rail_material)
+    # Inlaid warm metal along the *inner* edges of the solid table rails.
+    var rim := Premium.gold_material()
+    _make_visual_trim("WarmRimLeft", Vector3(-3.23, 0.805, 0), Vector3(0.025, 0.025, 10.25), rim)
+    _make_visual_trim("WarmRimRight", Vector3(3.23, 0.805, 0), Vector3(0.025, 0.025, 10.25), rim)
+    _make_visual_trim("WarmRimTop", Vector3(0, 0.805, -5.24), Vector3(6.5, 0.025, 0.025), rim)
+    _make_visual_trim("WarmRimBottom", Vector3(0, 0.805, 5.24), Vector3(6.5, 0.025, 0.025), rim)
+    # Previous card lamps at y6.0/y6.5 were OUTSIDE their illumination
+    # radii from the hero dice and reflected nothing on black obsidian.
+    _make_accent_light("StudioCardWarm",Vector3(-2.7,2.7,-3.35),
+        Color(1.0,0.84,0.65),540.0,1.10)
+    _make_accent_light("StudioCardCool",Vector3(2.6,2.9,-0.7),
+        Color(0.72,0.84,1.0),560.0,0.73)
+    # True D4 tetrahedral apex points to camera: one broad panel occupies
+    # most pixels. A small *side* light reveals its dark actual side faces
+    # without flattening that triangular bevel into uniform grey.
+    _make_accent_light("StudioCardD4",Vector3(3.0,1.85,2.45),
+        Color(0.96,0.77,0.54),340.0,1.18)
+
+func _make_visual_trim(node_name: String, origin: Vector3, dimensions: Vector3, material: Material) -> void:
+    var line := MeshInstance3D.new()
+    line.name = node_name
+    line.position = origin
+    var shape := BoxMesh.new()
+    shape.size = dimensions
+    line.mesh = shape
+    line.material_override = material
+    add_child(line)
+
+func _make_accent_light(node_name: String, origin: Vector3, tint: Color,
+        range_value: float, strength: float) -> void:
+    var lamp := OmniLight3D.new()
+    lamp.name = node_name
+    lamp.position = origin
+    lamp.light_color = tint
+    lamp.omni_range = range_value / 100.0
+    lamp.light_energy = strength
+    lamp.shadow_enabled = false
+    add_child(lamp)
+
 
 func _make_static_box(node_name: String, origin: Vector3, dimensions: Vector3, material: Material) -> void:
     var body := StaticBody3D.new()
@@ -72,82 +452,282 @@ func _make_static_box(node_name: String, origin: Vector3, dimensions: Vector3, m
     shape_node.shape = box
     body.add_child(shape_node)
     var mesh_node := MeshInstance3D.new()
-    var mesh := BoxMesh.new()
-    mesh.size = dimensions
-    mesh_node.mesh = mesh
+    # Godot auto-generated names change with sibling count. The M5 felt skin
+    # must address this exact visual mesh without touching StaticBody/Jolt.
+    mesh_node.name = "StaticBoxVisual"
+    if node_name.begins_with("Rail"):
+        mesh_node.mesh = BeveledBox.create(dimensions,0.052)
+    else:
+        var mesh := BoxMesh.new()
+        mesh.size = dimensions
+        mesh_node.mesh = mesh
     mesh_node.material_override = material
     body.add_child(mesh_node)
     add_child(body)
 
+func _chip_style(selected: bool) -> StyleBoxFlat:
+    var box_style := StyleBoxFlat.new()
+    box_style.bg_color = Color(0.12, 0.11, 0.075, 0.98) if selected else Color(0.032, 0.053, 0.048, 0.96)
+    box_style.border_color = Color(0.77, 0.63, 0.39) if selected else Color(0.16, 0.24, 0.21)
+    box_style.set_border_width_all(1)
+    box_style.set_corner_radius_all(13)
+    box_style.content_margin_left = 5
+    box_style.content_margin_right = 5
+    box_style.content_margin_top = 10
+    box_style.content_margin_bottom = 9
+    return box_style
+
+func _make_idle_showcase() -> void:
+    # Non-rolling collectible display. They are actual numbered 3D models,
+    # visibly arranged across the velvet like the approved third concept.
+    # All preview collision layers are disabled and the showcase is removed
+    # before the first real throw; it never invents a numeric roll result.
+    idle_display = Node3D.new()
+    idle_display.name = "IdleDiceDisplay"
+    add_child(idle_display)
+    var layout := [
+        {"script": D20Script, "sides": 20, "location": Vector3(-1.5, 0.77, -2.6), "angle": Vector3(14, -25, 18)},
+        {"script": D12Script, "sides": 12, "location": Vector3(1.45, 0.73, -2.1), "angle": Vector3(-18, 40, 20)},
+        {"script": DieScript, "sides": 6, "location": Vector3(-1.35, 0.62, 0.6), "angle": Vector3(9, 35, -12)},
+        {"script": D4Script, "sides": 4, "location": Vector3(1.55, 0.38, 1.55), "angle": Vector3(8, -20, 22)}
+    ]
+    for item in layout:
+        var scene_script: GDScript = item["script"]
+        var preview: RigidBody3D = scene_script.new()
+        idle_display.add_child(preview)
+        preview.name = "PreviewD%d" % item["sides"]
+        preview.freeze = true
+        preview.collision_layer = 0
+        preview.collision_mask = 0
+        var source_location: Vector3 = item["location"]
+        # Launch composition was too sparse on a 720x1280 handset. Scale the
+        # four NON-ROLLING collectible previews only, and lift their centers
+        # with the same ratio to keep the visual bases near velvet.
+        preview.position = Vector3(source_location.x, source_location.y * IDLE_HERO_SCALE, source_location.z)
+        preview.rotation_degrees = item["angle"]
+        preview.scale = Vector3.ONE * IDLE_HERO_SCALE
+        Premium.decorate_die(preview, item["sides"])
+
 func _make_overlay() -> void:
     var canvas := CanvasLayer.new()
+    canvas.name = "GameHUD"
     add_child(canvas)
     var root := Control.new()
+    root.name = "OverlayRoot"
     root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     canvas.add_child(root)
 
-    var top := Label.new()
-    top.text = "D&D Dice"
-    top.position = Vector2(24, 26)
-    root.add_child(top)
+    var brand := Label.new()
+    brand.name = "AppTitle"
+    brand.text = "ADEL DICE ROLL"
+    brand.position = Vector2(88, 29)
+    brand.add_theme_font_size_override("font_size", 20)
+    brand.add_theme_color_override("font_color", Color(0.92, 0.84, 0.65))
+    root.add_child(brand)
+    var studio := Label.new()
+    studio.name = "M5OfflineStudioCaption"
+    studio.text = "OBSIDIAN STUDIO  /  OFFLINE"
+    studio.position = Vector2(88, 56)
+    studio.add_theme_font_size_override("font_size", 12)
+    studio.add_theme_color_override("font_color", Color(0.48, 0.64, 0.58))
+    root.add_child(studio)
+    var tray_caption := Label.new()
+    tray_caption.name = "M5PhysicalTrayCaption"
+    tray_caption.text = "ФИЗИЧЕСКИЙ ЛОТОК"
+    tray_caption.position = Vector2(48, 125)
+    tray_caption.add_theme_font_size_override("font_size", 13)
+    tray_caption.add_theme_color_override("font_color", Color(0.70, 0.65, 0.54))
+    root.add_child(tray_caption)
+    m5_live_formula = Label.new()
+    m5_live_formula.name = "M5LivePhysicalFormula"
+    m5_live_formula.text = "1d6 · обычный"
+    m5_live_formula.position = Vector2(48, 148)
+    m5_live_formula.add_theme_font_size_override("font_size", 18)
+    m5_live_formula.add_theme_color_override("font_color", Color(0.92, 0.84, 0.66))
+    root.add_child(m5_live_formula)
 
+    # This is a genuinely minimalist single-screen control dock, not a Godot
+    # prototype form. Unsupported dice are not presented as dead controls.
     var panel := PanelContainer.new()
+    panel.name = "ControlDock"
     panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    panel.offset_top = -266.0
-    var panel_style := StyleBoxFlat.new()
-    panel_style.bg_color = Color(0.048, 0.053, 0.065, 1.0)
-    panel_style.border_color = Color(0.11, 0.12, 0.15, 1.0)
-    panel_style.border_width_top = 1
-    panel_style.corner_radius_top_left = 14
-    panel_style.corner_radius_top_right = 14
-    panel_style.content_margin_left = 18
-    panel_style.content_margin_right = 18
-    panel_style.content_margin_top = 14
-    panel_style.content_margin_bottom = 14
-    panel.add_theme_stylebox_override("panel", panel_style)
+    panel.offset_top = -236.0
+    var surface := StyleBoxFlat.new()
+    surface.bg_color = Color(0.028, 0.040, 0.036, 1.0)
+    surface.border_color = Color(0.23, 0.28, 0.22)
+    surface.border_width_top = 1
+    surface.corner_radius_top_left = 22
+    surface.corner_radius_top_right = 22
+    surface.content_margin_left = 20
+    surface.content_margin_right = 20
+    surface.content_margin_top = 15
+    surface.content_margin_bottom = 13
+    panel.add_theme_stylebox_override("panel", surface)
     root.add_child(panel)
+
     var column := VBoxContainer.new()
-    column.add_theme_constant_override("separation", 10)
+    column.add_theme_constant_override("separation", 12)
     panel.add_child(column)
     var heading := Label.new()
-    heading.text = "Кубики"
+    heading.text = "ВЫБЕРИ КУБИК"
+    heading.add_theme_font_size_override("font_size", 12)
+    heading.add_theme_color_override("font_color", Color(0.55, 0.61, 0.72))
     column.add_child(heading)
+
+    # A synchronized invisible option state is retained for the existing
+    # accessibility/physics regressions. Visible controls are tappable chips.
     selected_chooser = OptionButton.new()
-    selected_chooser.custom_minimum_size = Vector2(0, 42)
     selected_chooser.add_item("D4", 4)
     selected_chooser.add_item("D6", 6)
     selected_chooser.add_item("D8", 8)
     selected_chooser.add_item("D12", 12)
     selected_chooser.add_item("D20", 20)
-    ## Keep the visual selection aligned with the default D6 throw button.
+    selected_chooser.add_item("D10", 10)
+    selected_chooser.add_item("D100", 100)
     selected_chooser.select(1)
+    selected_chooser.visible = false
     selected_chooser.item_selected.connect(_on_type_selected)
     column.add_child(selected_chooser)
-    throw_button = Button.new()
-    throw_button.text = "Бросить D6"
-    throw_button.custom_minimum_size = Vector2(0, 54)
-    throw_button.pressed.connect(_throw_selected_die)
-    column.add_child(throw_button)
+
+    var chips := HBoxContainer.new()
+    chips.name = "DiceTypes"
+    chips.add_theme_constant_override("separation", 8)
+    column.add_child(chips)
+    # All seven real types share the approved minimal dock. No floating
+    # physics-testbed buttons over the 3D velvet playfield.
+    var types := [4, 6, 8, 10, 12, 20, 100]
+    var icons := ["△", "□", "◇", "⬡", "⬟", "⬢", "◈"]
+    for i in range(types.size()):
+        var sides: int = types[i]
+        var chip := Button.new()
+        chip.name = "SelectD%d" % sides
+        chip.text = "%s\nD%d" % [icons[i], sides]
+        chip.custom_minimum_size = Vector2(0, 67)
+        chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        chip.add_theme_font_size_override("font_size", 15)
+        chip.add_theme_color_override("font_color", Color(0.92, 0.91, 0.87))
+        chip.add_theme_color_override("font_hover_color", Color.WHITE)
+        chip.add_theme_stylebox_override("normal", _chip_style(sides == selected_die))
+        chip.add_theme_stylebox_override("hover", _chip_style(true))
+        chip.add_theme_stylebox_override("pressed", _chip_style(true))
+        chip.tooltip_text = "Выбрать D%d" % sides
+        chip.pressed.connect(_select_die_type.bind(sides))
+        die_buttons[sides] = chip
+        chips.add_child(chip)
+
+    var lower := HBoxContainer.new()
+    lower.name = "ThrowAndResult"
+    lower.custom_minimum_size = Vector2(0, 91)
+    lower.add_theme_constant_override("separation", 12)
+    column.add_child(lower)
+
+    var result_stack := VBoxContainer.new()
+    result_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    result_stack.alignment = BoxContainer.ALIGNMENT_CENTER
+    result_stack.add_theme_constant_override("separation", 3)
+    lower.add_child(result_stack)
     status_label = Label.new()
-    status_label.text = "Выбери кубик и нажми «Бросить»"
-    column.add_child(status_label)
+    status_label.name = "RollReadout"
+    status_label.text = "ГОТОВО К БРОСКУ"
+    status_label.add_theme_font_size_override("font_size", 23)
+    status_label.add_theme_color_override("font_color", Color(0.95, 0.91, 0.82))
+    result_stack.add_child(status_label)
     copy_button = Button.new()
-    copy_button.custom_minimum_size = Vector2(0, 40)
-    copy_button.text = "Скопировать результат"
+    copy_button.name = "CopyRoll"
+    copy_button.text = "⧉  КОПИРОВАТЬ"
+    copy_button.visible = false
     copy_button.disabled = true
+    copy_button.add_theme_font_size_override("font_size", 12)
+    copy_button.add_theme_color_override("font_color", Color(0.78, 0.83, 0.89))
+    copy_button.add_theme_stylebox_override("normal", _chip_style(false))
     copy_button.pressed.connect(_copy_result)
-    column.add_child(copy_button)
+    result_stack.add_child(copy_button)
+
+    # D100's single-hundred-face / paired-two-D10 physical mode stays
+    # functional, inside this same dock (never an overlay over the tabletop).
+    d100_mode_button = Button.new()
+    d100_mode_button.name = "D100Mode"
+    d100_mode_button.text = "2 × D10"
+    d100_mode_button.tooltip_text = "Один D100 / два независимых физических D10"
+    d100_mode_button.custom_minimum_size = Vector2(145, 31)
+    d100_mode_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+    d100_mode_button.add_theme_font_size_override("font_size", 14)
+    d100_mode_button.add_theme_stylebox_override("normal", _chip_style(false))
+    d100_mode_button.add_theme_stylebox_override("hover", _chip_style(true))
+    d100_mode_button.add_theme_stylebox_override("pressed", _chip_style(true))
+    d100_mode_button.visible = false
+    d100_mode_button.pressed.connect(_toggle_d100_mode)
+    result_stack.add_child(d100_mode_button)
+
+    var action_stack := VBoxContainer.new()
+    action_stack.alignment = BoxContainer.ALIGNMENT_CENTER
+    action_stack.add_theme_constant_override("separation", 2)
+    lower.add_child(action_stack)
+    throw_button = Button.new()
+    throw_button.name = "PhysicalRollButton"
+    throw_button.text = "⬡"
+    throw_button.tooltip_text = "Бросить D6"
+    throw_button.custom_minimum_size = Vector2(83, 83)
+    throw_button.add_theme_font_size_override("font_size", 37)
+    throw_button.add_theme_color_override("font_color", Color.WHITE)
+    var action_style := StyleBoxFlat.new()
+    action_style.bg_color = Color(0.075, 0.35, 0.75)
+    action_style.border_color = Color(0.30, 0.67, 0.99)
+    action_style.set_border_width_all(2)
+    action_style.set_corner_radius_all(43)
+    throw_button.add_theme_stylebox_override("normal", action_style)
+    throw_button.add_theme_stylebox_override("hover", action_style)
+    throw_button.add_theme_stylebox_override("pressed", action_style)
+    throw_button.pressed.connect(_throw_selected_die)
+    action_stack.add_child(throw_button)
+
+func _toggle_d100_mode() -> void:
+    percentile_pair_enabled = not percentile_pair_enabled
+    d100_mode_button.text = "2 × D10" if percentile_pair_enabled else "1 × D100"
+    _update_m5_live_formula()
+
+func _select_die_type(sides: int) -> void:
+    for index in range(selected_chooser.item_count):
+        if selected_chooser.get_item_id(index) == sides:
+            selected_chooser.select(index)
+            _on_type_selected(index)
+            break
 
 func _copy_result() -> void:
     if last_result != -1:
         DisplayServer.clipboard_set(str(last_result))
-        status_label.text = "Скопировано: D%d = %d" % [active_sides, last_result]
+        if active_sides == 0:
+            status_label.text = "Скопировано: %s = %d" % [last_advanced_formula,last_result]
+        else:
+            status_label.text = "Скопировано: D%d = %d" % [active_sides,last_result]
 
 func _on_type_selected(index: int) -> void:
     selected_die = selected_chooser.get_item_id(index)
-    throw_button.text = "Бросить D%d" % selected_die
+    _update_m5_live_formula()
+    throw_button.tooltip_text = "Бросить D%d" % selected_die
+    if d100_mode_button != null:
+        d100_mode_button.visible = selected_die == 100
+        if selected_die == 100 and OS.is_debug_build():
+            # Report ACTUAL arranged rectangle; AVD must still physically tap.
+            call_deferred("_qa_report_d100_mode_rect")
+    for die_sides in die_buttons:
+        var chip: Button = die_buttons[die_sides]
+        chip.add_theme_stylebox_override("normal", _chip_style(die_sides == selected_die))
+
+func _qa_report_d100_mode_rect() -> void:
+    await get_tree().process_frame
+    if not OS.is_debug_build() or not is_instance_valid(d100_mode_button):
+        return
+    if not d100_mode_button.visible:
+        return
+    var bounds: Rect2 = d100_mode_button.get_global_rect()
+    print("DICE_QA_D100_MODE_RECT x=%d y=%d w=%d h=%d" % [
+        int(bounds.position.x), int(bounds.position.y),
+        int(bounds.size.x), int(bounds.size.y)])
 
 func _throw_selected_die() -> void:
+    if is_instance_valid(physical_pool) and bool(physical_pool.get("busy")):
+        return
     match selected_die:
         4:
             _throw_physical_d4()
@@ -157,6 +737,13 @@ func _throw_selected_die() -> void:
             _throw_physical_d12()
         20:
             _throw_physical_d20()
+        10:
+            _throw_physical_d10()
+        100:
+            if percentile_pair_enabled:
+                _throw_percentile_d100()
+            else:
+                _throw_physical_d100()
         _:
             _throw_physical_d6()
 
@@ -175,39 +762,174 @@ func _throw_physical_d8() -> void:
 func _throw_physical_d12() -> void:
     _begin_throw(D12Script.new(), 12)
 
+func _throw_physical_d10() -> void:
+    var die: RigidBody3D = TrapezohedronDie.new()
+    die.set("sides", 10)
+    _begin_throw(die, 10)
+
+func _throw_physical_d100() -> void:
+    var die: RigidBody3D = TrapezohedronDie.new()
+    die.set("sides", 100)
+    _begin_throw(die, 100)
+
+func _watch_table_contact(die: RigidBody3D) -> void:
+    # One genuine Jolt body_entered event per first contact with the felt
+    # floor. Rail and die-on-die collisions cannot animate the table.
+    if not is_instance_valid(die):
+        return
+    die.contact_monitor = true
+    die.max_contacts_reported = maxi(die.max_contacts_reported,8)
+    if not die.body_entered.is_connected(Callable(self,"_on_die_table_contact").bind(die)):
+        die.body_entered.connect(Callable(self,"_on_die_table_contact").bind(die))
+
+func _on_die_table_contact(body: Node, die: RigidBody3D) -> void:
+    if not is_instance_valid(body) or body.name != "VelvetTable":
+        return
+    if not is_instance_valid(die) or not is_instance_valid(velvet_impact):
+        return
+    var impact_speed := die.linear_velocity.length()
+    if bool(velvet_impact.call("register_impact",die.global_position,impact_speed,die.mass)):
+        if OS.is_debug_build():
+            print("DICE_M5_REAL_VELVET_IMPACT speed=%.3f x=%.3f z=%.3f" %
+                [impact_speed,die.global_position.x,die.global_position.z])
+
+func _throw_percentile_d100() -> void:
+    if not throw_button or throw_button.disabled:
+        return
+    _clear_pool_for_basic_throw()
+    active_sides = 100
+    last_result = -1
+    percentile_tens = -1
+    percentile_ones = -1
+    if is_instance_valid(idle_display):
+        idle_display.queue_free()
+        idle_display = null
+    if is_instance_valid(active_die):
+        # queue_free() deletes at end-of-frame, leaving an old collider live
+        # for the next physics step. Detach from SceneTree immediately.
+        if active_die.get_parent() == self:
+            remove_child(active_die)
+        active_die.queue_free()
+        active_die = null
+    if is_instance_valid(active_percentile):
+        # Repeated two-D10 throws previously left the queued parent with
+        # the same node name. get_node() then found the OLD settled pair.
+        # The old two colliders must also be removed from Jolt immediately.
+        if active_percentile.get_parent() == self:
+            remove_child(active_percentile)
+        active_percentile.queue_free()
+        active_percentile = null
+    active_percentile = Node3D.new()
+    active_percentile.name = "PhysicalD100Percentile"
+    add_child(active_percentile)
+    copy_button.visible = false
+    copy_button.disabled = true
+    throw_button.disabled = true
+    selected_chooser.disabled = true
+    for is_tens in [true, false]:
+        var die: RigidBody3D = TrapezohedronDie.new()
+        die.set("sides", 10)
+        die.name = "TensD10" if is_tens else "OnesD10"
+        active_percentile.add_child(die)
+        _watch_table_contact(die)
+        die.connect("roll_completed", Callable(self, "_on_percentile_finished").bind(is_tens))
+        die.connect("roll_failed", Callable(self, "_on_die_failed"))
+        die.call("throw_from_top", -1 if is_tens else 1)
+    status_label.text = "D100  ·  ДВА БРОСКА…"
+    if OS.is_debug_build():
+        print("DICE_QA_STARTED D100_PAIR")
+
+func _on_percentile_finished(value: int, is_tens: bool) -> void:
+    if is_tens:
+        percentile_tens = value
+    else:
+        percentile_ones = value
+    if percentile_tens == -1 or percentile_ones == -1:
+        return
+    # Printed 10 corresponds to zero on each percentile digit; only the
+    # physically visible two faces determine the combined result.
+    last_result = DiceRules.percentile((percentile_tens % 10) * 10, percentile_ones % 10)
+    if last_result < 1:
+        _on_die_failed("Ошибка процентного броска")
+        return
+    status_label.text = "D100   /   %d" % last_result
+    copy_button.visible = true
+    copy_button.disabled = false
+    throw_button.disabled = false
+    selected_chooser.disabled = false
+    var percentile_spec: Dictionary = RollFormula.parse("1d100")
+    var observed: Dictionary = RollFormula.evaluate(percentile_spec,
+        [[{"tens":percentile_tens,"ones":percentile_ones}]])
+    _record_m4_result(observed)
+    if OS.is_debug_build():
+        print("DICE_QA_COMPLETED D100_PAIR=%d" % last_result)
+
 func _begin_throw(die: RigidBody3D, sides: int) -> void:
     if not throw_button or throw_button.disabled:
         die.queue_free()
         return
+    _clear_pool_for_basic_throw()
     active_sides = sides
     last_result = -1
+    if is_instance_valid(idle_display):
+        idle_display.queue_free()
+        idle_display = null
     copy_button.disabled = true
     throw_button.disabled = true
     selected_chooser.disabled = true
     if is_instance_valid(active_die):
         remove_child(active_die)
         active_die.queue_free()
+    if is_instance_valid(active_percentile):
+        # Switching from two percentiles back to one physical die must
+        # leave no orphan physics bodies in the running scene.
+        if active_percentile.get_parent() == self:
+            remove_child(active_percentile)
+        active_percentile.queue_free()
+        active_percentile = null
     die.name = "PhysicalD%d" % sides
     add_child(die)
+    _watch_table_contact(die)
+    if sides != 10 and sides != 100:
+        Premium.decorate_die(die, sides)
     active_die = die
     die.connect("roll_completed", Callable(self, "_on_die_completed"))
     die.connect("roll_failed", Callable(self, "_on_die_failed"))
     die.call("throw_from_top")
-    status_label.text = "D%d · кубик летит…" % sides
+    # Debug-only Android AVD handshake. Reflects REAL physical signals,
+    # never replaces or sets the numeric outcome.
+    if OS.is_debug_build():
+        print("DICE_QA_STARTED D%d" % sides)
+    status_label.text = "D%d  ·  БРОСОК…" % sides
+    copy_button.visible = false
 
 func _on_die_completed(value: int) -> void:
     last_result = value
+    if OS.is_debug_build():
+        print("DICE_QA_COMPLETED D%d=%d" % [active_sides, value])
+    # Only the physically settled face signal can trigger a critical aura.
+    # This effect attaches in 3D space, never to the result HUD.
+    if is_instance_valid(active_die):
+        CriticalAura.spawn(active_die, active_sides, value)
     if active_sides == 20 and value == 20:
-        status_label.text = "D20 · 20 · критический успех"
+        status_label.text = "✦  20  ·  КРИТИЧЕСКИЙ УСПЕХ"
     elif active_sides == 20 and value == 1:
-        status_label.text = "D20 · 1 · критический провал"
+        status_label.text = "1  ·  КРИТИЧЕСКИЙ ПРОВАЛ"
     else:
-        status_label.text = "D%d · результат: %d" % [active_sides, value]
+        status_label.text = "D%d   /   %d" % [active_sides, value]
     throw_button.disabled = false
     selected_chooser.disabled = false
     copy_button.disabled = false
+    copy_button.visible = true
+    var single_spec: Dictionary = RollFormula.parse("1d%d" % active_sides)
+    var recorded: Dictionary = RollFormula.evaluate(single_spec,[[value]])
+    _record_m4_result(recorded)
 
 func _on_die_failed(message: String) -> void:
+    if OS.is_debug_build():
+        var key := "100_PAIR" if active_sides == 100 and is_instance_valid(active_percentile) else str(active_sides)
+        print("DICE_QA_FAILED D%s=%s" % [key, message])
     status_label.text = "Бросок не засчитан: %s" % message
+    copy_button.visible = false
     throw_button.disabled = false
     selected_chooser.disabled = false

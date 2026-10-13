@@ -11,4 +11,6 @@ dist/
 .vscode/
 .idea/
 android/build/
+src/assets/approved_m5/*.glb
+src/assets/approved_m5/*.hdr
 

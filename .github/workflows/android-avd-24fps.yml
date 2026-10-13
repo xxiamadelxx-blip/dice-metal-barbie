@@ -1,0 +1,120 @@
+name: Android AVD dice screen recorder + 24fps frame critic
+# This is a deliberately experimental Android emulator diagnostic,
+# NOT a second PR gate. The real release pipeline is gauntlet-release-gate.yml.
+# The SwiftShader/AVD incompatibility must not multiply PR workflow runs.
+on:
+  workflow_call:
+    inputs:
+      fresh_assets:
+        type: boolean
+        required: false
+        default: false
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  emulator-apk:
+    name: Build isolated Android x86_64 emulation-only APK
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Consume exact Blender GLBs from this Gauntlet
+        if: inputs.fresh_assets
+        uses: actions/download-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb
+      - name: Verify and install exact Blender GLBs before APK export
+        if: inputs.fresh_assets
+        run: |
+          set -eu
+          (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
+          mkdir -p src/assets/generated
+          for die in d4 d6 d8 d12 d20; do
+            test -s "build/gauntlet-glb/${die}_boolean_engraved.glb"
+            cp "build/gauntlet-glb/${die}_boolean_engraved.glb" "src/assets/generated/${die}_boolean_engraved.glb"
+          done
+      - name: Select emulator ABI WITHOUT changing phone ARM64 preset in git
+        run: |
+          sed -i 's/^architectures\/arm64-v8a=true/architectures\/arm64-v8a=false\narchitectures\/x86_64=true/' export_presets.cfg
+          grep 'architectures/' export_presets.cfg
+          # Emulator SwiftShader Vulkan reported QueuePresentKHR DEVICE_LOST.
+          # Modify ONLY the disposable x86_64 diagnostic build checkout.
+          # Production phone ARM64 renderer stays unchanged in git.
+          sed -i 's/renderer\/rendering_method="mobile"/renderer\/rendering_method="gl_compatibility"/' project.godot
+          sed -i 's/renderer\/rendering_method.mobile="mobile"/renderer\/rendering_method.mobile="gl_compatibility"/' project.godot
+          grep 'rendering_method' project.godot
+          mkdir -p ~/.local/share/godot/export_templates
+          cp -r /root/.local/share/godot/export_templates/4.6.3.stable ~/.local/share/godot/export_templates/ || true
+          mkdir -p ~/.config/godot
+          [ ! -d /root/.config/godot ] || cp -rn /root/.config/godot/. ~/.config/godot/ || true
+          godot --headless --path . --editor --quit
+          mkdir -p build/android
+          test -f /root/debug.keystore
+      - name: Export isolated signed x86_64 Android test binary
+        run: |
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore
+          export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+          godot --headless --path . --export-debug "Android Debug" build/android/dice-emulator-x86-debug.apk
+          test -s build/android/dice-emulator-x86-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dice-avd-x86-debug-apk
+          path: build/android/dice-emulator-x86-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  android-emulator:
+    name: Real Android AVD 24fps screenshot-sequence audit
+    needs: emulator-apk
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: dice-avd-x86-debug-apk
+      - name: Enable host Android hardware acceleration
+        run: |
+          test -e /dev/kvm || { echo "/dev/kvm not available: Android AVD NOT VERIFIED"; exit 1; }
+          sudo chmod 666 /dev/kvm
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg python3-pil
+          python3 tools/visual/test_detect_android_immersive.py -v
+          python3 tools/visual/test_detect_android_launcher_anr.py -v
+          python3 tools/visual/test_detect_android_system_anr.py -v
+          # Cheap deterministic regression: Godot telemetry may arrive BEFORE
+          # Android framebuffer updates. Same strict metric as final critic.
+          python3 tools/visual/test_pool_editor_pixels.py -v
+          python3 tools/visual/test_wait_android_pixels.py -v
+          mkdir -p qa-evidence/android-avd
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          # API 37 deprecated swiftshader_indirect; prior AVD screenshots were
+          # uniformly black with SceneShaderGLES3 SwiftShader 261-uniform error.
+          # Mesa Lavapipe is an isolated emulator diagnostic, not phone config.
+          emulator-options: "-no-window -no-audio -no-snapshot -no-boot-anim -gpu lavapipe -feature -Vulkan"
+          script: bash tools/visual/run_android_avd_rolls.sh
+      - name: Decode every Android emulator image and keep time ordered evidence
+        run: python3 tools/visual/audit_android_avd_sequence.py qa-evidence/android-avd
+      - name: Upload captured AVD screens, eight baseline plus M4 videos, per-frame logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dice-android-avd-24fps-evidence
+          path: qa-evidence/android-avd/
+          if-no-files-found: warn
+          retention-days: 14

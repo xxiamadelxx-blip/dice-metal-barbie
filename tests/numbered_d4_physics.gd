@@ -19,9 +19,26 @@ func _run() -> void:
     var scene: Node3D = load("res://src/main.tscn").instantiate()
     root.add_child(scene)
     await process_frame
+    var showroom: Node3D = scene.get_node("IdleDiceDisplay")
+    _assert(showroom.get_child_count() == 4, "Approved idle composition must show exactly four real 3D dice")
+    for prop in showroom.get_children():
+        var nonrolling: RigidBody3D = prop as RigidBody3D
+        _assert(nonrolling != null and nonrolling.freeze, "Idle prop must be stationary")
+        if nonrolling != null:
+            _assert(nonrolling.collision_layer == 0 and nonrolling.collision_mask == 0, "Idle prop must NEVER affect Jolt randomness")
     _assert(scene.selected_chooser.get_selected_id() == scene.selected_die, "Initial chooser must match selected die")
-    _assert(scene.throw_button.text == "Бросить D6", "D6 must be the initial selected throw")
-    _assert(scene.selected_chooser.get_item_count() == 5, "D4 D6 D8 D12 D20 all selectable")
+    _assert(scene.throw_button.tooltip_text == "Бросить D6", "D6 must be the initial selected throw")
+    var required: Array[int] = [4, 6, 8, 10, 12, 20, 100]
+    _assert(scene.selected_chooser.get_item_count() == required.size(),
+        "All seven approved physical dice must be selectable")
+    for sides in required:
+        var in_chooser := false
+        for index in range(scene.selected_chooser.get_item_count()):
+            if scene.selected_chooser.get_item_id(index) == sides:
+                in_chooser = true
+                break
+        _assert(in_chooser, "Missing D%d in physical die chooser" % sides)
+        _assert(scene.die_buttons.has(sides), "Missing accessible D%d chip" % sides)
     var die = D4.new()
     root.add_child(die)
 
@@ -30,6 +47,8 @@ func _run() -> void:
     _assert(collider.shape.points.size() == 4, "D4 collision needs four vertices")
     var mesh: MeshInstance3D = die.get_node("ObsidianD4")
     _assert(mesh.mesh.get_faces().size() == 12, "D4 visible mesh has four triangles")
+    _assert((die.get_node("ActualSculptedBevels") as MeshInstance3D).mesh.get_faces().size() == 72, "D4 must have real beveled geometry")
+    _assert((die.get_node("FaceInsetBronzeHairlines") as MeshInstance3D).mesh.get_faces().size() == 72, "D4 bronze is inlaid into face planes")
     var num_glyphs := 0
     for apex in range(4):
         for opposite in range(4):
@@ -52,6 +71,7 @@ func _run() -> void:
     counts.resize(5)
     for trial in range(TRIALS):
         scene.call("_throw_physical_d4")
+        _assert(scene.idle_display == null, "Real throw must clear the decorative display")
         await physics_frame
         var active: RigidBody3D = scene.get_node_or_null("PhysicalD4")
         _assert(active != null, "No actual D4 body in scene")

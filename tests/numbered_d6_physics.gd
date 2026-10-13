@@ -64,7 +64,7 @@ func _run() -> void:
         if not settled:
             break
         _expect(die.failure == "", "Trial %d failed: %s" % [trial, die.failure])
-        _expect(die.edge_recovery_count <= 3, "Trial %d exceeded physical recovery budget" % trial)
+        _expect(die.edge_recovery_count <= Dice.MAX_EDGE_RECOVERIES, "Trial %d exceeded physical recovery budget" % trial)
         if die.failure != "":
             break
         var visual := Symmetry.top_value(die.global_transform.basis.orthonormalized(), 0.02)

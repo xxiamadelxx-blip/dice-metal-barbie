@@ -1,12 +1,12 @@
 name: Godot cloud scene visual QA
 on:
+  workflow_call:
+    inputs:
+      fresh_assets:
+        type: boolean
+        required: false
+        default: false
   workflow_dispatch:
-  pull_request:
-    paths:
-      - "src/**"
-      - "tests/visual_capture.gd"
-      - ".github/workflows/godot-native-visual.yml"
-      - "project.godot"
 permissions:
   contents: read
 
@@ -19,17 +19,50 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Consume same-run fresh GLBs (not stale repository binaries)
+        if: inputs.fresh_assets
+        uses: actions/download-artifact@v4
+        with:
+          name: gauntlet-fresh-glbs
+          path: build/gauntlet-glb
+      - name: Check GLB SHA256 and install before Godot import
+        if: inputs.fresh_assets
+        run: |
+          set -eu
+          (cd build/gauntlet-glb && sha256sum -c glb-sha256.txt)
+          mkdir -p src/assets/generated
+          for die in d4 d6 d8 d12 d20; do
+            test -s "build/gauntlet-glb/${die}_boolean_engraved.glb"
+            cp "build/gauntlet-glb/${die}_boolean_engraved.glb" "src/assets/generated/${die}_boolean_engraved.glb"
+          done
       - name: Install Mesa/X11 runtime libraries for Godot
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0 python3-pil
           mkdir -p qa-evidence
       - name: Import project
         run: godot --headless --path . --editor --quit
+      - name: Verify production mesh geometry and 3D engraved numerals
+        run: |
+          godot --headless --path . --script res://tests/engraved_assets.gd > qa-evidence/engraved-assets.log 2>&1 || { tail -120 qa-evidence/engraved-assets.log; exit 1; }
+          cat qa-evidence/engraved-assets.log
+          godot --headless --path . --script res://tests/critical_aura.gd > qa-evidence/critical-aura.log 2>&1 || { tail -120 qa-evidence/critical-aura.log; exit 1; }
+          cat qa-evidence/critical-aura.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call\\.|FAIL:|FAIL [^0]' qa-evidence/engraved-assets.log; then
+            echo "FAIL: sculpted asset regression or GDScript error"
+            exit 5
+          fi
       - name: Render real frame evidence under virtual display
         run: |
           xvfb-run -a -s "-screen 0 720x1280x24" godot --path . --rendering-method gl_compatibility --script res://tests/visual_capture.gd > qa-evidence/native-godot.log 2>&1 || { tail -100 qa-evidence/native-godot.log; exit 1; }
-          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png; do
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call\\.' qa-evidence/native-godot.log; then
+            echo "FAIL: GDScript errors detected despite generated screenshots"
+            grep -E 'SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid call' qa-evidence/native-godot.log
+            exit 3
+          fi
+          for file in qa-evidence/native-01-launch.png qa-evidence/native-02-moving.png qa-evidence/native-03-after.png qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png qa-evidence/native-09-d8-detail.png qa-evidence/native-10-d12-detail.png qa-evidence/native-11-d4-apex-detail.png qa-evidence/native-12-d8-normal.png qa-evidence/native-13-d12-normal.png qa-evidence/native-14-d4-normal.png qa-evidence/native-15-staged-d20-six-underbar.png qa-evidence/native-16-staged-d20-nine-underbar.png qa-evidence/native-17-jolt-contact-felt.png qa-evidence/native-18-recovered-felt.png; do
             test -s "$file"
             test "$(stat -c%s "$file")" -ge 10000
           done
@@ -37,7 +70,36 @@ jobs:
             echo "FAIL: image unchanged after actual physics throw"
             exit 2
           fi
+          if cmp -s qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png; then
+            echo "FAIL: golden crit pulse did not render a visible native change"
+            exit 4
+          fi
+          if cmp -s qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png; then
+            echo "FAIL: critical colors or pulse rendering indistinguishable"
+            exit 4
+          fi
+          if cmp -s qa-evidence/native-09-d8-detail.png qa-evidence/native-10-d12-detail.png; then
+            echo "FAIL: D8 and D12 detail frames identical despite distinct dice"
+            exit 6
+          fi
+          if cmp -s qa-evidence/native-11-d4-apex-detail.png qa-evidence/native-10-d12-detail.png; then
+            echo "FAIL: D4 apex scene does not differ from D12"
+            exit 6
+          fi
+          if cmp -s qa-evidence/native-15-staged-d20-six-underbar.png qa-evidence/native-16-staged-d20-nine-underbar.png; then
+            echo "FAIL: staged engraved six and nine Godot frames identical"
+            exit 7
+          fi
+          if cmp -s qa-evidence/native-17-jolt-contact-felt.png qa-evidence/native-18-recovered-felt.png; then
+            echo "FAIL: real-contact felt and recovered frame identical"
+            exit 8
+          fi
+          grep -Fq 'DICE_M5_REAL_VELVET_IMPACT speed=' qa-evidence/native-godot.log || {
+            echo "FAIL: screenshot response did not originate from Jolt contact"; exit 9;
+          }
           ls -lh qa-evidence/native-*.png
+      - name: Run autonomous native-frame pixel critic
+        run: python3 tools/visual/critique_native.py qa-evidence/native-06-d20-detail.png qa-evidence/native-07-staged-gold-pulse.png qa-evidence/native-08-staged-crimson-pulse.png qa-evidence/native-11-d4-apex-detail.png qa-evidence/native-01-launch.png
       - name: Publish native screenshot evidence regardless of failure
         if: always()
         uses: actions/upload-artifact@v4
