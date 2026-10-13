@@ -2,22 +2,22 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 canonical Blender D20 rebuilt and all20 Godot faces verified",
+    "task": "M5 D20 optimized20146 triangles all20 faces verified",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "Blender canonical D20 continuation",
-    "next_action": "Reduce80352-triangle cost; integrate private canonical GLB into real game with unchanged collision/outcomes; full24fps/Android gates after architecture fix.",
+    "owner": "Blender measured optimization",
+    "next_action": "Integrate private optimized canonical visual into genuine runtime using unchanged canonical collider and outcomes; fix architecture dependency, full24fps/Android/Qwen gates.",
     "blockers": [
-      "Game integration, full24fps, Android/Nord3 and independent critic NOT_VERIFIED; architecture core->visual FAIL."
+      "Actual game integration/full24fps/Android/Nord3/independent critic unverified; architecture core->visual FAIL persists."
     ],
     "evidence": [
-      "GLB SHA25674c95b405414a8d5ca2a3eb5173262964a9347cef9c7f536e2b2347437c783d6"
+      "GLB SHA2568cfb2fffc68bf60a5824d861e77f1e322aa18f3e5c774bf9c4700e16bfd2247b"
     ],
     "last_observed_sha": "dfafc71670bebb60836ef4d64d3f609537462a02",
     "last_verified_sha": "",
     "branch": "fix/executable-engineering-entry",
-    "updated_at": "2026-10-12T23:36:42+00:00",
-    "verification_note": "All20 Godot face poses and exported glyph normals PASS; Boolean6/9 underbars, stone manifold, source UV fits max3.49e-8, embedded images exact. Godot4.6.3 Mobile llvmpipe/Jolt canonical collider settled3.2167s value11.80352triangles. Standalone proof only."
+    "updated_at": "2026-10-13T00:03:52+00:00",
+    "verification_note": "80352->20146triangles; measured surface maxerror.000318, topology Euler/components/manifold preserved. Original PBR images exact. All20 exported front caps and actual Godot poses PASS; Jolt canonical collider same settled3.2167s/top11. Mobile Vulkan llvmpipe fixture; art/device acceptance open."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
