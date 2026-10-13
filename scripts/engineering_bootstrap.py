@@ -21,6 +21,10 @@ REVIEW_PATHS = ['scripts/engineering_router.py', 'scripts/engineering_bootstrap.
                 'tools/blender/rebake_selected_obsidian.py',
                 'tools/blender/render_selected_comparison.py',
                 'tools/qa/obsidian_candidate_review.gd']
+REVIEW_PATHS += ['tools/visual/run_android_avd_rolls.sh',
+                 'tools/visual/check_pool_editor_pixels.py',
+                 'tools/visual/wait_android_pixels.py',
+                 'tools/visual/test_wait_android_pixels.py']
 
 def command(root, argv, out, name, timeout=180):
     try:

@@ -231,18 +231,12 @@ adb shell screenrecord --size 720x1280 --bit-rate 4500000 \
 m4_record_pid=$!
 sleep 1
 adb shell input tap 50 97
-sleep 1
-adb exec-out screencap -p > qa-evidence/android-avd/m4-drawer-open.png
-python3 - <<'PY'
-from PIL import Image, ImageChops
-a=Image.open('qa-evidence/android-avd/m4-before-drawer.png').convert('RGB')
-b=Image.open('qa-evidence/android-avd/m4-drawer-open.png').convert('RGB')
-assert a.size==b.size==(720,1280),'Android M4 viewport shifted'
-diff=ImageChops.difference(a.crop((17,106,703,510)), b.crop((17,106,703,510))).convert('L')
-changed=sum(n for i,n in enumerate(diff.histogram()) if i>16)
-print('M4 actual Android drawer pixels changed:',changed)
-assert changed>7500,'M4 advanced drawer did not visibly open on Android'
-PY
+# A tap and a fixed one-second delay do not prove a new Lavapipe frame.
+# Wait for the SAME original crop/threshold; never tap the toggle twice.
+python3 tools/visual/wait_android_pixels.py \
+  qa-evidence/android-avd/m4-before-drawer.png \
+  qa-evidence/android-avd/m4-drawer-open.png \
+  --minimum 7500 --crop 17 106 703 510
 # Actual native screenshot established exact 720x1280 hit target:
 # "БРОСИТЬ ФОРМУЛУ" occupies x32..688 and y259..310.
 adb shell input tap 355 285
@@ -274,19 +268,10 @@ if test "$m4_completed" = 1; then
   sleep 1
   adb exec-out screencap -p > qa-evidence/android-avd/m4-before-reroll-drawer.png
   adb shell input tap 50 97
-  sleep 1
-  adb exec-out screencap -p > qa-evidence/android-avd/m4-reroll-selector-open.png
-  python3 - <<'PY'
-from PIL import Image,ImageChops
-a=Image.open('qa-evidence/android-avd/m4-before-reroll-drawer.png').convert('RGB')
-b=Image.open('qa-evidence/android-avd/m4-reroll-selector-open.png').convert('RGB')
-assert a.size==b.size==(720,1280), 'M4 reroll Android UI viewport changed'
-diff=ImageChops.difference(a.crop((17,110,703,580)),
-                           b.crop((17,110,703,580))).convert('L')
-changed=sum(v for i,v in enumerate(diff.histogram()) if i>16)
-print('M4 Android reroll selector drawer changed pixels',changed)
-assert changed>8500,'Actual Android source-reroll drawer is not visible'
-PY
+  python3 tools/visual/wait_android_pixels.py \
+    qa-evidence/android-avd/m4-before-reroll-drawer.png \
+    qa-evidence/android-avd/m4-reroll-selector-open.png \
+    --minimum 8500 --crop 17 110 703 580
   adb shell input tap 590 340
   sleep 1
   adb exec-out screencap -p > qa-evidence/android-avd/m4-after-reroll-tap.png
@@ -311,26 +296,19 @@ m4_history_open=0
 if test "$m4_completed" = 1 && test "$m4_reroll_completed" = 1; then
   adb exec-out screencap -p > qa-evidence/android-avd/m4-before-history-drawer.png
   adb shell input tap 50 97
-  sleep 1
-  adb exec-out screencap -p > qa-evidence/android-avd/m4-history-drawer-open.png
+  python3 tools/visual/wait_android_pixels.py \
+    qa-evidence/android-avd/m4-before-history-drawer.png \
+    qa-evidence/android-avd/m4-history-drawer-open.png \
+    --minimum 8500 --crop 17 110 703 580
   # Layout grounded by 720x1280 native QA: complete history row appears
   # beneath real D6 selector and presets, centered near x540,y482.
   adb shell input tap 540 482
-  sleep 1.2
-  adb exec-out screencap -p > qa-evidence/android-avd/m4-full-history-open.png
+  python3 tools/visual/wait_android_pixels.py \
+    qa-evidence/android-avd/m4-history-drawer-open.png \
+    qa-evidence/android-avd/m4-full-history-open.png \
+    --minimum 15000 --crop 30 60 690 1190 --difference-threshold 18
   adb logcat -d -v time -s godot:I '*:S' > "$m4_log" || true
   if grep -Eq 'DICE_M4_HISTORY_OPEN records=([2-9]|[1-9][0-9]+)' "$m4_log"; then
-    python3 - <<'PY'
-from PIL import Image,ImageChops
-before=Image.open('qa-evidence/android-avd/m4-history-drawer-open.png').convert('RGB')
-after=Image.open('qa-evidence/android-avd/m4-full-history-open.png').convert('RGB')
-assert before.size==after.size==(720,1280), 'Android full-history pixel dimensions wrong'
-diff=ImageChops.difference(before.crop((30,60,690,1190)),
-                           after.crop((30,60,690,1190))).convert('L')
-changed=sum(v for i,v in enumerate(diff.histogram()) if i>18)
-print('Actual Android full-history modal changed pixels:',changed)
-assert changed>15000,'Real Android history dialog not visibly present'
-PY
     m4_history_open=1
   fi
 fi

@@ -14,15 +14,20 @@ _SIZE = (720, 1280)
 MIN_CHANGED_PIXELS = 75
 
 
-def changed_pixels(before: Path, after: Path) -> int:
+def changed_pixels(before: Path, after: Path, crop=_CROP, difference_threshold=16) -> int:
     with Image.open(before) as image:
         a = image.convert("RGB")
     with Image.open(after) as image:
         b = image.convert("RGB")
     if a.size != _SIZE or b.size != _SIZE:
         raise ValueError("Android AVD screenshots must both be 720x1280")
-    delta = ImageChops.difference(a.crop(_CROP), b.crop(_CROP)).convert("L")
-    return sum(delta.histogram()[17:])
+    left, top, right, bottom = crop
+    if not 0 <= left < right <= _SIZE[0] or not 0 <= top < bottom <= _SIZE[1]:
+        raise ValueError("Pixel crop must be inside the original Android frame")
+    if not 0 <= difference_threshold < 255:
+        raise ValueError("Invalid per-pixel difference threshold")
+    delta = ImageChops.difference(a.crop(crop), b.crop(crop)).convert("L")
+    return sum(delta.histogram()[difference_threshold+1:])
 
 
 def main() -> None:

@@ -94,6 +94,7 @@ jobs:
           # Cheap deterministic regression: Godot telemetry may arrive BEFORE
           # Android framebuffer updates. Same strict metric as final critic.
           python3 tools/visual/test_pool_editor_pixels.py -v
+          python3 tools/visual/test_wait_android_pixels.py -v
           mkdir -p qa-evidence/android-avd
       - uses: reactivecircus/android-emulator-runner@v2
         with:
