@@ -26,12 +26,14 @@ def main():
     parser.add_argument('--wave-scale', type=float, default=5.0)
     parser.add_argument('--noise-scale', type=float, default=3.0)
     parser.add_argument('--roughness', type=float, default=.09)
+    parser.add_argument('--normal-strength', type=float, default=.2)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     assert hashlib.sha256(args.source_blend.read_bytes()).hexdigest() == SOURCE_BLEND_SHA
     assert hashlib.sha256(args.geometry.read_bytes()).hexdigest() == args.geometry_sha
     assert 0 < args.roughness <= 1 and 0 <= args.wave_strength <= .2
     assert 0 <= args.noise_strength <= .05
     assert 0 < args.wave_scale <= 30 and 0 < args.noise_scale <= 30
+    assert 0 < args.normal_strength <= 1
     args.output.mkdir(parents=True, exist_ok=True)
     # Open the source as a main file so Blender runs its file-version migration
     # on the entire node graph; appending only its material is insufficient.
@@ -116,6 +118,7 @@ def main():
     texture = baked.node_tree.nodes.new('ShaderNodeTexImage')
     texture.image = normal_image
     normal = baked.node_tree.nodes.new('ShaderNodeNormalMap')
+    normal.inputs['Strength'].default_value = args.normal_strength
     baked.node_tree.links.new(texture.outputs['Color'], normal.inputs['Color'])
     baked.node_tree.links.new(normal.outputs['Normal'], shader.inputs['Normal'])
     for index in range(len(stone.data.materials)):
@@ -134,6 +137,7 @@ def main():
                'uv': 'Blender Smart UV; unique chart unwrap before tangent bake, angle .6, margin .015',
                'wave_strength': args.wave_strength, 'noise_strength': args.noise_strength,
                'wave_scale': args.wave_scale, 'noise_scale': args.noise_scale,
+               'normal_strength': args.normal_strength,
                'roughness': args.roughness, 'base_color': [0, 0, 0], 'metallic': 0,
                'source_principled_migration': 'native node; source Base Color/Roughness/Normal links preserved',
                'valid_normal_pixels': len(encoded), 'normal_xy_range': channel_range.tolist(),

@@ -2,23 +2,23 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "Blender D20 re-authoring and source-material tangent bake",
+    "task": "Polished obsidian D20 final candidate a02ce9; authentic review capture in progress",
     "route": "creative-3d",
     "status": "in_progress",
     "owner": "Codex Blender/Godot corrective authoring",
-    "next_action": "Inspect polished candidate 4c0738 actual Blender/Godot frames, save private evidence and triage same-source bounded Qwen CI.",
+    "next_action": "Finish real a02ce9 Blender/Godot captures, save private PNG/GLB/blend/video bundle and triage final-source Qwen response.",
     "blockers": [
-      "M5 artistic acceptance pending. Local Ollama absent. Required full CI/independent Qwen and Nord3 device performance NOT_VERIFIED."
+      "Art acceptance and Nord3 phone quality/FPS NOT_VERIFIED. Local Qwen unavailable; final-source unified CI required. Candidate is private review asset, not default production selected GLB."
     ],
     "evidence": [
-      "Blender4.0.2 actual .024 bevel and .013 engraving; manifold shell,0 boundary edges,max hull deviation1.05e-7; 58092 triangles. Original control SHA4c04c170 unchanged. Source material reopened with full node migration; unique UV authored for actual 2K Cycles tangent bake.",
-      "9 geometry/pool regressions PASS;28 engineering contracts,25 Gauntlet contracts PASS; authentic 40 staged face poses and real single/mixed throws for intermediate fa4e9e candidate, failures[]. Polished candidate rendering still running."
+      "Final private GLB a02ce9a2ea6c38367eb5ea739c289ad4c1540ffe481a1a08886a73d3a1f6e2c9; actual Blender2K source tangent bake and unique UV. Polished normal strength0.2, roughness0.09, pure black, original gold unchanged. Base geometry b48e27,58092 triangles,manifold,in canonical collider.",
+      "28 engineering contracts and25 Gauntlet contracts PASS;9 native geometry/pool regressions PASS. Intermediate fa4e9 has40 staged poses and2 real throws, failures[]. Final candidate imports; final visual proof currently executing."
     ],
-    "last_observed_sha": "57dcc9dcc3ba7e1f9f6d194dbf0fe851dd25dcc7",
+    "last_observed_sha": "900fae71cb4df1413bf28860d4a707a167a8a807",
     "last_verified_sha": "",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
-    "updated_at": "2026-10-13T20:30:47+00:00",
-    "verification_note": "No production camera, mechanics, mass or collider changes. Candidates remain private review assets; original selected material remains active. Bounded Qwen API repaired with 512 token maximum and fail-closed incomplete-reply checks."
+    "updated_at": "2026-10-13T20:36:18+00:00",
+    "verification_note": "No camera/mass/collider/mechanics changes. Original GLB4c04c170/HDRa8166255 remain immutable controls. Qwen bounds512 tokens, raw completion/model validation fail closed. Required CI response is not image critique."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
