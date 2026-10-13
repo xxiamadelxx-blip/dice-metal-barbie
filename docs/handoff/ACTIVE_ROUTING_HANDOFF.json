@@ -2,23 +2,23 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "User-rejected obsidian visual FAIL diagnosed; AA-only fix is insufficient",
+    "task": "Blender D20 re-authoring and source-material tangent bake",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "Rejected-quality corrective authoring",
-    "next_action": "Rework Blender surface, bevel/engraving detail in separate candidates against selected original; compare native-scale and true macro Godot captures. Repair bounded Qwen execution before new implementation Gauntlet.",
+    "owner": "Codex Blender/Godot corrective authoring",
+    "next_action": "Inspect polished candidate 4c0738 actual Blender/Godot frames, save private evidence and triage same-source bounded Qwen CI.",
     "blockers": [
-      "Current visual explicitly rejected. Last exact-source Qwen eebae timed out. Existing physics tests do not grant artistic acceptance; no corrected art or Android quality claimed."
+      "M5 artistic acceptance pending. Local Ollama absent. Required full CI/independent Qwen and Nord3 device performance NOT_VERIFIED."
     ],
     "evidence": [
-      "User attachment 1000048175.jpg reviewed. Private diagnostics libfile_e5583298ba6c81918dfe7b2c880f4ff8: no-AA/MSAA2/MSAA4/SMAA/SSAA comparison and real1440x2560 engine frames; same camera/materials and staged poses.",
-      "Canonical run38382383419 artifact11803489788 actual entry report: sourceeebae493c025e44c67e8ffbfe07e74f2562966fb criticNOT_VERIFIED reasonTimeoutExpired."
+      "Blender4.0.2 actual .024 bevel and .013 engraving; manifold shell,0 boundary edges,max hull deviation1.05e-7; 58092 triangles. Original control SHA4c04c170 unchanged. Source material reopened with full node migration; unique UV authored for actual 2K Cycles tangent bake.",
+      "9 geometry/pool regressions PASS;28 engineering contracts,25 Gauntlet contracts PASS; authentic 40 staged face poses and real single/mixed throws for intermediate fa4e9e candidate, failures[]. Polished candidate rendering still running."
     ],
-    "last_observed_sha": "eebae493c025e44c67e8ffbfe07e74f2562966fb",
+    "last_observed_sha": "57dcc9dcc3ba7e1f9f6d194dbf0fe851dd25dcc7",
     "last_verified_sha": "",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
-    "updated_at": "2026-10-13T10:39:30+00:00",
-    "verification_note": "Production source unchanged at eebae. AA study exit0, 18 authentic staged images; edge smoothness improves but material/engraving remains VISUAL_FAIL. No new Blender authoring or graphical acceptance completed. Router entry executed and checkpoint contract validated. Original selected material remains immutable control; do not propagate rejected look to other dice."
+    "updated_at": "2026-10-13T20:30:47+00:00",
+    "verification_note": "No production camera, mechanics, mass or collider changes. Candidates remain private review assets; original selected material remains active. Bounded Qwen API repaired with 512 token maximum and fail-closed incomplete-reply checks."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
