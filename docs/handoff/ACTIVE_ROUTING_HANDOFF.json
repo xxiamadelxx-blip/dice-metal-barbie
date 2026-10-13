@@ -4,22 +4,23 @@
   "active": {
     "task": "Android M4 original-frame wait repaired; strict D4 visual failure remains",
     "route": "interface-accessibility",
-    "status": "in_progress",
+    "status": "not_verified",
     "owner": "Codex actual CI failure recovery",
-    "next_action": "Inspect new exact-source Qwen/Gauntlet and real AVD menu, reroll and history pixels; fix genuine D4 contrast6.63<8 with real-render evidence, without lowering gates. Preserve private D20a02ce9 proof libfile_8866648cfb708191b5d6de34cca0e63a and do not redo its completed authoring.",
+    "next_action": "Check exact-source Actions for57dd1684fbd067956c4098d157ca22dd9a3098bf; no new run has yet been observed. Identify an authorized workflow-dispatch capability if it remains absent; do not rerun older source as new evidence. Then address strict D4 visual failure, preserving saved private D20a02ce9.",
     "blockers": [
-      "New AVD readiness fix still requires actual emulator verification and exact-source Qwen. D4 visual gate still FAIL. M5/Nord3/60FPS unaccepted. Prior privateD20a02ce9 candidate remains review-only; no licensed binaries committed."
+      "New AVD readiness fix still requires actual emulator verification and exact-source Qwen. D4 visual gate still FAIL. M5/Nord3/60FPS unaccepted. Prior privateD20a02ce9 candidate remains review-only; no licensed binaries committed.",
+      "Exact-source Actions57dd168 currently has0 observed runs. gh is absent; installed GitHub connector exposes no workflow dispatch. Public workflow definition endpoint is unsupported. Actual new emulator and critic results remain NOT_VERIFIED."
     ],
     "evidence": [
       "Actual run38464325751: entry/Qwen, Blender and eight-mode native temporal jobs PASS. Native pixel job115529677382 FAIL D4 facet_dynamic_range6.63<8; AVD115530239718 booted/completed8 modes then original menu ROI0 changed pixels, required>7500.",
       "Downloaded nativeartifact11848437157 SHA6671063a4124164b8c1e83c7b48f6b63e5d38f07e4a6eac04a59093f61e4f1b0 and AVDartifact11849270153 SHA1d9fb8407e1ff7597192c129a27283b0ccceb49911ae9e7eb334951564208b62; inspected actual PNGs. Native fresh GUI press/release at50,97 opens actual panel with buttonrect25,73,51,48.",
       "Seven synthetic readiness/pixel tests,28 engineering contracts and shell syntax PASS. New bounded20s originalADB frame wait retains stale PNGs, preserves all crop/count thresholds and history difference18, never repeats toggle tap. No gameplay/art/physics changes. See docs/M4_ANDROID_FRAME_READINESS_2026-10-14.md."
     ],
-    "last_observed_sha": "3dc30e53fb87486b9eba1971d605e66845b0b22a",
+    "last_observed_sha": "57dd1684fbd067956c4098d157ca22dd9a3098bf",
     "last_verified_sha": "",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
-    "updated_at": "2026-10-13T22:31:21+00:00",
-    "verification_note": "Router enter with literal Завис and Продолжай executed; tool versions checked. Source3dc30e resumed clean before edits. Qwen scope includes new QA driver/helper/test. Delayed AVD frame is a hypothesis, not a fabricated confirmed root cause or emulator PASS."
+    "updated_at": "2026-10-13T22:36:29+00:00",
+    "verification_note": "Router enter with literal Завис and Продолжай executed; tool versions checked. Source3dc30e resumed clean before edits. Qwen scope includes new QA driver/helper/test. Delayed AVD frame is a hypothesis, not a fabricated confirmed root cause or emulator PASS. Published implementation57dd168 and verified matching remote/local tree87e5a01. Exact-SHA Actions queries returned0 runs after publication; no new CI/emulator/Qwen success claimed."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

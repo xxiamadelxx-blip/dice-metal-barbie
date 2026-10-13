@@ -11,3 +11,5 @@ Local verification: seven synthetic pixel/retry tests PASS,28 engineering contra
 A separate native visual gate still fails on the public fallback D4: measured facet_dynamic_range6.63, required8.0. Original images were inspected; no threshold was lowered and no artistic acceptance granted. Source3aa native eight-mode temporal job succeeded, but that public CI does not contain the private selected/polished D20.
 
 Preserve the private D20 a02ce9 candidate and all prior Blender/Godot proof: libfile_8866648cfb708191b5d6de34cca0e63a. Its source/controls and its physics remain unchanged by this QA-only patch. Next: inspect the new Android readiness result/Qwen response, then correct D4 presentation/material contrast using real renders while preserving the strict critic and physical tetrahedron.
+
+Published implementation:57dd1684fbd067956c4098d157ca22dd9a3098bf, matching remote/local tree87e5a01. Exact-SHA Actions queries after publication returned0 runs. No newly running/passed emulator or Qwen review is claimed. The available connector has no workflow-dispatch operation and gh is absent; check for a subsequent actual run before reporting acceptance.
