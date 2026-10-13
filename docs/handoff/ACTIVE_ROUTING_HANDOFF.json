@@ -2,23 +2,25 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "Polished obsidian D20 final candidate a02ce9; authentic review capture in progress",
+    "task": "Blender D20 candidate a02ce9 authored, real Godot evidence saved; review/integration pending",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "Codex Blender/Godot corrective authoring",
-    "next_action": "Finish real a02ce9 Blender/Godot captures, save private PNG/GLB/blend/video bundle and triage final-source Qwen response.",
+    "owner": "Codex Blender/Godot verified artifact checkpoint",
+    "next_action": "Use saved private proof ZIP libfile_8866648cfb708191b5d6de34cca0e63a, inspect actual before/after against the approved original and final-source Gauntlet38464325751. Broaden Qwen beyond the latest2344-character diff before integrating the chosen private model. Do not redo completed captures or claim phone/M5 acceptance.",
     "blockers": [
-      "Art acceptance and Nord3 phone quality/FPS NOT_VERIFIED. Local Qwen unavailable; final-source unified CI required. Candidate is private review asset, not default production selected GLB."
+      "Candidate is private review-only, not default production model; other dice not reworked. Full Gauntlet verdict, independent full-authoring/art critique, M5 and Nord3 quality/FPS NOT_VERIFIED. PublicCI lacks private assets. Fixed24fps clip is not real-time device performance; MSAA4x fixture-only."
     ],
     "evidence": [
-      "Final private GLB a02ce9a2ea6c38367eb5ea739c289ad4c1540ffe481a1a08886a73d3a1f6e2c9; actual Blender2K source tangent bake and unique UV. Polished normal strength0.2, roughness0.09, pure black, original gold unchanged. Base geometry b48e27,58092 triangles,manifold,in canonical collider.",
-      "28 engineering contracts and25 Gauntlet contracts PASS;9 native geometry/pool regressions PASS. Intermediate fa4e9 has40 staged poses and2 real throws, failures[]. Final candidate imports; final visual proof currently executing."
+      "Code3aa97f9988e2a8b3dbc0ed8dc76cba5e201bbca3; finalGLB a02ce9a2ea6c38367eb5ea739c289ad4c1540ffe481a1a08886a73d3a1f6e2c9. Actual Blender4.0.2 authoring, 58092 triangles, manifold shell, original gold/controls retained. 2K source tangent bake with unique UV and normal strength0.2.",
+      "Godot4.6.3:40 staged poses, real D20=20 and10+2=12; separate continuous video D20=1 and6+5=11. Both failures[]. Original camera14.2, mass0.045, collider preserved. 225 frames decoded/all10 chronological sheets reviewed;0 black frames.9 geometry/pool regressions,28 engineering contracts,25 Gauntlet contracts PASS.",
+      "Private artifacts: comparison libfile_aa5593d5ff8c8191aa714af239dd9a3f; rawGodotmacro libfile_8b93f879b714819183a5cd51c5257eaf; BlenderPNG libfile_e84ccd8010cc81918ea6064fb476216e; actualgamePNG libfile_6020b92b48b08191bafe63c8ca2761ea;20facesPNG libfile_1818fc728c448191bf6db021f078a3b0; realvideo libfile_11cacf4f17e08191ba3df1e3c1e6586c; model/source/proofZIP libfile_8866648cfb708191b5d6de34cca0e63a.",
+      "Actual Qwen7B run38464325751/job115527365574 source3aa97f REVIEW_RECEIVED,220 tokens, APIsha1124d4d6cfbad7e39381533e698919a5306439a8b1befb2ac7575680fb162407. Artifact11848351479 downloaded/verified SHA617fe352086020457fb3c5f47f24f89bd0b9fc1b1b6e40084cc6a8b0698de616. RawFAIL retained;3 findings rejected with5 actual Blender invalid-input exit1/no-output runs and intended-default receipt. See docs/M5_BLENDER_REWORK_2026-10-13.md."
     ],
-    "last_observed_sha": "900fae71cb4df1413bf28860d4a707a167a8a807",
+    "last_observed_sha": "3aa97f9988e2a8b3dbc0ed8dc76cba5e201bbca3",
     "last_verified_sha": "",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
-    "updated_at": "2026-10-13T20:36:18+00:00",
-    "verification_note": "No camera/mass/collider/mechanics changes. Original GLB4c04c170/HDRa8166255 remain immutable controls. Qwen bounds512 tokens, raw completion/model validation fail closed. Required CI response is not image critique."
+    "updated_at": "2026-10-13T20:54:31+00:00",
+    "verification_note": "Original4c04c170 GLB/a8166255 HDR immutable. No mechanics/camera/collider/mass changes. Qwen timeout repair is proven live, but reviewed latest2344-character diff only; raw modelFAIL was triaged, never rewritten as modelPASS. All output files saved persistently with receipts; source and evidence recovery are concrete."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
