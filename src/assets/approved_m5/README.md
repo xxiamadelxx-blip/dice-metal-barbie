@@ -27,3 +27,12 @@ public CI exercises fallback assets, so its green status cannot certify this
 selected material. Raw hashes are checked while source files exist; exported
 Godot packs remap imported resources. Android inclusion and appearance require
 a separate export and device check with these exact private inputs.
+
+The original panorama bytes remain pinned. `selected_studio.gdshader` adds a
+static neutral reflection fill (0.04) and broad overhead reflection (0.12)
+for the approved overhead camera. It does not edit the GLB, gold, PBR maps,
+exposure, camera or physical bodies. See `docs/M5_OBSIDIAN_OVERHEAD_LIGHTING.md`.
+For reproducible staged comparisons of every face and three yaws, run
+`godot --path . --rendering-method mobile --audio-driver Dummy --script res://tests/m5_selected_obsidian_lighting.gd`.
+This writes 120 actual game-camera images, with deliberately frozen poses;
+it does not claim physical roll outcomes or Android acceptance.

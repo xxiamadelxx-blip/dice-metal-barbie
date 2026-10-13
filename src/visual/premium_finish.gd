@@ -23,8 +23,9 @@ static func _selected_obsidian_available() -> bool:
 static func apply_selected_obsidian_lighting(env: Environment) -> bool:
     if not _selected_obsidian_available():
         return false
-    var panorama := PanoramaSkyMaterial.new()
-    panorama.panorama = load(SELECTED_STUDIO) as Texture2D
+    var panorama := ShaderMaterial.new()
+    panorama.shader = preload("res://src/visual/selected_studio.gdshader")
+    panorama.set_shader_parameter("panorama", load(SELECTED_STUDIO) as Texture2D)
     var sky := Sky.new()
     sky.sky_material = panorama
     env.sky = sky

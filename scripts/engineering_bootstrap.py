@@ -9,8 +9,10 @@ import sys
 REVIEW_PATHS = ['scripts/engineering_router.py', 'scripts/engineering_bootstrap.py',
                 'scripts/engineering_checks.py', 'src/main.gd',
                 'src/core/physical_roll_pool.gd', 'src/visual/premium_finish.gd',
+                'src/visual/selected_studio.gdshader',
                 'tests/engraved_assets.gd', 'tests/test_engineering_bootstrap.py',
                 'tests/m5_selected_obsidian_runtime.gd',
+                'tests/m5_selected_obsidian_lighting.gd',
                 'tools/blender/generate_die_assets.py']
 
 def command(root, argv, out, name, timeout=180):
