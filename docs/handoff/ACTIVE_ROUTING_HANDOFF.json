@@ -2,23 +2,23 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "Selected obsidian overhead reflection fill with exact original GLB and gold",
+    "task": "User-rejected obsidian visual FAIL diagnosed; AA-only fix is insufficient",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "Obsidian overhead lighting continuation",
-    "next_action": "Inspect the new exact-commit Qwen response; build and test Android with the pinned private selected inputs, then transfer selected stone material to remaining authored dice without changing canonical physics.",
+    "owner": "Rejected-quality corrective authoring",
+    "next_action": "Rework Blender surface, bevel/engraving detail in separate candidates against selected original; compare native-scale and true macro Godot captures. Repair bounded Qwen execution before new implementation Gauntlet.",
     "blockers": [
-      "M5 artistic acceptance and exact-selected-input Android/AVD/Nord3 remain open. Public CI uses fallback assets; prior Qwen response covered d949 only."
+      "Current visual explicitly rejected. Last exact-source Qwen eebae timed out. Existing physics tests do not grant artistic acceptance; no corrected art or Android quality claimed."
     ],
     "evidence": [
-      "Private proof libfile_ba31e829aa5081919ac4ead5a946ee9b: 120 matched-pose game-camera PNGs, 183-frame live movie, 8 real live throws, 1325 audited frames, 59 fresh exhaustive sheets, 0 active black frames. D20 frame25 pre-launch delay flag retained.",
-      "Actual Qwen7B response at d949b9b77ca693fb65d40b4e291fdd23b203a7e1 read from canonical run38379371567 artifact11803031772; no actionable ranked defects, no visual assessment."
+      "User attachment 1000048175.jpg reviewed. Private diagnostics libfile_e5583298ba6c81918dfe7b2c880f4ff8: no-AA/MSAA2/MSAA4/SMAA/SSAA comparison and real1440x2560 engine frames; same camera/materials and staged poses.",
+      "Canonical run38382383419 artifact11803489788 actual entry report: sourceeebae493c025e44c67e8ffbfe07e74f2562966fb criticNOT_VERIFIED reasonTimeoutExpired."
     ],
-    "last_observed_sha": "d949b9b77ca693fb65d40b4e291fdd23b203a7e1",
+    "last_observed_sha": "eebae493c025e44c67e8ffbfe07e74f2562966fb",
     "last_verified_sha": "",
     "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
-    "updated_at": "2026-10-13T10:17:09+00:00",
-    "verification_note": "Working-tree lighting change based on d949. Selected GLB4c04c170... and HDRa8166255... hashes unchanged; static reflection fill0.04/roof0.12 only. Actual game D20=13, mixed6+1=7, collider/mass0.045/camera unchanged. 6 Godot regressions, 120-pose graphical test, 24 router and25 Gauntlet contracts PASS. New-source independent review pending; phone and complete art acceptance NOT_VERIFIED."
+    "updated_at": "2026-10-13T10:39:30+00:00",
+    "verification_note": "Production source unchanged at eebae. AA study exit0, 18 authentic staged images; edge smoothness improves but material/engraving remains VISUAL_FAIL. No new Blender authoring or graphical acceptance completed. Router entry executed and checkpoint contract validated. Original selected material remains immutable control; do not propagate rejected look to other dice."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

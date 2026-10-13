@@ -1,5 +1,9 @@
 # Selected obsidian: overhead reflection correction, 2026-10-13
 
+**Superseded visual verdict:** the user rejected these captures as low quality
+later on 2026-10-13. See `M5_VISUAL_REJECTION_2026-10-13.md`. This experiment is
+not an approved improvement or a template for the remaining dice.
+
 The original selected D20 GLB, baked maps and darker gold are unchanged, as is
 the original studio HDR file. Their SHA256 values still match the pinned
 private inputs in `src/assets/approved_m5/README.md`. No Blender geometry,
