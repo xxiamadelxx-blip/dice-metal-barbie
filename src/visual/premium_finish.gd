@@ -1,9 +1,37 @@
 extends RefCounted
-## Procedural, locally generated visual assets. No licensed textures or
-## external service. All embellishments are NON-COLLIDING.
+## Visual assets only, including an optional licensed authored D20.
+## All embellishments are NON-COLLIDING.
 const EngravedGem = preload("res://src/visual/engraved_gem.gd")
 const GOLD := Color(0.56, 0.41, 0.25)
 const OBSIDIAN := Color(0.075, 0.085, 0.105)
+const SELECTED_D20 := "res://src/assets/approved_m5/d20_selected_obsidian.glb"
+const SELECTED_STUDIO := "res://src/assets/approved_m5/selected_studio.hdr"
+const SELECTED_D20_SHA256 := "4c04c1707e1ed0d59f5bee286525059d85cdec5668c2ce5969d968d3a18221df"
+const SELECTED_STUDIO_SHA256 := "a816625569d497e3672d522357c8ae292b9ef947eb3ae1c80c00e33f76b6a971"
+
+static func _selected_obsidian_available() -> bool:
+    if not ResourceLoader.exists(SELECTED_D20) or not ResourceLoader.exists(SELECTED_STUDIO):
+        return false
+    # Check original bytes before export. Exported Godot resources are remapped
+    # to imported scenes/textures and may omit their raw GLB/HDR source files.
+    if FileAccess.file_exists(SELECTED_D20) and FileAccess.get_sha256(SELECTED_D20) != SELECTED_D20_SHA256:
+        return false
+    if FileAccess.file_exists(SELECTED_STUDIO) and FileAccess.get_sha256(SELECTED_STUDIO) != SELECTED_STUDIO_SHA256:
+        return false
+    return true
+
+static func apply_selected_obsidian_lighting(env: Environment) -> bool:
+    if not _selected_obsidian_available():
+        return false
+    var panorama := PanoramaSkyMaterial.new()
+    panorama.panorama = load(SELECTED_STUDIO) as Texture2D
+    var sky := Sky.new()
+    sky.sky_material = panorama
+    env.sky = sky
+    env.ambient_light_color = Color.WHITE
+    env.ambient_light_energy = 0.8
+    env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+    return true
 
 static func velvet_material() -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
@@ -171,6 +199,9 @@ static func _attach_blender_glb(die: RigidBody3D, sides: int) -> bool:
     if die.get_node_or_null("BlenderRecessedGLB") != null:
         return true
     var path := "res://src/assets/generated/d%d_boolean_engraved.glb" % sides
+    var preserve_authored := sides == 20 and _selected_obsidian_available()
+    if preserve_authored:
+        path = SELECTED_D20
     if not ResourceLoader.exists(path):
         return false
     var packed: Resource = load(path)
@@ -182,7 +213,8 @@ static func _attach_blender_glb(die: RigidBody3D, sides: int) -> bool:
         push_warning("Blender geometry did not instantiate as Node3D for D%d" % sides)
         return false
     art.name = "BlenderRecessedGLB"
-    _finish_glb_node(art)
+    if not preserve_authored:
+        _finish_glb_node(art)
     die.add_child(art)
     for child in die.get_children():
         if child == art:

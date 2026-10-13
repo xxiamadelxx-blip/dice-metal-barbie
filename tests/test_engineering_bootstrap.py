@@ -3,9 +3,24 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from scripts.engineering_bootstrap import command, bootstrap
+from scripts.engineering_bootstrap import command, bootstrap, ollama_argv
 
 class ExecutedEntryTests(unittest.TestCase):
+    def test_running_prepared_container_is_used_without_host_binary(self):
+        import scripts.engineering_bootstrap as module
+        import subprocess
+        with patch.object(module.shutil,'which',side_effect=lambda name: '/usr/bin/docker' if name=='docker' else None), \
+             patch.object(module.subprocess,'run',return_value=subprocess.CompletedProcess([],0,'true\n','')) as run:
+            self.assertEqual(ollama_argv(),['docker','exec','-i','dice-gauntlet-ollama','ollama'])
+        self.assertEqual(run.call_args.args[0],['docker','inspect','--format','{{.State.Running}}','dice-gauntlet-ollama'])
+
+    def test_stopped_container_never_claims_available_critic(self):
+        import scripts.engineering_bootstrap as module
+        import subprocess
+        with patch.object(module.shutil,'which',side_effect=lambda name: '/usr/bin/docker' if name=='docker' else None), \
+             patch.object(module.subprocess,'run',return_value=subprocess.CompletedProcess([],0,'false\n','')):
+            self.assertIsNone(ollama_argv())
+
     def test_actual_failed_process_is_preserved(self):
         import sys
         with tempfile.TemporaryDirectory() as folder:

@@ -4,6 +4,7 @@ extends Node3D
 signal pool_completed(result: Dictionary)
 signal pool_failed(reason: String)
 signal physical_die_spawned(die: RigidBody3D)
+signal critical_visual_requested(die: RigidBody3D, sides: int, value: int)
 
 const Formula = preload("res://src/core/roll_formula.gd")
 const D4 = preload("res://src/dice/d4_body.gd")
@@ -18,7 +19,6 @@ const Octa = preload("res://src/core/octahedron.gd")
 const Dodeca = preload("res://src/core/dodecahedron.gd")
 const Ico = preload("res://src/core/icosahedron.gd")
 const Kite = preload("res://src/core/trapezohedron.gd")
-const CriticalAura = preload("res://src/visual/critical_aura.gd")
 const MAX_PHYSICAL_STEPS := 2400
 const MAX_VISIBLE_BODIES := 8
 const LAUNCH_COLUMNS := 3
@@ -271,7 +271,7 @@ func _execute_physical_reroll(slot: int, group_index: int, die_index: int,
         var selected_faces: Array = final["groups"][group_index]["kept_faces"]
         if selected_faces.size() == 1 and int(selected_faces[0]) == new_top and (
                 new_top == 1 or new_top == 20):
-            CriticalAura.spawn(target,20,new_top)
+            critical_visual_requested.emit(target,20,new_top)
     final["physical_bodies"] = _active.size()
     final["all_source_bodies_remain_visible"] = true
     final["rerolled_physical_group_index"] = group_index
@@ -414,7 +414,7 @@ func _run() -> void:
                     continue
                 var physical_d20: RigidBody3D = _active[slot]
                 if int(physical_d20.get("result")) == selected_value:
-                    CriticalAura.spawn(physical_d20,20,selected_value)
+                    critical_visual_requested.emit(physical_d20,20,selected_value)
                     break
     result["physical_bodies"] = plan.size()
     result["peak_simultaneously_rolling"] = peak_simultaneously_rolling

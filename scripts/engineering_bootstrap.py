@@ -8,7 +8,10 @@ import sys
 
 REVIEW_PATHS = ['scripts/engineering_router.py', 'scripts/engineering_bootstrap.py',
                 'scripts/engineering_checks.py', 'src/main.gd',
-                'src/visual/premium_finish.gd', 'tools/blender/generate_die_assets.py']
+                'src/core/physical_roll_pool.gd', 'src/visual/premium_finish.gd',
+                'tests/engraved_assets.gd', 'tests/test_engineering_bootstrap.py',
+                'tests/m5_selected_obsidian_runtime.gd',
+                'tools/blender/generate_die_assets.py']
 
 def command(root, argv, out, name, timeout=180):
     try:
@@ -22,6 +25,20 @@ def command(root, argv, out, name, timeout=180):
     (out / (name + '.log')).write_text(log, encoding='utf-8')
     return {'status': status, 'exit_code': code, 'argv': argv,
             'log': name + '.log'}
+
+def ollama_argv():
+    if shutil.which('ollama'):
+        return ['ollama']
+    if not shutil.which('docker'):
+        return None
+    try:
+        probe = subprocess.run(['docker', 'inspect', '--format', '{{.State.Running}}',
+                                'dice-gauntlet-ollama'], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if probe.returncode == 0 and probe.stdout.strip() == 'true':
+        return ['docker', 'exec', '-i', 'dice-gauntlet-ollama', 'ollama']
+    return None
 
 def bootstrap(root: Path, out: Path, *, critic=False):
     out.mkdir(parents=True, exist_ok=True)
@@ -42,16 +59,18 @@ def bootstrap(root: Path, out: Path, *, critic=False):
         print('Engineering entry: ' + name, file=sys.stderr, flush=True)
         checks[name] = command(root, [sys.executable] + args, out, name)
     versions = {}
+    ollama = ollama_argv()
     for binary, arg in [('blender','--version'), ('godot','--version'),
                         ('ffmpeg','-version'), ('inkscape','--version'),
                         ('adb','version'), ('ollama','--version')]:
-        versions[binary] = (command(root, [binary, arg], out, binary, 15)
-                            if shutil.which(binary) else {'status':'NOT_VERIFIED', 'reason':'not installed'})
+        argv = ollama if binary == 'ollama' else [binary] if shutil.which(binary) else None
+        versions[binary] = (command(root, argv + [arg], out, binary, 15)
+                            if argv else {'status':'NOT_VERIFIED', 'reason':'not installed'})
     result['toolchain'] = versions
     if critic and dirty:
         result['critic']['reason'] = 'Commit candidate before exact-SHA independent review'
-    elif critic and shutil.which('ollama'):
-        listing = command(root, ['ollama', 'list'], out, 'ollama-models', 15)
+    elif critic and ollama:
+        listing = command(root, ollama + ['list'], out, 'ollama-models', 15)
         if listing['status'] == 'PASS' and 'qwen2.5-coder:7b' in (out/'ollama-models.log').read_text():
             diff = command(root, ['git','diff','HEAD^','HEAD','--'] + REVIEW_PATHS, out, 'review-diff', 15)
             if diff['status'] == 'PASS':
@@ -66,7 +85,7 @@ def bootstrap(root: Path, out: Path, *, critic=False):
                                               for n in ['router-contracts','gauntlet-contracts']))
                 (out/'qwen-prompt.txt').write_text(prompt)
                 try:
-                    response = subprocess.run(['ollama','run','qwen2.5-coder:7b'],
+                    response = subprocess.run(ollama + ['run','qwen2.5-coder:7b'],
                         input=prompt, cwd=root, capture_output=True, text=True, timeout=420)
                     (out/'qwen-response.txt').write_text(response.stdout)
                     (out/'qwen-stderr.log').write_text(response.stderr)

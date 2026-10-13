@@ -61,12 +61,16 @@ func _run() -> void:
             _check(die.get_node_or_null("NonCollidingMetalInlay") == null, "No floating cylinder outlines")
             var meshes := _imported_meshes(baked)
             var pbr_mesh: MeshInstance3D = null
+            var selected_source := false
             for item in meshes:
                 if item.name.begins_with("Sculpted_Obsidian"):
                     pbr_mesh = item
+                elif sides == 20 and item.name.begins_with("Canonical_D20_Engraved_Obsidian"):
+                    pbr_mesh = item
+                    selected_source = true
             _check(pbr_mesh != null, "D%d obsidian art mesh must be present" % sides)
-            if pbr_mesh != null and pbr_mesh.material_override is StandardMaterial3D:
-                var mapped := pbr_mesh.material_override as StandardMaterial3D
+            if pbr_mesh != null and pbr_mesh.get_active_material(0) is StandardMaterial3D:
+                var mapped := pbr_mesh.get_active_material(0) as StandardMaterial3D
                 _check(mapped.albedo_texture != null, "D%d generated albedo texture not applied to real Godot mesh" % sides)
                 _check(mapped.normal_enabled and mapped.normal_texture != null, "D%d tangent-space normal texture not applied" % sides)
                 _check(mapped.roughness_texture != null, "D%d scalar-only roughness is not PBR art" % sides)
@@ -75,19 +79,37 @@ func _run() -> void:
                 # emitting a uniform blue-grey color is not polished stone.
                 _check(not mapped.emission_enabled,
                     "D%d fake emissive wash destroys true facet shading" % sides)
-                _check(mapped.clearcoat_enabled and mapped.clearcoat >= 0.50,
+                if selected_source:
+                    _check(is_zero_approx(mapped.metallic), "Selected obsidian must remain dielectric glass")
+                    _check(mapped.albedo_color == Color.WHITE, "Selected baked albedo must not be retinted")
+                    _check(pbr_mesh.material_override == null, "Selected source material must remain imported")
+                else:
+                    _check(mapped.clearcoat_enabled and mapped.clearcoat >= 0.50,
                     "D%d obsidian lacks a distinct polish/reflection lobe" % sides)
-                _check(mapped.clearcoat_roughness <= 0.20,
+                    _check(mapped.clearcoat_roughness <= 0.20,
                     "D%d clearcoat is too matte for premium stone" % sides)
-                _check(mapped.metallic >= 0.15 and mapped.metallic <= 0.35,
+                    _check(mapped.metallic >= 0.15 and mapped.metallic <= 0.35,
                     "D%d obsidian metallic response outside physical-art budget" % sides)
-                _check(mapped.roughness > 0.60 and mapped.roughness < 0.90,
+                    _check(mapped.roughness > 0.60 and mapped.roughness < 0.90,
                     "D%d GLB roughness texture must retain real variation" % sides)
-            _check(meshes.size() == 2, "D%d GLB must contain separate stone and bronze geometry" % sides)
+            _check(meshes.size() == (21 if selected_source else 2), "D%d GLB stone/glyph mesh count mismatch" % sides)
+            if selected_source:
+                var numbers := {}
+                for glyph in meshes:
+                    if not glyph.name.begins_with("Gold_"):
+                        continue
+                    var number := glyph.name.split("_")[1].split(".")[0].to_int()
+                    numbers[number] = true
+                    var gold := glyph.get_active_material(0) as StandardMaterial3D
+                    _check(gold != null and is_equal_approx(gold.metallic, 1.0) and not gold.emission_enabled,
+                        "Selected gold must be imported metal without emission")
+                _check(numbers.size() == 20, "Selected source needs twenty unique numbered glyphs")
+                for value in range(1,21):
+                    _check(numbers.has(value), "Selected glyph missing value %d" % value)
             for mesh_node in meshes:
                 _check(mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0,
                     "D%d imported GLB mesh has no render surfaces" % sides)
-                _check(mesh_node.material_override != null,
+                _check(mesh_node.material_override != null or selected_source,
                     "D%d imported GLB material override missing in Godot renderer" % sides)
                 if mesh_node.mesh != null and mesh_node.mesh.get_surface_count() > 0:
                     _check(mesh_node.mesh.surface_get_material(0) != null,

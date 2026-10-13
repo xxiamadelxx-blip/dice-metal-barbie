@@ -2,22 +2,23 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "Selected diaverx obsidian bake + gold readability and fresh-import proof",
+    "task": "Exact first-selected obsidian D20 integrated into real single and M4 pool throws",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "Selected obsidian material continuation",
-    "next_action": "Integrate private selected-material GLB into actual game with immutable collider/results; fix architecture and run full8dice24fps/Android/local Qwen; visual reflection contrast remains open.",
+    "owner": "Selected obsidian runtime integration",
+    "next_action": "Triage real Qwen output on this PR revision; preserve selected first GLB/HDR and original gold while resolving dark overhead reflections, then exact-private-input Android/AVD and remaining dice.",
     "blockers": [
-      "Architecture core->visual FAIL persists. Actual game integration, Android/Nord3 and independent critic NOT_VERIFIED; no artistic acceptance."
+      "Artistic legibility open; local independent Qwen and selected-input Android/Nord3 NOT_VERIFIED. Public CI exercises fallback assets."
     ],
     "evidence": [
-      "Selected-material proof private Library libfile_b0ab446a69a48191ba390f2a2964d6e7; gold-final GLB SHA38e16da766774f32d259c5f8802acf5c2b381a0a6525be07db4fc00ab1b0453b"
+      "Private real-game proof libfile_b94ff909e21c8191a614f3eb3c954e05; 8 real live throws, 1285 sequential frames, 0 active black frames, D20 frame25 start-delay warning retained.",
+      "Selected GLB4c04c1707e1ed0d59f5bee286525059d85cdec5668c2ce5969d968d3a18221df; HDRa816625569d497e3672d522357c8ae292b9ef947eb3ae1c80c00e33f76b6a971."
     ],
-    "last_observed_sha": "dfafc71670bebb60836ef4d64d3f609537462a02",
+    "last_observed_sha": "410f7c831f077fef9e5b4789ebd166cb77b9eeac",
     "last_verified_sha": "",
-    "branch": "fix/executable-engineering-entry",
-    "updated_at": "2026-10-13T08:29:57+00:00",
-    "verification_note": "Actual selected material downloaded/baked in previous session; recovered exact saved proof. Stone/images/triangles binary bytes unchanged; gold color factor changed, no emission. Fixed .blend import blocking fresh GLB/HDR. Live material/HDR verified,20faces PASS, Jolt3.2167s/top11,170 actual frames24fps on llvmpipe. Side reflection contrast remains open."
+    "branch": "feat/m5-approved-minimal-premium-visual-pass-1",
+    "updated_at": "2026-10-13T09:50:40+00:00",
+    "verification_note": "Implementation working tree based on PR23 HEAD410f7c8. Actual main-scene exit0, D20=10, mixed16+3=19, mass0.045/collider/camera preserved. Architecture PASS_STATIC_ONLY; 24 router and25 Gauntlet contracts PASS;6 Godot regressions PASS. Qwen Docker routing repaired; model execution not fabricated."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {

@@ -189,7 +189,8 @@ func _request_advanced_throw(expression: String, mode: String, d100_mode: String
     physical_pool.connect("pool_failed",Callable(self,"_m4_physical_failed"))
     # Attach to each genuine Jolt RigidBody before its launch. Rerolls reuse
     # the same body and contact connection; no visual fake impact timer.
-    physical_pool.connect("physical_die_spawned",Callable(self,"_watch_table_contact"))
+    physical_pool.connect("physical_die_spawned",Callable(self,"_on_pool_die_spawned"))
+    physical_pool.connect("critical_visual_requested",Callable(self,"_show_pool_critical"))
     var accepted: bool = physical_pool.call("begin",expression,mode,d100_mode)
     if not accepted:
         return
@@ -232,6 +233,14 @@ func _request_m4_physical_reroll(group_index: int, die_index: int,
     advanced_open_button.disabled = true
     if OS.is_debug_build():
         print("DICE_M4_REAL_REROLL_STARTED group=%d die=%d digit=%s" % [group_index,die_index,digit])
+
+func _on_pool_die_spawned(die: RigidBody3D) -> void:
+    _watch_table_contact(die)
+    if die.get_node_or_null("IcosahedronCollision") != null:
+        Premium.decorate_die(die, 20)
+
+func _show_pool_critical(die: RigidBody3D, sides: int, value: int) -> void:
+    CriticalAura.spawn(die, sides, value)
 
 func _m4_physical_completed(result: Dictionary) -> void:
     if not bool(result.get("ok",false)):
@@ -352,12 +361,13 @@ func _make_world() -> void:
     studio_sky.sky_material = studio
     env.sky = studio_sky
     env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+    var selected_obsidian_look := Premium.apply_selected_obsidian_lighting(env)
     environment.environment = env
     add_child(environment)
 
     var light := DirectionalLight3D.new()
-    light.rotation_degrees = Vector3(-63.0, 24.0, 0.0)
-    light.light_energy = 1.35
+    light.rotation_degrees = Vector3(-55.0, -25.0, 0.0) if selected_obsidian_look else Vector3(-63.0, 24.0, 0.0)
+    light.light_energy = 0.8 if selected_obsidian_look else 1.35
     light.shadow_enabled = true
     add_child(light)
 
@@ -366,9 +376,9 @@ func _make_world() -> void:
     # Intentional secondary light, not a second shadow caster: mobile friendly.
     var fill := DirectionalLight3D.new()
     fill.name = "SoftStudioBounce"
-    fill.rotation_degrees = Vector3(-46.0, -133.0, 0.0)
-    fill.light_color = Color(0.72, 0.83, 1.0)
-    fill.light_energy = 0.48
+    fill.rotation_degrees = Vector3(-35.0, 145.0, 0.0) if selected_obsidian_look else Vector3(-46.0, -133.0, 0.0)
+    fill.light_color = Color.WHITE if selected_obsidian_look else Color(0.72, 0.83, 1.0)
+    fill.light_energy = 0.35 if selected_obsidian_look else 0.48
     fill.shadow_enabled = false
     add_child(fill)
 
