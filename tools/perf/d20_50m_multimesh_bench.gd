@@ -148,25 +148,35 @@ func _run() -> void:
       "viewport":[VIEW.x,VIEW.y],"msaa":false,"physics":false,
       "renderer":RenderingServer.get_current_rendering_method(),
       "gpu":RenderingServer.get_video_adapter_name(),"mesh_generation_ms":build_ms})
-    var stop := ""
+    # Prime actual shaders and same renderer path BEFORE timing, so compilation is not FPS.
+    _arrange(first*10)
+    var warmup_ms := []
+    for warm in range(4):
+        var a := Time.get_ticks_usec()
+        await process_frame
+        await RenderingServer.frame_post_draw
+        warmup_ms.append(float(Time.get_ticks_usec()-a)/1000.0)
+    _record({"kind":"warmup","first":first,"samples_ms":warmup_ms,
+      "excluded_from_per_stage_timing":true})
+    var abort_reason := ""
     for step in range(first,last+1):
         var total := step*STEP
-        if stop!="":
-            _record({"step":step,"target_tris":total,"status":"NOT_RUN","reason":stop})
+        if abort_reason!="":
+            _record({"step":step,"target_tris":total,"status":"NOT_RUN","reason":abort_reason})
             continue
         var count := step*10
         var setup := Time.get_ticks_msec()
         _arrange(count)
         var setup_ms := Time.get_ticks_msec()-setup
         var frames := []
-        for sample in range(3):
+        for sample in range(2):
             var start := Time.get_ticks_usec()
             await process_frame
             await RenderingServer.frame_post_draw
             var frame_ms := float(Time.get_ticks_usec()-start)/1000.0
             frames.append(frame_ms)
-            if frame_ms>1350.0:
-                stop="frame_latency_exceeded_1350ms"
+            if frame_ms>12000.0:
+                abort_reason="individual_real_frame_over_12_seconds"
                 break
         var mean_ms := 0.0
         for ms in frames:
@@ -175,7 +185,7 @@ func _run() -> void:
         _record({"step":step,"target_tris":total,"instances":count,"submitted_tris":count*T,
           "status":"MEASURED","frame_samples_ms":frames,
           "mean_frame_wall_ms":snappedf(mean_ms,.01),
-          "estimated_fps_from_frame_wall":snappedf(1000.0/maxf(1.0,mean_ms),.01),
+          "estimated_fps_from_frame_wall":snappedf(1000.0/maxf(1.0,mean_ms),.01),\n          "warmup_excluded":true,
           "instance_setup_ms":setup_ms,
           "godot_primitives_monitor_includes_passes":Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
           "godot_draw_calls":Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
@@ -184,8 +194,8 @@ func _run() -> void:
             var capture := vp.get_texture().get_image()
             if capture!=null and capture.get_size()==VIEW:
                 capture.save_png("res://build/d20-50m/real_step_%03d.png"%step)
-        if mean_ms>800.0 and stop=="":
-            stop="mean_frame_latency_exceeded_800ms"
-    _record({"kind":"footer","first":first,"last":last,"stop_reason":stop})
+        # Do NOT stop on a merely slow software-GPU frame; try all 100 requested
+        # exact steps. Stop only at a pathological 12-second single-frame cost.
+    _record({"kind":"footer","first":first,"last":last,"stop_reason":abort_reason})
     output.close()
     quit(0)
