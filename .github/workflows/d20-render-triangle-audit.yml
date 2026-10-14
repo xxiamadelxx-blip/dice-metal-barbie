@@ -1,0 +1,91 @@
+name: D20 actual rendered GLB triangle count
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - ".github/workflows/d20-render-triangle-audit.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  count-actual-glb-triangles:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          run-id: 38281898713
+          github-token: ${{ github.token }}
+          path: build/learned-d20
+      - name: Count actual indexed GPU triangles of exact D20 used in 4-way Godot Mobile capture
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,struct,pathlib
+          path=pathlib.Path("build/learned-d20/learned_d20.glb")
+          binary=path.read_bytes()
+          expected="ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f"
+          actual=hashlib.sha256(binary).hexdigest()
+          assert actual==expected, ("wrong model",actual)
+          magic,version,total=struct.unpack_from("<III",binary)
+          assert (magic,version,total)==(0x46546C67,2,len(binary))
+          json_size,json_tag=struct.unpack_from("<II",binary,12)
+          assert json_tag==0x4E4F534A
+          gltf=json.loads(binary[20:20+json_size])
+          nodes=[n for n in gltf.get("nodes",[]) if "mesh" in n]
+          by_mesh={}
+          seen=set()
+          for node in nodes:
+              mesh_id=node["mesh"]
+              mesh=gltf["meshes"][mesh_id]
+              mesh_name=node.get("name",mesh.get("name","mesh-"+str(mesh_id)))
+              if mesh_name in seen:
+                  raise AssertionError("duplicate render node "+mesh_name)
+              seen.add(mesh_name)
+              prims=[]
+              for index,primitive in enumerate(mesh["primitives"]):
+                  mode=primitive.get("mode",4)
+                  assert mode==4, ("unexpected primitive mode",mesh_name,index,mode)
+                  # glTF TRIANGLES: three vertex indices per GPU triangle.
+                  count=(gltf["accessors"][primitive["indices"]]["count"]
+                    if "indices" in primitive else
+                    gltf["accessors"][primitive["attributes"]["POSITION"]]["count"])
+                  assert count%3==0,(mesh_name,index,count)
+                  material_id=primitive.get("material")
+                  mat=(gltf["materials"][material_id].get("name","") if material_id is not None
+                       else "NO_MATERIAL")
+                  prims.append({"material":mat,"indices":count,"triangles":count//3})
+              by_mesh[mesh_name]={"primitives":prims,
+                                   "triangles":sum(x["triangles"] for x in prims)}
+          stone=[v for n,v in by_mesh.items() if n.startswith("D20_Engraved")]
+          gold=[v for n,v in by_mesh.items() if n.startswith("Gold_")]
+          assert len(stone)==1,(len(stone),list(by_mesh))
+          assert len(gold)==20,(len(gold),list(by_mesh))
+          data={
+            "source_sha256":actual,
+            "total_render_triangles":sum(v["triangles"] for v in by_mesh.values()),
+            "stone_triangles":sum(v["triangles"] for v in stone),
+            "gold_numerals_triangles":sum(v["triangles"] for v in gold),
+            "meshes":len(by_mesh),
+            "gold_meshes":len(gold),
+            "face_count_geometrical_original":20,
+            "per_mesh":by_mesh,
+            "measurement":"glTF indexed TRIANGLES primitive accessor counts; original exact GLB used in CI #38593819713",
+            "not_screen_space_triangle_count":True
+          }
+          assert data["total_render_triangles"]==data["stone_triangles"]+data["gold_numerals_triangles"]
+          output=pathlib.Path("build/learned-d20/d20-real-render-triangles.json")
+          output.write_text(json.dumps(data,ensure_ascii=False,indent=2)+"\n")
+          print("PASS_ACTUAL_D20_RENDER_TRIANGLES "+json.dumps({k:v for k,v in data.items() if k!="per_mesh"}))
+          for name,details in by_mesh.items():
+              print("TRIANGLE_PART",name,details["triangles"],details["primitives"])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: D20-actual-GLB-triangle-count
+          path: build/learned-d20/d20-real-render-triangles.json
+          retention-days: 14
+          if-no-files-found: warn
