@@ -3,6 +3,7 @@ extends Node3D
 ## Not final UX, not yet approved as statistical fairness evidence.
 
 const Premium = preload("res://src/visual/premium_finish.gd")
+const M5OverheadHDR = preload("res://src/visual/m5_private_overhead_hdr.gd")
 const CriticalAura = preload("res://src/visual/critical_aura.gd")
 const VelvetImpact = preload("res://src/visual/velvet_impact.gd")
 const BeveledBox = preload("res://src/visual/beveled_box.gd")
@@ -51,6 +52,7 @@ var last_advanced_formula := ""
 
 func _ready() -> void:
     _make_world()
+    M5OverheadHDR.install(self)
     _make_idle_showcase()
     _make_overlay()
     _setup_m4_local_and_drawer()
