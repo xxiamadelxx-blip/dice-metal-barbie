@@ -1,0 +1,125 @@
+name: M5 real downloaded CC0 black PBR to 500k D20, Blender and Godot Mobile
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/blender/apply_licensed_cc0_black_stone_d20.py"
+      - ".github/workflows/d20-500k-real-cc0-blackstone-pbr.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  actually-integrate-cc0-and-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install actual Blender 4 and Godot Mobile Vulkan plus Pillow
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil fonts-dejavu-core xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          blender --version | head -3
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38614293661
+          name: M5-repaired-real-500k-engraving-Blender-Godot
+          github-token: ${{ github.token }}
+          path: build/pbr-source-master
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38616429603
+          name: M5-original-licensed-Nero-Marquina-CC0-PBR-pack
+          github-token: ${{ github.token }}
+          path: build/pbr-source-cc0
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38613525040
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          github-token: ${{ github.token }}
+          path: build/pbr-original-studio
+      - name: Source provenance, licensing and no false obsidian identity
+        run: |
+          mkdir -p build/pbr-godot src/assets/generated
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          master=Path("build/pbr-source-master/results/d20_obsidian_gold_master_500k.glb")
+          assert hashlib.sha256(master.read_bytes()).hexdigest()=="67650874fe979f6b7b82ad0e596fd5ea8d3397c58c50fa0d5cf8e4c83c9edadf"
+          src=Path("build/pbr-source-cc0/build/cc0-nero-marquina")
+          audit=json.loads((src/"real_cc0_material_manifest.json").read_text())
+          assert len(audit["textures"])>=3 and audit["license"].startswith("CC0")
+          assert audit["original_selected_blenderkit_material"] is False
+          assert all(hashlib.sha256((src/a["file"]).read_bytes()).hexdigest()==a["sha256"] for a in audit["textures"])
+          hdr=Path("build/pbr-original-studio/learned_studio.hdr")
+          assert hdr.read_bytes()[:10]==b"#?RADIANCE"
+          print("PASS_ACTUAL_CC0_SOURCE_PIXELS_AND_500K_MASTER_VALIDATED")
+          PY
+      - name: Apply actual third-party CC0 PBR normal/roughness/albedo in real Blender
+        run: |
+          set -eu
+          mkdir -p build/pbr-godot/results
+          timeout 850 blender -b -t 3 --python-exit-code 4 -P tools/blender/apply_licensed_cc0_black_stone_d20.py -- build/pbr-source-master/results/d20_obsidian_gold_master_500k.glb build/pbr-source-cc0/build/cc0-nero-marquina build/pbr-godot/results > build/pbr-godot/blender.log 2>&1 || { tail -120 build/pbr-godot/blender.log; exit 15; }
+          grep -F PASS_GENUINE_CC0_PBR_SOURCE_IMPORTED_ON_UNIQUE_500K_GLBS build/pbr-godot/blender.log
+          test -s build/pbr-godot/results/D20_500K_CC0_as_downloaded.glb
+          test -s build/pbr-godot/results/D20_500K_CC0_subdued_black.glb
+      - name: Import the original real PBR source variants and render both in Godot Mobile
+        run: |
+          set -eu
+          cp build/pbr-original-studio/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          touch docs/.gdignore build/.gdignore
+          for flavor in as_downloaded subdued_black; do
+            cp "build/pbr-godot/results/D20_500K_CC0_$flavor.glb" src/assets/generated/learned_d20.glb
+            rm -rf src/assets/generated/learned_d20.glb.import .godot/imported/learned_d20.glb-*.scn
+            timeout 115 godot --headless --path . --editor --import --quit > "build/pbr-godot/import_$flavor.log" 2>&1 || { tail -120 "build/pbr-godot/import_$flavor.log"; exit 30; }
+            if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' "build/pbr-godot/import_$flavor.log"; then
+              tail -120 "build/pbr-godot/import_$flavor.log"; exit 31
+            fi
+            timeout 170 xvfb-run -a -s "-screen 0 1100x900x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant=ibl > "build/pbr-godot/godot_$flavor.log" 2>&1 || { tail -100 "build/pbr-godot/godot_$flavor.log"; exit 32; }
+            grep -F LEARNED_D20_GODOT_REAL_FRAME "build/pbr-godot/godot_$flavor.log"
+            cp build/learned-d20/godot_ibl.png "build/pbr-godot/results/godot_mobile_cc0_$flavor.png"
+          done
+      - name: A/B inspection from actual unmodified Blender and Godot pixels
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageStat,ImageDraw,ImageFont
+          from pathlib import Path
+          import hashlib,json
+          root=Path("build/pbr-godot/results")
+          original=Image.open("build/pbr-source-master/results/godot_mobile_engraving_500k.png").convert("RGB")
+          variants=[("real CC0 original stone PBR","as_downloaded"),
+                    ("CC0 marble-derived black calibrated","subdued_black")]
+          assert original.size==(1000,850)
+          img=Image.new("RGB",(3050,895),(14,16,19))
+          d=ImageDraw.Draw(img)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",21)
+          d.text((12,9),"CONTROL: old synthetic gray obsidian placeholder",font=font,fill=(240,240,240))
+          img.paste(original,(8,42))
+          report={}
+          for i,(name,key) in enumerate(variants):
+              p=root/("godot_mobile_cc0_"+key+".png")
+              assert p.read_bytes()[:8]==bytes((137,80,78,71,13,10,26,10))
+              screenshot=Image.open(p).convert("RGB")
+              assert screenshot.size==(1000,850) and max(ImageStat.Stat(screenshot).stddev)>5
+              x=1023+i*1014
+              img.paste(screenshot,(x,42))
+              d.text((x,9),name,font=font,fill=(240,240,240))
+              report[key]={"godot_png_sha256":hashlib.sha256(p.read_bytes()).hexdigest(),
+                  "contrast_stddev":ImageStat.Stat(screenshot).stddev,
+                  "render":"ACTUAL Godot Mobile Vulkan on Mesa llvmpipe",
+                  "not_physical_Nord3":True}
+          img.save(root/"real_godot_CC0_black_stone_vs_gray_placeholder.png")
+          (root/"godot_real_CC0_comparison_manifest.json").write_text(json.dumps(report,indent=2)+"\n")
+          print("PASS_ACTUAL_NATIVE_CC0_GODOT_MOBILE_FRAME_COMPARISON",report)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-actual-external-CC0-PBR-500k-Blender-Godot-A-B
+          path: |
+            build/pbr-godot/
+          retention-days: 30
+          if-no-files-found: warn
