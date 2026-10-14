@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 D20 premium obsidian: genuine 4-way Godot Mobile HDR studio A/B published and technically PASS; selected Blendkit asset still 403; owner artistic acceptance open",
+    "task": "M5 isolated 100-stage D20 render load proof 500K–50M: 100/100 measured in actual Godot Mobile llvmpipe, and public/free polished black obsidian source audit; exact selected BlenderKit material still inaccessible",
     "route": "creative-3d",
     "status": "not_verified",
-    "owner": "Next Dice Blender/Godot visual agent, GitHub evidence current",
-    "next_action": "Inspect real originals at docs/evidence/m5-d20-blackglass-2026-10-14/real_godot_mobile_blackglass_2x2.png and research/M5_D20_BLACKGLASS_STUDIO_REAL_GODOT_2026-10-14.md. The native four-way renderer passed (CI #38593819713) and proved new black HDR source variance, but do NOT promote darkest setting on numeric luma alone. Chosen BlenderKit Procedural Obsidian remains inaccessible by anonymous API (two actual 403, do not replay). Once legitimately obtained, test Blender material .blend in tools/materials/preview_blendkit_on_d20.py then actual PBR bake→GLB→Godot Mobile A/B; preserve existing approved Jolt and M4 PR #23 untouched until real user art approval.",
+    "owner": "Next Dice Godot/Blender material and Android performance agent; GitHub research persisted",
+    "next_action": "Review source-based completed 100-stage render performance + legal-material audit at docs/research/M5_D20_100_STAGES_500K_TO_50M_AND_FREE_OBSIDIAN_AUDIT_2026-10-14.md and original exact CI 38599056847 aggregate CSV/artifacts. Do NOT equate multi-instanced 50M triangles to a unique 50M GLB or phone FPS: next safe optional benchmark is one indexed high-poly D20 at controlled limits with measured import peak RSS/system/GPU memory and physical Android AVD or Nord 3. For user's premium look, seek legitimate selected Blendkit black obsidian file through authorized UI, not blocked API and not purple; then actual PBR bake, real Blender and Godot comparison to owner approved reference, actual Jolt face mapping and Android evidence before M5 acceptance. Preserve prior real Godot blackglass frames, M4 feature Draft PR #23, unchanged main. Independent Qwen vision review and owner art acceptance still not verified.",
     "blockers": [
-      "Owner-selected exact Blendkit material UUID 92e31cbc-5b4e-4ead-a966-84bf106808c3 denied HTTP 403 in actual unattended public API runs #38590931873 and #38591644762. No rights-confirmed original .blend retrieved. Do not bypass or claim substitute equals selected material.",
-      "Real black-glass studio test completed CI #38593819713 and published four original Godot frames, but numeric lower gray facets != verified premium glossy OBSIDIAN or user art acceptance. No independent visual critic performed.",
-      "Source model is independently authored lookdev GLB ec7bcee0..., not the privately supplied Codex GLB. Selected Blenderkit procedural texture bake and Godot runtime transfer NOT VERIFIED.",
-      "New art/Jolt face mapping, 24fps animated sequences, 6/9 legibility, Android AVD and real Nord3 GPU/FPS are NOT VERIFIED. M4 PR #23 has unresolved source-gate failures; do not merge/overwrite."
+      "Selected original free BlenderKit Procedural Obsidian UUID 92e31cbc-5b4e-4ead-a966-84bf106808c3 still denies HTTP403 on exact source and alternative. No true original .blend or verified PBR map bytes acquired; avoid unlicensed proxy/cookies, paid materials and purple substitutes.",
+      "Technical benchmark PASS only for Godot Mobile on software Mesa llvmpipe with instanced 50K tessellated icosahedron × 10–1000, 100/100 exact submitted triangles. NOT a single unique 50M polygon mesh, not premium gold/numeral geometry, no Jolt or textures, not Android hardware. Cross-shard frame times uncalibrated.",
+      "Single high-poly real mesh import, peak CPU/GPU RAM, performance/thermal FPS on Nord 3 or Android AVD NOT VERIFIED. Analytic one-mesh ~1.8 GB buffer estimate at 50M indexed triangles is NOT observed memory.",
+      "User-approved black glossy obsidian and deeply engraved gold text still ART NOT_VERIFIED; #38593819713 4 native blackglass studio original frames are diagnostic only, no independent vision critic/owner signoff. Original M4 PR #23 unresolved CI gates. No integration into main."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -135,13 +135,19 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38593819713",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38593819713/artifacts/11909436065",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/evidence/m5-d20-blackglass-2026-10-14/real_godot_mobile_blackglass_2x2.png",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_D20_BLACKGLASS_STUDIO_REAL_GODOT_2026-10-14.md"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_D20_BLACKGLASS_STUDIO_REAL_GODOT_2026-10-14.md",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38599056847",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38599056847/artifacts/11913003014",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38599056847/artifacts/11912567961",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38598528322",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38599475260",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_D20_100_STAGES_500K_TO_50M_AND_FREE_OBSIDIAN_AUDIT_2026-10-14.md"
     ],
-    "last_observed_sha": "3fbc279280b63700c035a5ae3d5ece94511a8929",
-    "last_verified_sha": "",
+    "last_observed_sha": "2f27774a0d8540c25d799ba571fc01c862fee661",
+    "last_verified_sha": "7743e5a8828bd5b90b0554ddc77f6d68aed6a3c4",
     "branch": "experiment/m5-learn-codex-d20",
     "updated_at": "2026-10-14",
-    "verification_note": "Router entry via GitHub connector (no complete local working tree available, CLI enter NOT_VERIFIED). User-approved creative-3d route. Main 5f9333c; PR #23 draft 8ec1d7f untouched. Native Godot Mobile/Mesa at source SHA ef688293cd0e39797bbdb825f90e311d30470424: exact GLB SHA verified, true RGBE HDR, PBR material preserved, all four source PNG captures, pixel-variance gate PASS. First run #38593132441 failed after verified renders on container git config, recovered through Git Data API nonforce commit. Exact-source rerun #38593819713 SUCCESS, original 1000x850 screenshots and 2032x1792 comparison committed as f69f355c90c5803c87f48e8cb31edc5f17db8fe6. Pixel numeric ROI brightness values 58.17/43.42/45.75/40.49 are diagnostic only. Independent artistic/owner visual reviewer and physical Android NOT VERIFIED."
+    "verification_note": "2026-10-14: real source Godot 4.6.3 Mobile llvmpipe GitHub Actions CI #38599056847 SUCCESS on frozen benchmark commit 7743e5a8828bd5b90b0554ddc77f6d68aed6a3c4; each of 4 stage shards SUCCESS; aggregate source original 100/100 exact 500K increments to 50M, all actual Godot Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME equals submitted stage count, single MultiMesh draw call each; 4 warmup+2 measured wall-clock frames, first 500K 57.27ms, final 50M 5660.54ms. NOT Android GPU, NOT one unique mesh, NOT fps. Source audit CI #38598528322 SUCCESS, 10 public listed materials/models (8 HTTP200 and both BlendKit 403); MIT preview 25 material CI #38599475260 SUCCESS; actual selected PBR source not obtained and none approved. Main SHA 5f9333cf4a4e8f1fe979b0c7498a30e33222f601 and PR #23 draft SHA 8ec1d7fcd52e794024210358d676451c449add46 unchanged. Entry through GitHub connector, local engineering_router.py enter CLI NOT_VERIFIED because full local repo checkout unavailable; research and checkpoint persisted through GitHub connector. Optional independent Qwen vision critic NOT_VERIFIED, Android Nord3 NOT_VERIFIED."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
