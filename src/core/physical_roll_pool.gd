@@ -130,6 +130,11 @@ func _actual_top(body: RigidBody3D, sides: int) -> int:
         12:
             return Dodeca.top_value(basis)
         20:
+            # M5: when a genuine private 500k numbered die is visible, read
+            # THAT printed upper face, not an unrelated old Ico label order.
+            # The Jolt body, contact geometry and settled pose stay canonical.
+            if body.has_method("top_visible_value"):
+                return int(body.call("top_visible_value"))
             return Ico.top_value(basis)
     return -1
 
