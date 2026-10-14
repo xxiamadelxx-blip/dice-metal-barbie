@@ -4,7 +4,7 @@
   "same_geometry_physical_mapping": true,
   "material_albedo_normal_roughness_unchanged": true,
   "desktop_mesa_not_android": true,
-  "source_git_sha": "ef688293cd0e39797bbdb825f90e311d30470424",
+  "source_git_sha": "b17c00e2e4d61433203484587c67c7175cb923bb",
   "pixel_diagnostics_not_aesthetic_acceptance": {
     "brdf_ref": {
       "file_sha256": "788fa3ac05fd02c87646911bb8757af6a67f3d03ae2ec219481c0a7840015c65",
