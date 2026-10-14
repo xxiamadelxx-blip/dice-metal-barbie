@@ -114,7 +114,7 @@ def main():
             "premium_model_png_asset_ready":False,
             "candidates":obs}
     out=directory/"polished_obsidian_public_source_audit.json"
-    out.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\\n",encoding="utf-8")
+    out.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("PASS_OBSIDIAN_SOURCE_PAGES_AUDITED",len(obs),str(out),flush=True)
 
 if __name__=="__main__":main()
