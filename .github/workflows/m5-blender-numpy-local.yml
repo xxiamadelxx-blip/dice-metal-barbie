@@ -1,0 +1,38 @@
+name: M5 offline Blender Python312 NumPy module (open source only)
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/m5-blender-numpy-local.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-python312-numpy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exact Python312 compatible NumPy and package without user assets
+        run: |
+          set -eu
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq python3-numpy
+          /usr/bin/python3 - <<'PY'
+          import numpy,sys
+          print('EXACT_NUMPY',sys.version,numpy.__version__,numpy.__file__)
+          PY
+          mkdir -p build/python312
+          cp -a /usr/lib/python3/dist-packages/numpy build/python312/numpy
+          cd build/python312
+          tar -czf ../numpy-python312.tar.gz numpy
+          cd ..
+          rm -rf python312
+          sha256sum numpy-python312.tar.gz > SHA256SUMS
+          ls -lh numpy-python312.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M5-offline-Blender-Python312-numpy
+          path: |
+            build/numpy-python312.tar.gz
+            build/SHA256SUMS
+          retention-days: 14
