@@ -1,0 +1,83 @@
+name: M5 local private genuine Blender runtime toolkit (no user licensed data)
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/m5-private-local-blender-runtime-toolkit.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-open-source-blender:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - name: Install Blender 4 native runtime from official Debian packages
+        run: |
+          set -eu
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -qq -y blender python3-numpy
+          blender --version | head -3
+          command -v blender
+      - name: Package portable Blender CPU runtime and ELF shared dependencies
+        run: |
+          set -eu
+          mkdir -p build/blender-portable/bin build/blender-portable/lib build/blender-portable/system/blender
+          original="$(readlink -f "$(command -v blender)")"
+          cp "$original" build/blender-portable/bin/blender
+          python3 - <<'PY'
+          import subprocess,glob,shutil,pathlib,os
+          bundle=pathlib.Path("build/blender-portable")
+          exe=bundle/"bin/blender"
+          locations=[pathlib.Path("/usr/share/blender"),pathlib.Path("/usr/lib/blender")]
+          for loc in locations:
+            if loc.is_dir():
+              target=bundle/"system"/loc.relative_to("/")
+              target.parent.mkdir(parents=True,exist_ok=True)
+              shutil.copytree(loc,target,symlinks=True,dirs_exist_ok=True)
+              print("COPY_BLENDER_RESOURCE",loc,target,flush=True)
+          # ldd enumerates all direct executable ELF dependencies, including
+          # OIIO, Python 3.11, ICU, OpenColorIO and cycles linked libraries.
+          found=set()
+          def libs(f):
+            try:
+              result=subprocess.run(["ldd",str(f)],capture_output=True,text=True,timeout=20).stdout
+              for line in result.splitlines():
+                if "=>" in line:
+                  part=line.split("=>",1)[1].strip().split(" ",1)[0]
+                else:
+                  part=line.strip().split(" ",1)[0]
+                if part.startswith("/") and os.path.isfile(part):
+                  found.add(os.path.realpath(part))
+            except Exception as e:
+              print("SKIP_LDD",f,type(e).__name__)
+          libs(exe)
+          for candidate in (bundle/"system/usr/lib/blender").rglob("*.so*") if (bundle/"system/usr/lib/blender").exists() else ():
+            if candidate.is_file():
+              libs(candidate)
+          for dep in sorted(found):
+            dest=bundle/"lib"/os.path.basename(dep)
+            if not dest.exists():shutil.copy2(dep,dest)
+          (bundle/"LIBRARY_MANIFEST.txt").write_text("\n".join(sorted(found))+"\n")
+          print("PORTABLE_BLENDER_LIBRARY_COUNT",len(found))
+          print("PORTABLE_TOTAL_FILE_BYTES",sum(p.stat().st_size for p in bundle.rglob("*") if p.is_file()))
+          PY
+          cat > build/blender-portable/run-blender.sh <<'EOF'
+          #!/bin/sh
+          SELF="$(cd "$(dirname "$0")" && pwd)"
+          export LD_LIBRARY_PATH="$SELF/lib:${LD_LIBRARY_PATH:-}"
+          export BLENDER_SYSTEM_SCRIPTS="$SELF/system/usr/share/blender/4.0/scripts"
+          export BLENDER_SYSTEM_DATAFILES="$SELF/system/usr/share/blender/4.0/datafiles"
+          export BLENDER_SYSTEM_PYTHON="$SELF/system/usr/share/blender/4.0/python"
+          exec "$SELF/bin/blender" "$@"
+          EOF
+          chmod 755 build/blender-portable/run-blender.sh
+          sha256sum build/blender-portable/bin/blender > build/blender-portable/BINARY_SHA256
+          du -sh build/blender-portable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M5-Blender-4-local-private-original-material-CPU-kit
+          path: build/blender-portable/
+          compression-level: 6
+          retention-days: 7
