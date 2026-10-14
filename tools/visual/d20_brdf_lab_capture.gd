@@ -97,7 +97,7 @@ func _capture_main() -> void:
     if variant in ["narrow50", "narrow30"]:
         panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant
     if variant.begins_with("black"):
-        panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant
+        panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant.replace("_no_omni", "").replace("_half_omni", "")
     if variant == "narrow50_no_omni" or variant.begins_with("lab_") or variant.begins_with("brdf_"):
         panorama_path = "res://src/assets/generated/learned_studio_mobile_narrow50.hdr"
     var same_studio_hdr := load(panorama_path) as Texture2D
@@ -122,7 +122,7 @@ func _capture_main() -> void:
     ]:
         var omni := OmniLight3D.new()
         omni.position = spec.pos
-        omni.light_energy=0.0 if variant in ["narrow50_no_omni", "lab_ibl", "lab_probe"] else spec.energy
+        omni.light_energy=0.0 if variant.ends_with("_no_omni") or variant in ["narrow50_no_omni", "lab_ibl", "lab_probe"] else (spec.energy*.25 if variant.ends_with("_half_omni") else spec.energy)
         omni.light_color=spec.color
         omni.omni_range=15
         omni.light_size=.8
