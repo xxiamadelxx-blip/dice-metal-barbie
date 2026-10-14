@@ -1,0 +1,105 @@
+name: M5 genuine CC0 black-stone 500k GLB 3 black-glass Godot lighting variants
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/d20-500k-cc0-blackglass-godot.yml"]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  real-blackglass-cc0-native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Mesa, native Godot Mobile headful Xvfb, 2D image validation libraries
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers python3-numpy python3-pil fonts-dejavu-core libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38617713494
+          name: M5-actual-external-CC0-PBR-500k-Blender-Godot-A-B
+          path: build/cc0-500k-upstream
+      - name: Verify unchanged actual GLB and load physically authored HDR black-glass cards
+        run: |
+          set -eu
+          mkdir -p src/assets/generated build/learned-d20 build/cc0-blackglass
+          cp build/cc0-500k-upstream/results/D20_500K_CC0_subdued_black.glb src/assets/generated/learned_d20.glb
+          python3 tools/visual/d20_blackglass_studio.py src/assets/generated
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,struct
+          p=Path("src/assets/generated/learned_d20.glb")
+          raw=p.read_bytes();n,tag=struct.unpack_from("<II",raw,12)
+          assert raw[:4]==b"glTF" and tag==0x4e4f534a
+          g=json.loads(raw[20:20+n])
+          tris=0
+          for node in g["nodes"]:
+            if "mesh" not in node:continue
+            tris+=sum(g["accessors"][a["indices"]]["count"]//3 for a in g["meshes"][node["mesh"]]["primitives"])
+          assert tris==500000,tris
+          print("PASS_CC0_BLACKGLASS_SAME_GLB",hashlib.sha256(raw).hexdigest(),tris)
+          PY
+      - name: Actual Godot Mobile glTF + PBR + light map import
+        run: |
+          set -eu
+          touch docs/.gdignore build/.gdignore
+          timeout 120 godot --headless --path . --editor --import --quit > build/cc0-blackglass/import.log 2>&1 || { tail -90 build/cc0-blackglass/import.log; exit 11; }
+          if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' build/cc0-blackglass/import.log; then tail -90 build/cc0-blackglass/import.log; exit 12; fi
+      - name: Capture three genuine Mobile Renderer frames with the SAME 500k PBR die
+        run: |
+          set -eu
+          for flavor in black40_lowfill black40_specular black33_specular; do
+            timeout 140 xvfb-run -a -s "-screen 0 1100x900x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/d20_brdf_lab_capture.gd -- --variant="$flavor" > "build/cc0-blackglass/$flavor.log" 2>&1 || { tail -90 "build/cc0-blackglass/$flavor.log"; exit 23; }
+            grep -F "LEARNED_D20_GODOT_REAL_FRAME" "build/cc0-blackglass/$flavor.log"
+            if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' "build/cc0-blackglass/$flavor.log"; then tail -100 "build/cc0-blackglass/$flavor.log"; exit 25; fi
+            cp "build/learned-d20/godot_$flavor.png" "build/cc0-blackglass/godot_$flavor.png"
+          done
+      - name: Validate true unchanged engine pixels and compose 4-way real candidate review
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          from PIL import Image,ImageDraw,ImageFont,ImageStat
+          import numpy as np
+          p=Path("build/cc0-blackglass")
+          names=["original_IBL","black40_lowfill","black40_specular","black33_specular"]
+          files=[Path("build/cc0-500k-upstream/results/godot_mobile_cc0_subdued_black.png")]+[p/("godot_"+x+".png") for x in names[1:]]
+          board=Image.new("RGB",(2040,1795),(15,16,20))
+          d=ImageDraw.Draw(board)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",21)
+          report={}
+          for i,(key,f) in enumerate(zip(names,files)):
+            assert f.read_bytes()[:8]==bytes((137,80,78,71,13,10,26,10)),f
+            image=Image.open(f).convert("RGB")
+            assert image.size==(1000,850) and max(ImageStat.Stat(image).stddev)>5
+            x=10+(i%2)*1014
+            y=34+(i//2)*882
+            d.text((x,y-26),"ACTUAL 500k CC0 Godot Mobile / "+key,fill=(245,245,245),font=font)
+            board.paste(image,(x,y))
+            pixels=np.asarray(image)[155:725,250:780].astype(np.float32)
+            report[key]={"roi_mean_rgb":round(float(pixels.mean()),2),
+               "roi_bright_over_100":round(float((pixels.mean(axis=2)>100).mean()),4),
+               "sha256":hashlib.sha256(f.read_bytes()).hexdigest()}
+          board.save(p/"real_cc0_500k_blackglass_four_way.png")
+          manifest={"license":"CC0 derivative black marble, NOT exact BlenderKit obsidian",
+            "original_pbr_source":"ProcTexture Nero Marquina",
+            "engine":"Godot 4.6.3 Mobile using Mesa llvmpipe", "not_android_nord3":True,
+            "black_stone_material_unchanged":True, "gold_original_unchanged":True,
+            "no_fake_image_generation":True,"artistic_owner_approval":False,"metrics":report}
+          (p/"real_cc0_blackglass_metrics.json").write_text(json.dumps(manifest,indent=2)+"\n")
+          print("PASS_CC0_REAL_GODOT_BLACK_STONE_4WAY",json.dumps(report))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-500K-CC0-black-polished-stone-4-real-Godot-renders
+          path: build/cc0-blackglass/
+          retention-days: 30
+          if-no-files-found: warn
