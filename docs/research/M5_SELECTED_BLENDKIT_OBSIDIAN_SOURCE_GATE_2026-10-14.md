@@ -63,3 +63,35 @@ Cycles screenshot is not a Godot look or release PASS.
    recessed numbers to the user's selected material and the previous D20.
 3. Only then implement a real procedural-to-PBR bake and test exactly the same
    resulting GLB in Godot Mobile, before touching the actual APK.
+
+## Actual CI result and stop decision (2026-10-14)
+
+1. [First run #38590931873](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38590931873):
+   real Blender installed, original D20 with 20 gold inserts downloaded from preserved artifact,
+   exact GLB SHA256 verified. The anonymous Blendkit search API returned **HTTP 403 Forbidden**;
+   material Cycles render steps were correctly skipped. Public failure manifest in
+   artifact `11907322588`, no preview PNG.
+2. [Changed-protocol run #38591644762](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38591644762):
+   supplied documented add-on search fields `addon_version=3.14.0`,
+   `blender_version=4.0.2`, a scene UUID and exact material type/asset UUID.
+   It still returned **HTTP 403 Forbidden** at the search endpoint.
+   This is an observed remote access denial, not a license rejection or a
+   Blender shader/render failure. No source asset or legal download was obtained.
+
+**Stop:** no further replays of anonymous GET with cosmetic header changes, nor
+Cloudflare/WAF bypass, cookie reuse, scraped signed CDN URLs, or paywall circumvention.
+Official [Blendkit-Client API](https://github.com/BlenderKit/bk_client/blob/main/client/docs/API.md)
+lists free/anonymous search/download as valid app operations, but that does not
+guarantee API availability to this unattended runner. This specific free asset's
+current downloadable license metadata remains NOT_VERIFIED without API access.
+
+**Productively reusable implementation:** `preview_blendkit_on_d20.py` already
+takes a legitimately obtained Blender `.blend` as positional input and checks
+that one named obsidian material is applied to exactly one D20 stone face slot;
+it keeps all gold meshes, chamfer materials and geometry unchanged. That local
+fallback is *source-ready but runtime NOT_VERIFIED*, because no legitimate source
+file could be supplied in these CI runs.
+
+No fake source material, alternate purple obsidian, screenshots, Godot Android
+performance or premium acceptance are claimed. The existing unmodified independently
+authored D20 remains the safe reproducible test reference, and PR #23/main are untouched.
