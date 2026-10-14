@@ -1,0 +1,29 @@
+name: M5 offline Blender Python3.12 stdlib open-source only
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - ".github/workflows/m5-blender-stdlib-private-local.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  open-source-blender-python-stdlib:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export matching binary Blender runtime Python library
+        run: |
+          set -eu
+          python3 -V
+          test -d /usr/lib/python3.12
+          mkdir -p build/blender-python
+          tar -C /usr/lib -czf build/blender-python/python3.12-stdlib.tar.gz python3.12
+          sha256sum build/blender-python/python3.12-stdlib.tar.gz > build/blender-python/SHA256SUMS
+          du -h build/blender-python/python3.12-stdlib.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M5-offline-Blender-Python312-stdlib-runtime
+          path: build/blender-python/
+          retention-days: 14
