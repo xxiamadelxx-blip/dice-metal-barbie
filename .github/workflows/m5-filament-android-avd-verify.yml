@@ -1,0 +1,73 @@
+name: M5 native Filament Android real emulator startup
+on:
+  push:
+    branches: [experiment/m5-android-renderer-alternatives]
+    paths: [".github/workflows/m5-filament-android-avd-verify.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  install-native-filament-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Allow KVM Android emulator
+        run: |
+          if test -e /dev/kvm; then sudo chmod 666 /dev/kvm; echo "KVM available"; else echo "KVM unavailable"; fi
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38655205395
+          name: M5-Filament-native-Android-PBR-debug-APK
+          path: build/filament-avd-apk
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-boot-timeout: 720
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -eu
+            mkdir -p build/filament-avd-proof
+            apk=build/filament-avd-apk/app-debug.apk
+            test -s "$apk"
+            adb install -r "$apk" | tee build/filament-avd-proof/installation.txt
+            adb shell am start -n com.adeldice.filamentlab/.MainActivity | tee build/filament-avd-proof/activity-launch.txt
+            sleep 22
+            adb shell dumpsys activity activities > build/filament-avd-proof/activity.txt
+            adb exec-out screencap -p > build/filament-avd-proof/REAL_NATIVE_FILAMENT_ANDROID_AVD_STARTUP.png
+            adb logcat -d -v time > build/filament-avd-proof/logcat.txt
+            python3 - <<'PY'
+            from pathlib import Path
+            import struct,json
+            path=Path("build/filament-avd-proof/REAL_NATIVE_FILAMENT_ANDROID_AVD_STARTUP.png")
+            raw=path.read_bytes()
+            assert raw[:8]==bytes((137,80,78,71,13,10,26,10))
+            w,h=struct.unpack_from(">II",raw,16)
+            assert w>=480 and h>=720 and len(raw)>20000,(w,h,len(raw))
+            act=Path("build/filament-avd-proof/activity.txt").read_text(errors="replace")
+            assert "com.adeldice.filamentlab" in act,("Native Filament activity not foreground",act[-1000:])
+            log=Path("build/filament-avd-proof/logcat.txt").read_text(errors="replace")
+            fata=[x for x in log.splitlines() if "FATAL EXCEPTION" in x or "Process: com.adeldice.filamentlab" in x]
+            assert not fata,("Native app crash",fata)
+            print("PASS_REAL_NATIVE_FILAMENT_ANDROID_AVD_LAUNCH",w,h,len(raw))
+            Path("build/filament-avd-proof/verification.json").write_text(json.dumps({
+             "status":"PASS",
+             "actual_android_emulator":True,"native_filament_app":True,
+             "original_user_licensed_glb_loaded":False,
+             "pbr_glb_material_parity":"NOT_TESTED",
+             "application_pixel_size":[w,h],
+             "no_internet_permission":True},indent=2)+"\n")
+            PY
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: M5-Filament-native-Android-real-AVD-startup-and-PNG
+          path: build/filament-avd-proof/
+          retention-days: 21
+          if-no-files-found: warn
