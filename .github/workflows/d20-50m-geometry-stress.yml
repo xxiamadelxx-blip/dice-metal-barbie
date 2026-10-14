@@ -1,0 +1,168 @@
+name: D20 500k through 50M GPU triangle capacity experiment
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/perf/d20_50m_multimesh_bench.gd"
+      - ".github/workflows/d20-50m-geometry-stress.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: d20-50m-stress-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  syntax-and-gpu-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install software Mesa/Xvfb
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers python3
+          godot --version
+      - name: Import GDScript and test 500000 true submitted triangles
+        run: |
+          mkdir -p build/d20-50m
+          timeout 120 godot --headless --path . --editor --import --quit > build/d20-50m/smoke-import.log 2>&1 || { tail -100 build/d20-50m/smoke-import.log; exit 11; }
+          timeout 140 xvfb-run -a -s "-screen 0 800x800x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/perf/d20_50m_multimesh_bench.gd -- --from=1 --to=1 > build/d20-50m/smoke.log 2>&1 || { tail -100 build/d20-50m/smoke.log; exit 12; }
+          cat build/d20-50m/smoke.log | grep D20_PERF_REAL_STAGE | tail -5
+          python3 - <<'PY'
+          import json
+          p="build/d20-50m/stages_001_001.jsonl"
+          data=[json.loads(v) for v in open(p)]
+          rows=[v for v in data if "step" in v]
+          assert len(rows)==1 and rows[0]["status"]=="MEASURED"
+          assert rows[0]["target_tris"]==rows[0]["submitted_tris"]==500000
+          assert len(rows[0]["frame_samples_ms"])>=1
+          print("PASS_REAL_RENDERED_HALF_MILLION",json.dumps(rows[0]))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: D20-50m-Godot-smoke
+          path: build/d20-50m/
+          retention-days: 14
+  range:
+    needs: syntax-and-gpu-smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: barichello/godot-ci:4.6.3
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {first: 1, last: 25}
+          - {first: 26, last: 50}
+          - {first: 51, last: 75}
+          - {first: 76, last: 100}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare native Mesa software renderer
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers python3
+          godot --version
+      - name: Godot source import
+        run: |
+          mkdir -p build/d20-50m
+          timeout 120 godot --headless --path . --editor --import --quit > build/d20-50m/import.log 2>&1 || { tail -80 build/d20-50m/import.log; exit 21; }
+      - name: Measure actual 0.5-million incremental GPU draw frames
+        run: |
+          set -eu
+          timeout 650 xvfb-run -a -s "-screen 0 800x800x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/perf/d20_50m_multimesh_bench.gd -- --from=${{ matrix.first }} --to=${{ matrix.last }} > build/d20-50m/progress.log 2>&1 || { tail -100 build/d20-50m/progress.log; exit 22; }
+          tail -8 build/d20-50m/progress.log
+          python3 - <<'PY'
+          import json,glob
+          ps=glob.glob("build/d20-50m/stages_*_*.jsonl")
+          assert len(ps)==1,ps
+          rows=[json.loads(v) for v in open(ps[0]) if v.strip()]
+          targets=[x for x in rows if "step" in x]
+          first=int("${{ matrix.first }}")
+          last=int("${{ matrix.last }}")
+          assert [x["step"] for x in targets]==list(range(first,last+1))
+          assert all(x["target_tris"]==x["step"]*500000 for x in targets)
+          assert all(x["submitted_tris"]==x["target_tris"] for x in targets if x["status"]=="MEASURED")
+          assert any(x["status"]=="MEASURED" for x in targets)
+          print("PASS_FULL_INTERVAL_COVERAGE",first,last,"measured",sum(x["status"]=="MEASURED" for x in targets),"unrun",sum(x["status"]!="MEASURED" for x in targets))
+          PY
+      - name: Preserve real run data / PNG frames even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: D20-50m-Godot-part-${{ matrix.first }}-${{ matrix.last }}
+          path: build/d20-50m/
+          retention-days: 14
+          if-no-files-found: warn
+  aggregate:
+    if: always()
+    needs: [syntax-and-gpu-smoke, range]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: D20-50m-Godot-part-*
+          merge-multiple: false
+          path: build/stage-inputs
+      - name: Merge exact 100 level rows and refuse fictional FPS
+        run: |
+          mkdir -p build/d20-50m-summary
+          python3 - <<'PY'
+          import csv,glob,json,statistics
+          from pathlib import Path
+          files=sorted(glob.glob("build/stage-inputs/**/stages_*.jsonl",recursive=True))
+          records={}
+          headers=[]
+          for f in files:
+            for line in open(f):
+              row=json.loads(line)
+              if row.get("kind")=="header":headers.append(row)
+              if "step" in row:
+                assert row["step"] not in records,row["step"]
+                records[row["step"]]=row
+          out=Path("build/d20-50m-summary")
+          columns=["step","target_triangles","status","instances","wall_frame_ms","estimated_fps","stop_reason"]
+          with (out/"d20_100_stages.csv").open("w",newline="") as f:
+            writer=csv.writer(f)
+            writer.writerow(columns)
+            for s in range(1,101):
+              item=records.get(s)
+              if item is None:
+                writer.writerow([s,s*500000,"NO_JOB_EVIDENCE","","","","shard_not_completed"])
+              else:
+                writer.writerow([s,s*500000,item.get("status",""),item.get("instances",""),item.get("mean_frame_wall_ms",""),item.get("estimated_fps_from_frame_wall",""),item.get("reason","")])
+          counted=[x for x in records.values() if x["status"]=="MEASURED"]
+          report={
+            "experiment":"0.5M through 50M in 100 stages","increment":500000,
+            "actual_test_definition":"hardware-instanced 50000-triangle tessellated D20 mesh; NOT 50M unique one-mesh triangles; NO Jolt",
+            "render_machine":"GitHub Actions Ubuntu Godot Mobile Mesa software renderer, not Android phone",
+            "run_sha":"${{ github.sha }}",
+            "shards_present":len(files),"covered_rows":len(records),
+            "measured_stages":len(counted),"not_measured_stages":100-len(counted),
+            "max_measured_triangles":max((x["target_tris"] for x in counted),default=0),
+            "fastest_measured_frame_ms":min((x["mean_frame_wall_ms"] for x in counted),default=None),
+            "slowest_measured_frame_ms":max((x["mean_frame_wall_ms"] for x in counted),default=None),
+            "actual_renderer_gpu":headers}
+          (out/"summary.json").write_text(json.dumps(report,indent=2)+"\n")
+          with (out/"report.md").open("w") as f:
+            f.write("# D20 100-step real renderer performance report\n\n")
+            f.write("Godot Mobile on Mesa software GPU. Each row is an actual instanced-frame observation or explicit NOT_RUN. This is NOT one single 50M triangle mesh and NOT OnePlus Nord 3 FPS.\n\n")
+            f.write("Measured %s/100 steps, max measured %s triangles.\n\n"%(len(counted),report["max_measured_triangles"]))
+            f.write("|Stage|Triangles|Status|Frame ms|Estimated FPS|\n|---:|---:|---|---:|---:|\n")
+            for s in range(1,101):
+              x=records.get(s,{})
+              f.write("|%s|%s|%s|%s|%s|\n"%(s,s*500000,x.get("status","NO_JOB_EVIDENCE"),x.get("mean_frame_wall_ms",""),x.get("estimated_fps_from_frame_wall","")))
+          print("D20_50M_AGGREGATE",json.dumps({k:v for k,v in report.items() if k!="actual_renderer_gpu"}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: D20-50m-real-100-stage-report
+          path: build/d20-50m-summary/
+          retention-days: 30
