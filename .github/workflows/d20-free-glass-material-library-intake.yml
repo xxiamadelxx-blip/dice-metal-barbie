@@ -1,0 +1,88 @@
+name: M5 25 real MIT Blender glass shader asset thumbnails
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - ".github/workflows/d20-free-glass-material-library-intake.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-free-shader-source-intake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify 25 actual free Blender glass materials, inspect preview color
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from urllib.request import urlopen,Request
+          import hashlib,io,json,statistics,time
+          from PIL import Image,ImageDraw,ImageFont
+          base="https://raw.githubusercontent.com/Infinitode/Material-Library/main/"
+          root=Path("build/free-glass-material-library")
+          root.mkdir(parents=True,exist_ok=True)
+          def fetch(path,maximum):
+              req=Request(base+path,headers={"User-Agent":"Dice-M5-CC-LicenseAudit/1.0"})
+              with urlopen(req,timeout=30) as r:
+                  data=r.read(maximum+1)
+                  assert r.status==200 and len(data)<=maximum
+                  return data
+          license=fetch("LICENSE",10000).decode()
+          assert license.startswith("MIT License")
+          index=json.loads(fetch("materials.json",100000))
+          files={x["image"]:x for x in index if "glass" in x["name"].lower()}
+          assert len(files)>=25,len(files)
+          previews=[]
+          catalog=[]
+          for i in range(1,26):
+              key=f"glass-{i}.webp"
+              data=fetch("materials/"+key,2000000)
+              assert data[:4]==b"RIFF"
+              image=Image.open(io.BytesIO(data)).convert("RGB")
+              assert min(image.size)>=64
+              thumb=image.resize((220,220))
+              pixels=list(thumb.getdata())
+              med=tuple(int(statistics.median(c[j] for c in pixels)) for j in range(3))
+              overbright=sum(max(c)>180 for c in pixels)/len(pixels)
+              purple=sum(c[2]>c[1]*1.27 and c[0]>c[1]*1.16 and max(c)>50 for c in pixels)/len(pixels)
+              black=sum(max(c)<65 for c in pixels)/len(pixels)
+              relative=f"blend-files/glass-{i}.blend"
+              assert files[key]["blend-file"]==relative
+              catalog.append({"id":i,"name":f"Glass {i}","source_repository":"Infinitode/Material-Library","license":"MIT",
+                  "blend_url":base+relative,
+                  "preview_url":base+"materials/"+key,
+                  "preview_sha256":hashlib.sha256(data).hexdigest(),
+                  "preview_size":image.size,
+                  "median_rgb":med,"black_pixel_fraction":round(black,4),
+                  "purple_pixel_fraction":round(purple,4),
+                  "highlight_pixel_fraction":round(overbright,4),
+                  "mat_source_downloaded":False,
+                  "potential_black_nopurple":black>.35 and purple<.02 and overbright>.005})
+              previews.append(thumb)
+              time.sleep(.07)
+          sheet=Image.new("RGB",(1200,1240),(235,235,235))
+          d=ImageDraw.Draw(sheet)
+          for i,im in enumerate(previews):
+              x=(i%5)*240+10;y=(i//5)*248+20
+              sheet.paste(im,(x,y))
+              label=f"GLASS {i+1}: black={catalog[i]['black_pixel_fraction']:.2f} purple={catalog[i]['purple_pixel_fraction']:.2f}"
+              d.text((x,y-16),label,fill=(10,10,10))
+          sheet.save(root/"real_free_blender_glass_25_previews.png")
+          (root/"source_manifest.json").write_text(json.dumps({
+              "license":"MIT", "upstream":"https://github.com/Infinitode/Material-Library",
+              "sha256_index":hashlib.sha256(json.dumps(index).encode()).hexdigest(),
+              "source_count":len(catalog),"gallery_not_material_render":True,
+              "original_selected_blenderkit_is_different":True,
+              "catalog":catalog},indent=2)+"\n")
+          print("PASS_25_REAL_FREE_BLENDER_GLASS_PREVIEWS",len(catalog))
+          print("BLACK_CANDIDATE_IDS",[c["id"] for c in catalog if c["potential_black_nopurple"]])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-25-free-real-Blender-MIT-glass-shader-visual-gallery
+          path: build/free-glass-material-library/
+          retention-days: 21
+          if-no-files-found: warn
