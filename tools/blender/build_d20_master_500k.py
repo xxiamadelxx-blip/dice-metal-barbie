@@ -97,7 +97,7 @@ gold_total=after-stone_total
 # Preserve face shading selection and original source material slots.
 for obj in objects:
     assert obj.data.materials
-    assert not any("Emission" in m.name for m in obj.data.materials if m)
+    assert not any(m.name.lower().startswith("emissive") for m in obj.data.materials if m)
 # Selecting ALL 21 die objects, not studio/floor/camera; export one die GLB.
 bpy.ops.object.select_all(action="DESELECT")
 for obj in objects:
