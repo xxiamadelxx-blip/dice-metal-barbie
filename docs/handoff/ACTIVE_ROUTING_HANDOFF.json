@@ -2,15 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 selected polished black obsidian from Blendkit: anonymous licensed source intake and real Blender Cycles D20 preview; separate M4/PR #23 remains open",
+    "task": "M5 premium obsidian D20: real Godot split-bevel regression PASS; user-selected free Blendkit material intake denied HTTP 403 in two actual CI runs; original GLB preserved",
     "route": "creative-3d",
-    "status": "in_progress",
-    "owner": "GitHub-connected Dice agent, isolated no-account Blender lookdev",
-    "next_action": "Inspect exact source run #38590931873 for public Blendkit API/license/download and actual 1000x850 Blender oblique/overhead PNGs. If intake fails, inspect logs and alter hypothesis; if succeeds, inspect real source frames before planning baked GLB→Godot Mobile A/B. Never merge to PR #23/main before owner art approval.",
+    "status": "not_verified",
+    "owner": "Next Dice Blender/Godot art agent, canonical GitHub experiment handoff",
+    "next_action": "No third anonymous API replay. Use only legitimately retrieved original Blendkit .blend with tools/materials/preview_blendkit_on_d20.py, or continue reversible lookdev on existing independently authored D20 while clearly marking material not exact. After actual source Cycles renders, bake PBR textures to GLB, inspect channel bytes, compare actual Godot 4.6.3 Mobile frames and canonical Codex reference; do not integrate APK before owner signoff.",
     "blockers": [
-      "Blendkit free material unattended anonymous download NOT_VERIFIED pending workflow #38590931873; license must be verified at metadata.",
-      "Even successful Blender procedural render is NOT a Godot PBR GLB; actual color/normal/roughness/AO bake and Godot Mobile source frames NOT_VERIFIED.",
-      "User's gold engraved premium D20 artistic acceptance, Jolt/24fps roll, Android AVD, OnePlus Nord3 device FPS/signoff NOT_VERIFIED."
+      "Selected Blenderkit Procedural Obsidian asset ID 92e31cbc-5b4e-4ead-a966-84bf106808c3: public API search returned 403 twice (run 38590931873 and documented-protocol 38591644762); third-party asset bytes, exact license metadata, and Cycles PNG not obtained. Stop repeated anonymous attempts.",
+      "Actual user-approved black polished gemstone with deeply inset gold lettering remains ART NOT_VERIFIED; original renderer output retains some gray facets.",
+      "New selected material was never baked/exported/imported to Godot, so material fidelity in Godot Mobile NOT_VERIFIED. M4 PR #23 visual D4 and AVD gates still red/unaccepted.",
+      "Real Jolt roll face/visual agreement on new candidate, Android AVD interactive app and OnePlus Nord 3 FPS/thermal offline install remain NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -128,13 +129,14 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38306809305/artifacts/11772698044",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38590355911",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38590931873",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_SELECTED_BLENDKIT_OBSIDIAN_SOURCE_GATE_2026-10-14.md"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_SELECTED_BLENDKIT_OBSIDIAN_SOURCE_GATE_2026-10-14.md",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38591644762"
     ],
-    "last_observed_sha": "cc2f0149801b3dbfe1e8a2cc93c65d164fec84fe",
+    "last_observed_sha": "b6b4adf84f5c9877c6ff5e756ba88638bed65d3e",
     "last_verified_sha": "",
     "branch": "experiment/m5-learn-codex-d20",
     "updated_at": "2026-10-14",
-    "verification_note": "Real Godot Mobile/Mesa BRDF workflow #38590355911 completed SUCCESS at c366362; no art accept inferred. Blendkit material fetch/Blender preview workflow #38590931873 currently in_progress and unverified. Local Blender/Godot binaries absent, so router CLI and native local render NOT_VERIFIED; work performed with GitHub source/CI. main and PR #23 unchanged."
+    "verification_note": "SOURCE-PROVEN: Good Godot Mobile/Mesa split-bevel BRDF regression at c366362, actual CI 38590355911 completed success. Source intake run 38590931873 failed HTTP 403 and updated addon-contract run 38591644762 also failed HTTP 403. Both ran actual GitHub Actions in container with Blender installed and source GLB hash verified; zero material preview PNGs. No local Godot/Blender executables in current container; router CLI NOT_VERIFIED. PR #23 and main untouched."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
