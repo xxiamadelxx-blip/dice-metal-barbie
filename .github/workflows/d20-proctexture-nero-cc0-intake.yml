@@ -1,0 +1,33 @@
+name: M5 acquire real seamless Nero CC0 polished black stone PBR
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/materials/fetch_proctexture_nero_cc0.py"
+      - ".github/workflows/d20-proctexture-nero-cc0-intake.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-source-channel-intake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pillow
+        run: python3 -m pip install --quiet --disable-pip-version-check pillow
+      - name: Download official black marble CC0 PBR pack and verify actual channels
+        run: |
+          set -eu
+          python3 -m py_compile tools/materials/fetch_proctexture_nero_cc0.py
+          timeout 180 python3 tools/materials/fetch_proctexture_nero_cc0.py build/cc0-nero-marquina > build-nero-source.log 2>&1 || { tail -100 build-nero-source.log; exit 2; }
+          grep -F "PASS_REAL_PROC_TEXTURE_NERO_CC0_MAPS" build-nero-source.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-original-licensed-Nero-Marquina-CC0-PBR-pack
+          path: |
+            build/cc0-nero-marquina/
+            build-nero-source.log
+          retention-days: 21
+          if-no-files-found: warn
