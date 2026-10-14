@@ -79,9 +79,12 @@ def place_maps(m, ims):
 def cutter_glyph(value,center,normal,up,font,gold=False):
     data=bpy.data.curves.new("Glyph_%02d"%value,"FONT")
     data.body=str(value);data.font=font;data.size=.43
-    data.align_x="CENTER";data.align_y="CENTER";data.resolution_u=6
-    data.extrude=.0015 if gold else .06
-    data.bevel_depth=.00065 if gold else 0
+    data.align_x="CENTER";data.align_y="CENTER";data.resolution_u=24
+    # Curved glyph outlines must be sampled finely BEFORE the Boolean.
+    # Subdividing resulting triangles later cannot fix jagged text contours.
+    data.bevel_resolution=4
+    data.extrude=.0025 if gold else .05
+    data.bevel_depth=.0014 if gold else 0
     glyph=bpy.data.objects.new(("Gold_%02d" if gold else "Cut_%02d")%value,data)
     bpy.context.collection.objects.link(glyph)
     glyph.rotation_mode="QUATERNION"
@@ -90,7 +93,7 @@ def cutter_glyph(value,center,normal,up,font,gold=False):
     up=(up-normal*up.dot(normal)).normalized()
     right=up.cross(normal).normalized()
     glyph.rotation_quaternion=Matrix((right,up,normal)).transposed().to_quaternion()
-    glyph.location=center-normal*(.032 if gold else .008)
+    glyph.location=center-normal*(.011 if gold else .008)
     active(glyph)
     bpy.ops.object.convert(target="MESH")
     return bpy.context.view_layer.objects.active
@@ -283,7 +286,26 @@ def build():
     mod.operation="DIFFERENCE";mod.solver="EXACT";mod.object=union
     active(shell);bpy.ops.object.modifier_apply(modifier=mod.name)
     bpy.data.objects.remove(union,do_unlink=True)
+    # Crucial: create a tiny roundover on the *NEW* cavity outline,
+    # which did not exist when the initial icosahedron bevel was applied.
+    # The prior builder beveled the outer silhouette before Boolean,
+    # leaving the engraved numeral edges razor sharp/aliased.
+    lip=shell.modifiers.new("AFTER_BOOLEAN_GLYPH_LIP_ROUNDOVER","BEVEL")
+    lip.width=.0022
+    lip.segments=3
+    lip.limit_method="ANGLE"
+    lip.angle_limit=.38
+    lip.material=1
+    lip.loop_slide=True
+    active(shell)
+    bpy.ops.object.modifier_apply(modifier=lip.name)
     assert len(shell.data.polygons)>100
+    for face in shell.data.polygons:
+        face.use_smooth=(face.material_index==1)
+    log("POST_BOOLEAN_GLYPH_LIP_BEVEL",{"width":.0022,"segments":3,
+        "angle_limit":.38,"glyph_outline_resolution":24,
+        "gold_top_depth":.0085})
+
     # An actual raised border would project BEYOND any original flat face
     # plane. Evaluate each source face halfspace against every FINAL Boolean
     # vertex, not merely the apparent edge highlight on a PNG.
