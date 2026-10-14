@@ -91,7 +91,7 @@ jobs:
         run: |
           # The build directory contains .blend roundtrip evidence which is NOT a
           # runtime resource. Godot tries to import it as a source if not ignored.
-          touch build/.gdignore
+          touch build/.gdignore docs/.gdignore
           timeout 100 godot --headless --path . --editor --import --quit > build/learned-d20/import.log 2>&1 || { tail -100 build/learned-d20/import.log; exit 1; }
           if grep -E 'ERROR:|SCRIPT ERROR:|Parse Error' build/learned-d20/import.log; then
             echo "Godot editor importer emitted errors (must not issue false PASS)"
