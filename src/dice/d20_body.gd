@@ -8,6 +8,7 @@ signal roll_failed(reason: String)
 const Ico = preload("res://src/core/icosahedron.gd")
 const Sculpt = preload("res://src/visual/sculpted_d20.gd")
 const DiceRng = preload("res://src/core/dice_rng.gd")
+const M5OriginalArt = preload("res://src/dice/m5_original_obsidian_art.gd")
 const MAX_ROLL_SECONDS := 9.0
 # Actual Jolt recovery when sleeping on an ambiguous EDGE, never face
 # snapping or value substitution. Preserve 9s overall physics time budget.
@@ -18,6 +19,7 @@ var result := -1
 var failure := ""
 var elapsed := 0.0
 var edge_recovery_count := 0
+var m5_original_visual_active := false
 
 func _ready() -> void:
     name = "PhysicalD20"
@@ -40,6 +42,7 @@ func _ready() -> void:
     add_child(collision)
 
     _create_geometry_and_numerals()
+    _try_enable_private_m5_visual()
 
 func _create_geometry_and_numerals() -> void:
     var vertices := Ico.vertices()
@@ -84,6 +87,25 @@ func _create_geometry_and_numerals() -> void:
         var face_up := Vector3.BACK if absf(normal.y) > 0.7 else Vector3.UP
         label.basis = Basis.looking_at(normal, face_up, true)
         add_child(label)
+
+func _try_enable_private_m5_visual() -> void:
+    # Experimental opt-in; no original BlenderKit source is committed publicly.
+    # Runtime verifies exact SHA/20 labels/500k triangles BEFORE hiding any art.
+    var premium := M5OriginalArt.make_visual()
+    if premium == null:
+        return
+    for child in get_children():
+        if child is VisualInstance3D:
+            (child as VisualInstance3D).visible = false
+    add_child(premium)
+    m5_original_visual_active = true
+    print("DICE_M5_PRIVATE_500K_VISUAL_ACTIVE; Jolt convex collider unchanged")
+
+func top_visible_value() -> int:
+    var face := Ico.top_face(global_transform.basis.orthonormalized(),0.02)
+    if face < 0:
+        return -1
+    return M5OriginalArt.printed_value_for_face(face) if m5_original_visual_active else Ico.numbers()[face]
 
 func throw_from_top() -> void:
     result = -1
@@ -151,7 +173,7 @@ func _physics_process(delta: float) -> void:
         _abort("D20 не смог устойчиво остановиться на грани после %d реальных импульсов" % edge_recovery_count)
         return
     rolling = false
-    result = Ico.numbers()[face]
+    result = M5OriginalArt.printed_value_for_face(face) if m5_original_visual_active else Ico.numbers()[face]
     roll_completed.emit(result)
 
 func _abort(message: String) -> void:
