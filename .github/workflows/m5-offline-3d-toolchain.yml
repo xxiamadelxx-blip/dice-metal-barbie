@@ -63,6 +63,7 @@ jobs:
           print('PASS_OPEN_SOURCE_3D_BINARIES_ONLY',receipts)
           PY
           tar -C build/toolchain/root -cf - . | zstd -T2 -6 -o build/toolchain/blender-godot-deps.tar.zst
+          rm -rf build/toolchain/root
           ls -lh build/toolchain/blender-godot-deps.tar.zst build/toolchain/manifest.json
       - uses: actions/upload-artifact@v4
         with:
