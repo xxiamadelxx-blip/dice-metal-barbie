@@ -1,0 +1,88 @@
+{
+  "experiment": "0.5M through 50M in 100 stages",
+  "increment": 500000,
+  "actual_test_definition": "hardware-instanced 50000-triangle tessellated D20 mesh; NOT 50M unique one-mesh triangles; NO Jolt",
+  "render_machine": "GitHub Actions Ubuntu Godot Mobile Mesa software renderer, not Android phone",
+  "run_sha": "7743e5a8828bd5b90b0554ddc77f6d68aed6a3c4",
+  "shards_present": 4,
+  "covered_rows": 100,
+  "measured_stages": 100,
+  "not_measured_stages": 0,
+  "max_measured_triangles": 50000000,
+  "fastest_measured_frame_ms": 57.27,
+  "slowest_measured_frame_ms": 5660.54,
+  "actual_renderer_gpu": [
+    {
+      "benchmark": "total_gpu_instanced_submitted_triangles_NOT_single_mesh",
+      "first": 1,
+      "gpu": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "increments": 500000,
+      "kind": "header",
+      "last": 25,
+      "mesh_generation_ms": 37,
+      "mesh_triangles": 50000,
+      "msaa": false,
+      "physics": false,
+      "renderer": "mobile",
+      "texture": "NO / shared dielectric test material",
+      "viewport": [
+        640,
+        640
+      ]
+    },
+    {
+      "benchmark": "total_gpu_instanced_submitted_triangles_NOT_single_mesh",
+      "first": 26,
+      "gpu": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "increments": 500000,
+      "kind": "header",
+      "last": 50,
+      "mesh_generation_ms": 47,
+      "mesh_triangles": 50000,
+      "msaa": false,
+      "physics": false,
+      "renderer": "mobile",
+      "texture": "NO / shared dielectric test material",
+      "viewport": [
+        640,
+        640
+      ]
+    },
+    {
+      "benchmark": "total_gpu_instanced_submitted_triangles_NOT_single_mesh",
+      "first": 51,
+      "gpu": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "increments": 500000,
+      "kind": "header",
+      "last": 75,
+      "mesh_generation_ms": 37,
+      "mesh_triangles": 50000,
+      "msaa": false,
+      "physics": false,
+      "renderer": "mobile",
+      "texture": "NO / shared dielectric test material",
+      "viewport": [
+        640,
+        640
+      ]
+    },
+    {
+      "benchmark": "total_gpu_instanced_submitted_triangles_NOT_single_mesh",
+      "first": 76,
+      "gpu": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "increments": 500000,
+      "kind": "header",
+      "last": 100,
+      "mesh_generation_ms": 55,
+      "mesh_triangles": 50000,
+      "msaa": false,
+      "physics": false,
+      "renderer": "mobile",
+      "texture": "NO / shared dielectric test material",
+      "viewport": [
+        640,
+        640
+      ]
+    }
+  ]
+}
