@@ -13,6 +13,8 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+      - name: Install pixel inspection dependency
+        run: python3 -m pip install --disable-pip-version-check --no-input pillow
       - name: Verify 25 actual free Blender glass materials, inspect preview color
         run: |
           python3 - <<'PY'
