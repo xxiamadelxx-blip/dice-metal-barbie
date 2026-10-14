@@ -1,0 +1,149 @@
+name: M5 single 500K D20 real black obsidian Godot Mobile visual lookdev
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/d20-500k-blackglass-capture.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  actual-godot-polished-black-500k:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install correct Mesa Mobile/X11 and PBR pixel verifier
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers python3-numpy python3-pil fonts-dejavu-core libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38607312075
+          name: M5-real-unique-500000-D20-GLB-Blender-Godot-Cycles
+          github-token: ${{ github.token }}
+          path: build/highpoly-ref
+      - name: Prepare exact source same model and physically rendered alternate HDRs
+        run: |
+          set -eu
+          mkdir -p src/assets/generated build/learned-d20 build/master-blackglass
+          cp build/highpoly-ref/results/d20_obsidian_gold_master_500k.glb src/assets/generated/learned_d20.glb
+          python3 tools/visual/d20_blackglass_studio.py src/assets/generated
+          python3 - <<'PY'
+          import hashlib, pathlib
+          p=pathlib.Path("src/assets/generated/learned_d20.glb")
+          assert hashlib.sha256(p.read_bytes()).hexdigest()=="b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e"
+          assert all((pathlib.Path("src/assets/generated")/("learned_studio_mobile_"+n+".hdr")).exists()
+                     for n in ["black40_specular","black33_specular","black40_lowfill"])
+          print("PASS_SAME_SINGLE_500K_GLB_BLACKGLASS_PROBE")
+          PY
+      - name: Import D20 and native black studio HDRs to real Godot Mobile
+        run: |
+          set -eu
+          touch docs/.gdignore build/.gdignore
+          timeout 130 godot --headless --path . --editor --import --quit > build/master-blackglass/import.log 2>&1 || { tail -80 build/master-blackglass/import.log; exit 3; }
+          if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' build/master-blackglass/import.log; then
+            tail -80 build/master-blackglass/import.log
+            exit 4
+          fi
+      - name: Actual source GLB / Godot Mobile blackglass studio A/B
+        run: |
+          set -eu
+          for flavor in black40_lowfill black40_specular black33_specular; do
+            timeout 160 xvfb-run -a -s "-screen 0 1100x900x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/d20_brdf_lab_capture.gd -- --variant="$flavor" > "build/master-blackglass/$flavor.log" 2>&1 || { tail -80 "build/master-blackglass/$flavor.log"; exit 9; }
+            grep -F "LEARNED_D20_GODOT_REAL_FRAME" "build/master-blackglass/$flavor.log"
+            if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' "build/master-blackglass/$flavor.log"; then cat "build/master-blackglass/$flavor.log"; exit 11; fi
+            cp "build/learned-d20/godot_$flavor.png" "build/master-blackglass/godot_$flavor.png"
+          done
+      - name: Audit actual pixel captures and composition with fixed GLB
+        run: |
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          import numpy as np
+          from PIL import Image,ImageDraw,ImageStat,ImageFont
+          out=Path("build/master-blackglass")
+          sources=[Path("build/highpoly-ref/results/godot_mobile_master_500k.png")]
+          names=["Baseline source GLB / neutral HDR"]
+          for flavor in ["black40_lowfill","black40_specular","black33_specular"]:
+            sources.append(out/("godot_"+flavor+".png"))
+            names.append("Same GLB / black "+flavor)
+          images=[]
+          measurements={}
+          for label,p in zip(names,sources):
+            assert p.read_bytes()[:8]==bytes((137,80,78,71,13,10,26,10))
+            im=Image.open(p).convert("RGB")
+            assert im.size==(1000,850)
+            assert max(ImageStat.Stat(im).stddev)>5,(label,"blank")
+            region=np.array(im)[155:725,250:780].astype(np.float32)
+            measurements[label]={"mean_rgb_brightness_roi":round(float(region.mean()),2),
+              "bright_above_100_fraction_roi":round(float((region.mean(axis=2)>100).mean()),5),
+              "sha256":hashlib.sha256(p.read_bytes()).hexdigest()}
+            images.append(im)
+          assert any(abs(measurements[names[i]]["mean_rgb_brightness_roi"]-measurements[names[0]]["mean_rgb_brightness_roi"])>2 for i in range(1,4)), "Sky variants failed to change actual real capture"
+          sheet=Image.new("RGB",(2032,1792),(15,17,21))
+          draw=ImageDraw.Draw(sheet)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",21)
+          for i,(label,image) in enumerate(zip(names,images)):
+            x=10+(i%2)*1014;y=32+(i//2)*888
+            draw.text((x,y-25),label,fill=(242,242,242),font=font)
+            sheet.paste(image,(x,y))
+          sheet.save(out/"real_one_d20_500k_blackglass_comparison.png")
+          (out/"source_pixel_metrics.json").write_text(json.dumps({
+            "glb_sha256":"b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e",
+            "one_unique_d20_triangles":500000,"has_false_multimesh":False,
+            "render_engine":"Godot 4.6.3 Mobile / Mesa software GPU",
+            "on_android":False,
+            "no_mesh_texture_or_gold_change_between_the_four":True,
+            "art_accepted":False,"screens":measurements},indent=2)+"\n")
+          print("PASS_REAL_500K_BLACK_STUDIO_CAPTURE",json.dumps(measurements))
+          PY
+      - name: Preserve all three real native PNG captures and self-review source proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: M5-real-unique-500k-D20-black-glass-Godot-mobile
+          path: build/master-blackglass
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Publish only source evidence PNG+metrics to experiment branch
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import base64,json,os
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          repo=os.environ["GITHUB_REPOSITORY"];token=os.environ["GITHUB_TOKEN"]
+          base="https://api.github.com/repos/"+repo;branch="experiment/m5-learn-codex-d20"
+          def api(method,path,body=None):
+            data=json.dumps(body).encode() if body is not None else None
+            req=Request(base+path,data=data,method=method,headers={
+              "Authorization":"Bearer "+token,"Accept":"application/vnd.github+json",
+              "Content-Type":"application/json","User-Agent":"Dice-M5-real-source-evidence"})
+            with urlopen(req,timeout=85) as resp:return json.loads(resp.read())
+          head=api("GET","/git/ref/heads/"+branch)["object"]["sha"]
+          tree=api("GET","/git/commits/"+head)["tree"]["sha"]
+          files=["real_one_d20_500k_blackglass_comparison.png",
+                 "godot_black40_lowfill.png","godot_black40_specular.png",
+                 "godot_black33_specular.png","source_pixel_metrics.json"]
+          objs=[]
+          for name in files:
+            path=Path("build/master-blackglass")/name
+            payload=path.read_bytes()
+            if name.endswith(".png"):assert payload[:8]==bytes((137,80,78,71,13,10,26,10))
+            blob=api("POST","/git/blobs",{
+              "content":base64.b64encode(payload).decode(),"encoding":"base64"})["sha"]
+            objs.append({"path":"docs/evidence/m5-d20-master-500k-2026-10-14/"+name,
+                "mode":"100644","type":"blob","sha":blob})
+          next_tree=api("POST","/git/trees",{"base_tree":tree,"tree":objs})["sha"]
+          commit=api("POST","/git/commits",{"message":"evidence(m5): same exact 500k GLB in three real Godot glossy black studio variants",
+                    "tree":next_tree,"parents":[head]})["sha"]
+          api("PATCH","/git/refs/heads/"+branch,{"sha":commit,"force":False})
+          print("PASS_BLACK_STUDIO_500K_PUBLISHED",commit)
+          PY
