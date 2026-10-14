@@ -1,0 +1,63 @@
+name: M5 persist exact 500000 triangle authored D20 GLB
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/d20-500k-persist-model.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  preserve-verified-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38606894722
+          name: M5-real-unique-500000-D20-GLB-Blender-Godot-Cycles
+          github-token: ${{ github.token }}
+          path: build/500k-original
+      - name: Validate the real native authored GLB, 20 gold meshes and exact source hash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, struct
+          from pathlib import Path
+          root=Path("build/500k-original/results")
+          p=root/"d20_obsidian_gold_master_500k.glb"
+          raw=p.read_bytes()
+          digest=hashlib.sha256(raw).hexdigest()
+          assert digest=="b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e"
+          assert raw[:4]==b"glTF"
+          count,kind=struct.unpack_from("<II",raw,12)
+          assert kind==0x4e4f534a
+          gltf=json.loads(raw[20:20+count])
+          parts=[]
+          for node in gltf["nodes"]:
+            if "mesh" not in node:continue
+            x=sum(gltf["accessors"][p["indices"]]["count"]//3 for p in gltf["meshes"][node["mesh"]]["primitives"])
+            parts.append((node["name"],x))
+          assert sum(x for _,x in parts)==500000
+          assert len([x for x,n in parts if x.startswith("Gold_")])==20
+          assert sum(n for x,n in parts if x.startswith("D20_Engraved"))==212464
+          assert sum(n for x,n in parts if x.startswith("Gold_"))==287536
+          assert (root/"blender_cycles_master_500k.png").read_bytes()[:8]==b"\\x89PNG\\r\\n\\x1a\\n"
+          print("PASS_PRESERVE_REAL_EXACT_500000",digest,p.stat().st_size)
+          PY
+      - name: Preserve GLB, original Cycles pixels and exact verification manifest in experiment branch
+        run: |
+          set -eu
+          dir=docs/evidence/m5-d20-master-500k-2026-10-14
+          mkdir -p "$dir"
+          cp build/500k-original/results/d20_obsidian_gold_master_500k.glb "$dir/"
+          cp build/500k-original/results/blender_cycles_master_500k.png "$dir/"
+          cp build/500k-original/results/manifest_glb_verified.json "$dir/"
+          cp build/500k-original/results/manifest_blender.json "$dir/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$dir"
+          if git diff --cached --quiet; then echo "ALREADY_PRESERVED"; else
+            git commit -m "evidence(m5): permanent real single 500k obsidian gold GLB and Blender Cycles screenshot"
+            git push origin HEAD:refs/heads/experiment/m5-learn-codex-d20
+          fi
