@@ -114,6 +114,28 @@ static func _scene_checked() -> PackedScene:
           " gold_tris=",totals["gold_tris"]," values=",PRINTED_FACE_VALUES)
     return _validated_scene
 
+static func _polish_gold(node: Node) -> int:
+    var count := 0
+    if node is MeshInstance3D and str(node.name).begins_with("Gold_"):
+        var gold_mesh := node as MeshInstance3D
+        for surface in range(gold_mesh.mesh.get_surface_count()):
+            var original := gold_mesh.mesh.surface_get_material(surface) as BaseMaterial3D
+            assert(original != null)
+            var improved := original.duplicate(true) as BaseMaterial3D
+            improved.albedo_color = Color(.92,.64,.27)
+            improved.metallic = .55
+            improved.roughness = .29
+            improved.clearcoat_enabled = true
+            improved.clearcoat = .08
+            improved.clearcoat_roughness = .22
+            # Gold-only instance override: keeps licensed original PBR maps
+            # and unchanged 500K GLB bytes. Do not repaint the obsidian.
+            gold_mesh.set_surface_override_material(surface, improved)
+        count += 1
+    for child in node.get_children():
+        count += _polish_gold(child)
+    return count
+
 static func make_visual() -> Node3D:
     var packed := _scene_checked()
     if packed == null:
@@ -124,4 +146,5 @@ static func make_visual() -> Node3D:
     instance.name = "M5OriginalObsidian500KVisual"
     instance.basis = VISUAL_ROTATION
     instance.scale = Vector3.ONE * VISUAL_SCALE
+    assert(_polish_gold(instance) == EXPECTED_GOLD)
     return instance
