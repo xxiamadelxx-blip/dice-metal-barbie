@@ -45,7 +45,7 @@ jobs:
           python3 tools/visual/d20_narrow_studio.py build/learned-d20/learned_studio.hdr build/learned-d20/ > build/learned-d20/narrow-studio.log
           grep -F PASS_AUTHORED_NARROW_STUDIO_CARD_MAPS build/learned-d20/narrow-studio.log
           cp build/learned-d20/learned_studio_mobile_narrow*.hdr src/assets/generated/
-          touch build/.gdignore
+          touch build/.gdignore docs/.gdignore
       - name: Import physical GLB and two real HDR files into Godot
         run: |
           timeout 100 godot --headless --path . --editor --import --quit > build/learned-d20/reimport.log 2>&1 || { tail -90 build/learned-d20/reimport.log; exit 1; }
