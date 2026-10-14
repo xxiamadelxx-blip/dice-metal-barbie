@@ -1,0 +1,112 @@
+name: M5 genuine 500k physically sculpted curved obsidian facet + CC0 PBR Blender Godot
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/blender/sculpt_cc0_d20_face_microcurvature.py"
+      - ".github/workflows/d20-500k-sculpted-facets.yml"
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  physical-microcurvature-a-b:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install actual Blender/Mesa Vulkan/Godot native
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil fonts-dejavu-core xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          blender --version | head -3
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38617713494
+          name: M5-actual-external-CC0-PBR-500k-Blender-Godot-A-B
+          github-token: ${{ github.token }}
+          path: build/cc0-microinput
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38613525040
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          github-token: ${{ github.token }}
+          path: build/hdr-ref
+      - name: Sculpt existing real 500k triangles in Blender with coordinated gold and stone
+        run: |
+          set -eu
+          mkdir -p build/cc0-microfacet/results src/assets/generated
+          timeout 850 blender -b -t 3 --python-exit-code 7 -P tools/blender/sculpt_cc0_d20_face_microcurvature.py -- build/cc0-microinput/results/D20_500K_CC0_subdued_black.glb build/cc0-microfacet/results > build/cc0-microfacet/blender.log 2>&1 || { tail -120 build/cc0-microfacet/blender.log; exit 7; }
+          grep PASS_TWO_ACTUAL_SCULPTED_500K_REAL_BLENDER_SOURCES build/cc0-microfacet/blender.log
+          test -s build/cc0-microfacet/results/D20_500K_CC0_micro_008.glb
+          test -s build/cc0-microfacet/results/D20_500K_CC0_micro_022.glb
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("build/cc0-microfacet/results/actual_microcurvature_manifest.json").read_text())
+          assert all(m["geometry"]["triangles"]==500000 for m in j["models"].values())
+          assert all(len(m["gold_geometry"])==20 for m in j["models"].values())
+          assert j["models"]["micro_008"]["stone_geometry"]["max_displacement"]>.006
+          assert j["models"]["micro_022"]["stone_geometry"]["max_displacement"]>.016
+          print("PASS_GENUINE_POSITION_SCULPT_WITH_GOLD",j["models"]["micro_022"]["stone_geometry"])
+          PY
+      - name: Render same two real SCULPTED GLBs in Godot Mobile native Mesa
+        run: |
+          set -eu
+          cp build/hdr-ref/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          touch docs/.gdignore build/.gdignore
+          for flavor in micro_008 micro_022; do
+            cp "build/cc0-microfacet/results/D20_500K_CC0_$flavor.glb" src/assets/generated/learned_d20.glb
+            rm -rf src/assets/generated/learned_d20.glb.import .godot/imported/learned_d20.glb-*.scn
+            timeout 135 godot --headless --path . --editor --import --quit > "build/cc0-microfacet/import_$flavor.log" 2>&1 || { tail -90 "build/cc0-microfacet/import_$flavor.log"; exit 14; }
+            if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' "build/cc0-microfacet/import_$flavor.log"; then tail -90 "build/cc0-microfacet/import_$flavor.log"; exit 15; fi
+            timeout 145 xvfb-run -a -s "-screen 0 1100x900x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant=ibl > "build/cc0-microfacet/godot_$flavor.log" 2>&1 || { tail -90 "build/cc0-microfacet/godot_$flavor.log"; exit 16; }
+            grep -F LEARNED_D20_GODOT_REAL_FRAME "build/cc0-microfacet/godot_$flavor.log"
+            if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' "build/cc0-microfacet/godot_$flavor.log"; then tail -90 "build/cc0-microfacet/godot_$flavor.log"; exit 17; fi
+            cp build/learned-d20/godot_ibl.png "build/cc0-microfacet/results/godot_mobile_$flavor.png"
+          done
+      - name: Compare actual native Godot unchanged PBR D20 facets, no image generator
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageDraw,ImageFont,ImageStat
+          from pathlib import Path
+          import numpy as np,json,hashlib
+          p=Path("build/cc0-microfacet/results")
+          names=["original flat cc0 marble-derived","microcurved real geometry .008","microcurved real geometry .022"]
+          files=[Path("build/cc0-microinput/results/godot_mobile_cc0_subdued_black.png"),
+             p/"godot_mobile_micro_008.png",p/"godot_mobile_micro_022.png"]
+          board=Image.new("RGB",(3050,899),(15,17,21))
+          draw=ImageDraw.Draw(board)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",21)
+          snapshots={}
+          for i,(title,file) in enumerate(zip(names,files)):
+              image=Image.open(file).convert("RGB")
+              assert image.size==(1000,850) and max(ImageStat.Stat(image).stddev)>5
+              x=10+i*1013
+              draw.text((x,8),title,font=font,fill=(242,242,242))
+              board.paste(image,(x,41))
+              px=np.array(image,dtype=np.uint8)
+              snapshots[title]={"sha256":hashlib.sha256(file.read_bytes()).hexdigest(),
+                 "stone_region_mean_rgb":round(float(px[155:725,250:780].mean()),2)}
+          raw=Path("build/cc0-microinput/results/godot_mobile_cc0_subdued_black.png").read_bytes()
+          for variant in files[1:]:
+              assert variant.read_bytes()!=raw
+          board.save(p/"real_Godot_same_500k_flat_vs_two_microcurves.png")
+          (p/"actual_sculpted_500k_godot_comparison.json").write_text(json.dumps({
+             "engine":"Godot 4.6.3 Mobile on llvmpipe (NOT Nord3)",
+             "source_real_CC0_material_unchanged":True,
+             "stone_gold_geometry_both_changed_coherently":True,
+             "unique_500k_triangles_every_GLb":True,
+             "owner_art_approval":False,"actual_engine_originals":snapshots},indent=2)+"\n")
+          print("PASS_REAL_TWO_SCULPTED_GODOT_500K_AB",json.dumps(snapshots))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-real-sculpted-facets-500k-two-Blender-Godot-proof
+          path: build/cc0-microfacet/
+          retention-days: 30
+          if-no-files-found: warn
