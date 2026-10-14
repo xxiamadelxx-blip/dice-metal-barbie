@@ -1,0 +1,100 @@
+name: M5 permanently publish repaired 500k D20 engraving GLB and real Godot screenshots
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/d20-500k-engraving-proof-publish.yml"]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish-only-verified-originals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for fixed genuine full-500k real Blender and Godot CI artifact
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import os,time,json
+          from urllib.request import Request,urlopen
+          base="https://api.github.com/repos/"+os.environ["GITHUB_REPOSITORY"]
+          token=os.environ["GITHUB_TOKEN"]
+          def get(path):
+            req=Request(base+path,headers={"Authorization":"Bearer "+token,
+              "Accept":"application/vnd.github+json","User-Agent":"Dice-evidence-publisher"})
+            with urlopen(req,timeout=20) as r:return json.load(r)
+          for i in range(85):
+            job=get("/actions/runs/38614293661")
+            assets=get("/actions/runs/38614293661/artifacts")
+            matches=[x for x in assets["artifacts"] if x["name"]=="M5-repaired-real-500k-engraving-Blender-Godot" and not x["expired"]]
+            if job["status"]=="completed":
+              assert job["conclusion"]=="success",("Source full CI must be PASS",job["conclusion"])
+              assert matches,("Source artifact missing",assets)
+              print("PASS_SOURCE_GODOT_500K_READY",matches[0]["id"])
+              break
+            print("WAIT_NATIVE_500K_REPAIRED_SOURCE",i,job["status"],flush=True)
+            time.sleep(12)
+          else:raise TimeoutError("Full native source CI did not complete")
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38614293661
+          name: M5-repaired-real-500k-engraving-Blender-Godot
+          github-token: ${{ github.token }}
+          path: build/repaired_source
+      - name: Check exact geometry and real original image pixels
+        run: |
+          python3 - <<'PY'
+          import json,hashlib,struct
+          from pathlib import Path
+          root=Path("build/repaired_source/results")
+          raw=(root/"d20_obsidian_gold_master_500k.glb").read_bytes()
+          assert raw[:4]==b"glTF"
+          assert hashlib.sha256(raw).hexdigest()=="67650874fe979f6b7b82ad0e596fd5ea8d3397c58c50fa0d5cf8e4c83c9edadf"
+          n,t=struct.unpack_from("<II",raw,12)
+          assert t==0x4e4f534a
+          gltf=json.loads(raw[20:20+n])
+          counts=[]
+          for node in gltf["nodes"]:
+            if "mesh" not in node:continue
+            mesh=gltf["meshes"][node["mesh"]]
+            tris=sum(gltf["accessors"][p["indices"]]["count"]//3 for p in mesh["primitives"])
+            counts.append((node["name"],tris))
+          assert sum(x[1] for x in counts)==500000
+          assert sum(x[1] for x in counts if x[0].startswith("Gold_"))==280000
+          assert sum(x[1] for x in counts if x[0].startswith("D20_Engraved"))==220000
+          for file in ("godot_mobile_engraving_500k.png",
+                       "real_engraving_before_after_godot.png",
+                       "blender_cycles_master_500k.png",
+                       "real_engraving_500k_detail.png"):
+              assert (root/file).read_bytes()[:8]==bytes((137,80,78,71,13,10,26,10)),file
+          print("PASS_SOURCE_VERIFIED_REAL_500K_GLB_PNG_GODOT")
+          PY
+      - name: Preserve exact unmodified real engine screenshots and 500k GLB in isolated feature branch
+        run: |
+          set -eu
+          dst=docs/evidence/m5-repaired-engraving-500k-2026-10-14
+          mkdir -p "$dst"
+          src=build/repaired_source/results
+          for file in d20_obsidian_gold_master_500k.glb \
+                      godot_mobile_engraving_500k.png \
+                      blender_cycles_master_500k.png \
+                      real_engraving_before_after_godot.png \
+                      real_engraving_500k_detail.png \
+                      manifest_actual_gltf_500k.json \
+                      manifest_blender.json \
+                      real_screenshot_sha256.json; do
+            cp "$src/$file" "$dst/$file"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$dst"
+          if git diff --cached --quiet; then echo "ALREADY_SAVED"; else
+            git commit -m "evidence(m5): fixed real Boolean digits 500k GLB and native Godot before-after"
+            git pull --rebase origin experiment/m5-learn-codex-d20
+            git push origin HEAD:refs/heads/experiment/m5-learn-codex-d20
+          fi
