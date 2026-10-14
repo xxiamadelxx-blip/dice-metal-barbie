@@ -2,16 +2,16 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 premium obsidian D20: real Godot split-bevel regression PASS; user-selected free Blendkit material intake denied HTTP 403 in two actual CI runs; original GLB preserved",
+    "task": "M5 D20 premium obsidian: genuine 4-way Godot Mobile HDR studio A/B published and technically PASS; selected Blendkit asset still 403; owner artistic acceptance open",
     "route": "creative-3d",
     "status": "not_verified",
-    "owner": "Next Dice Blender/Godot art agent, canonical GitHub experiment handoff",
-    "next_action": "No third anonymous API replay. Use only legitimately retrieved original Blendkit .blend with tools/materials/preview_blendkit_on_d20.py, or continue reversible lookdev on existing independently authored D20 while clearly marking material not exact. After actual source Cycles renders, bake PBR textures to GLB, inspect channel bytes, compare actual Godot 4.6.3 Mobile frames and canonical Codex reference; do not integrate APK before owner signoff.",
+    "owner": "Next Dice Blender/Godot visual agent, GitHub evidence current",
+    "next_action": "Inspect real originals at docs/evidence/m5-d20-blackglass-2026-10-14/real_godot_mobile_blackglass_2x2.png and research/M5_D20_BLACKGLASS_STUDIO_REAL_GODOT_2026-10-14.md. The native four-way renderer passed (CI #38593819713) and proved new black HDR source variance, but do NOT promote darkest setting on numeric luma alone. Chosen BlenderKit Procedural Obsidian remains inaccessible by anonymous API (two actual 403, do not replay). Once legitimately obtained, test Blender material .blend in tools/materials/preview_blendkit_on_d20.py then actual PBR bake→GLB→Godot Mobile A/B; preserve existing approved Jolt and M4 PR #23 untouched until real user art approval.",
     "blockers": [
-      "Selected Blenderkit Procedural Obsidian asset ID 92e31cbc-5b4e-4ead-a966-84bf106808c3: public API search returned 403 twice (run 38590931873 and documented-protocol 38591644762); third-party asset bytes, exact license metadata, and Cycles PNG not obtained. Stop repeated anonymous attempts.",
-      "Actual user-approved black polished gemstone with deeply inset gold lettering remains ART NOT_VERIFIED; original renderer output retains some gray facets.",
-      "New selected material was never baked/exported/imported to Godot, so material fidelity in Godot Mobile NOT_VERIFIED. M4 PR #23 visual D4 and AVD gates still red/unaccepted.",
-      "Real Jolt roll face/visual agreement on new candidate, Android AVD interactive app and OnePlus Nord 3 FPS/thermal offline install remain NOT_VERIFIED."
+      "Owner-selected exact Blendkit material UUID 92e31cbc-5b4e-4ead-a966-84bf106808c3 denied HTTP 403 in actual unattended public API runs #38590931873 and #38591644762. No rights-confirmed original .blend retrieved. Do not bypass or claim substitute equals selected material.",
+      "Real black-glass studio test completed CI #38593819713 and published four original Godot frames, but numeric lower gray facets != verified premium glossy OBSIDIAN or user art acceptance. No independent visual critic performed.",
+      "Source model is independently authored lookdev GLB ec7bcee0..., not the privately supplied Codex GLB. Selected Blenderkit procedural texture bake and Godot runtime transfer NOT VERIFIED.",
+      "New art/Jolt face mapping, 24fps animated sequences, 6/9 legibility, Android AVD and real Nord3 GPU/FPS are NOT VERIFIED. M4 PR #23 has unresolved source-gate failures; do not merge/overwrite."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -130,13 +130,18 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38590355911",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38590931873",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_SELECTED_BLENDKIT_OBSIDIAN_SOURCE_GATE_2026-10-14.md",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38591644762"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38591644762",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38593132441",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38593819713",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38593819713/artifacts/11909436065",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/evidence/m5-d20-blackglass-2026-10-14/real_godot_mobile_blackglass_2x2.png",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_D20_BLACKGLASS_STUDIO_REAL_GODOT_2026-10-14.md"
     ],
-    "last_observed_sha": "b6b4adf84f5c9877c6ff5e756ba88638bed65d3e",
+    "last_observed_sha": "3fbc279280b63700c035a5ae3d5ece94511a8929",
     "last_verified_sha": "",
     "branch": "experiment/m5-learn-codex-d20",
     "updated_at": "2026-10-14",
-    "verification_note": "SOURCE-PROVEN: Good Godot Mobile/Mesa split-bevel BRDF regression at c366362, actual CI 38590355911 completed success. Source intake run 38590931873 failed HTTP 403 and updated addon-contract run 38591644762 also failed HTTP 403. Both ran actual GitHub Actions in container with Blender installed and source GLB hash verified; zero material preview PNGs. No local Godot/Blender executables in current container; router CLI NOT_VERIFIED. PR #23 and main untouched."
+    "verification_note": "Router entry via GitHub connector (no complete local working tree available, CLI enter NOT_VERIFIED). User-approved creative-3d route. Main 5f9333c; PR #23 draft 8ec1d7f untouched. Native Godot Mobile/Mesa at source SHA ef688293cd0e39797bbdb825f90e311d30470424: exact GLB SHA verified, true RGBE HDR, PBR material preserved, all four source PNG captures, pixel-variance gate PASS. First run #38593132441 failed after verified renders on container git config, recovered through Git Data API nonforce commit. Exact-source rerun #38593819713 SUCCESS, original 1000x850 screenshots and 2032x1792 comparison committed as f69f355c90c5803c87f48e8cb31edc5f17db8fe6. Pixel numeric ROI brightness values 58.17/43.42/45.75/40.49 are diagnostic only. Independent artistic/owner visual reviewer and physical Android NOT VERIFIED."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
