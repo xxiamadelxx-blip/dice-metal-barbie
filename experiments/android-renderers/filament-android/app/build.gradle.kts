@@ -21,8 +21,8 @@ android {
     }
 }
 dependencies {
-    implementation("com.google.android.filament:filament-android:1.77.3")
-    implementation("com.google.android.filament:gltfio-android:1.77.3")
-    implementation("com.google.android.filament:filament-utils-android:1.77.3")
+    implementation("com.google.android.filament:filament-android:1.57.1")
+    implementation("com.google.android.filament:gltfio-android:1.57.1")
+    implementation("com.google.android.filament:filament-utils-android:1.57.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
