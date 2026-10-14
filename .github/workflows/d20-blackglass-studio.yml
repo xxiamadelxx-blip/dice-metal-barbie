@@ -1,0 +1,150 @@
+name: M5 actual Godot D20 polished-black studio source frames
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/visual/d20_blackglass_studio.py"
+      - "tools/visual/d20_brdf_lab_capture.gd"
+      - ".github/workflows/d20-blackglass-studio.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: m5-actual-blackglass-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  actual-godot-mobile:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install actual Mesa Vulkan, NumPy, Pillow and font
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-numpy python3-pil xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers fonts-dejavu-core fontconfig libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0 git
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          run-id: 38281898713
+          github-token: ${{ github.token }}
+          path: build/learned-d20
+      - name: Fix input GLB, authored real HDR and controls
+        run: |
+          set -eu
+          echo "ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f  build/learned-d20/learned_d20.glb" | sha256sum --check
+          mkdir -p src/assets/generated
+          cp build/learned-d20/learned_d20.glb src/assets/generated/learned_d20.glb
+          cp build/learned-d20/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          python3 tools/visual/d20_hdr_alignment.py build/learned-d20/learned_studio.hdr build/learned-d20/learned_studio_mobile_aligned.hdr > build/learned-d20/hdr-axes.log
+          python3 tools/visual/d20_narrow_studio.py build/learned-d20/learned_studio.hdr build/learned-d20 > build/learned-d20/narrow-reference.log
+          python3 tools/visual/d20_blackglass_studio.py build/learned-d20 > build/learned-d20/blackglass-source.log
+          grep -F PASS_PHYSICAL_BLACKGLASS_HDR_VARIANTS build/learned-d20/blackglass-source.log
+          cp build/learned-d20/learned_studio_mobile_narrow*.hdr src/assets/generated/
+          cp build/learned-d20/learned_studio_mobile_black*.hdr src/assets/generated/
+          touch build/.gdignore
+      - name: Real Godot 4.6.3 Mobile import
+        run: |
+          set -eu
+          timeout 120 godot --headless --path . --editor --import --quit > build/learned-d20/import-blackglass.log 2>&1 || { tail -100 build/learned-d20/import-blackglass.log; exit 1; }
+          if grep -E 'SCRIPT ERROR:|Parse Error|Invalid call|ERROR:' build/learned-d20/import-blackglass.log | grep -vF 'Unable to load fontconfig'; then
+            tail -100 build/learned-d20/import-blackglass.log
+            exit 23
+          fi
+      - name: Four original unretouched Godot Mobile screenshots, same GLB
+        run: |
+          set -eu
+          for variant in brdf_ref black40_lowfill black40_specular black33_specular; do
+            timeout 145 xvfb-run -a -s "-screen 0 1000x850x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/d20_brdf_lab_capture.gd -- --variant="$variant" > "build/learned-d20/blackglass-$variant.log" 2>&1 || { tail -100 "build/learned-d20/blackglass-$variant.log"; exit 30; }
+            grep -F LEARNED_D20_SEPARATE_SURFACES_OK "build/learned-d20/blackglass-$variant.log"
+            grep -F LEARNED_D20_GODOT_REAL_FRAME "build/learned-d20/blackglass-$variant.log"
+            test -s "build/learned-d20/godot_$variant.png"
+            if grep -Eq 'SCRIPT ERROR:|Parse Error|Invalid call|GDScript backtrace|ERROR:' "build/learned-d20/blackglass-$variant.log";then
+              tail -90 "build/learned-d20/blackglass-$variant.log"
+              exit 31
+            fi
+          done
+      - name: Confirm raw pixels differ; create large unretouched comparison and SHA report
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          import numpy as np
+          from PIL import Image,ImageDraw,ImageFont,ImageStat
+          root=Path("build/learned-d20")
+          names=["brdf_ref","black40_lowfill","black40_specular","black33_specular"]
+          labels=["A | CONTROL - PREVIOUS WIDE GREY", "B | DARKER SKY / 40% CARDS",
+                  "C | DARK SKY / 40% BRIGHT CARDS", "D | DARK SKY / 33% BRIGHT CARDS"]
+          imgs=[];stats={}
+          for n in names:
+              p=root/f"godot_{n}.png"
+              with Image.open(p) as image:
+                  img=image.convert("RGB").copy()
+              assert img.size==(1000,850),(p,img.size)
+              assert max(ImageStat.Stat(img).stddev)>6,(n,"blank frame")
+              pixels=np.asarray(img)[155:725,250:780,:].astype(np.float32)
+              stats[n]={"file_sha256":hashlib.sha256(p.read_bytes()).hexdigest(),
+                        "mean_roi_rgb":round(float(pixels.mean()),2),
+                        "bright_fraction_100":round(float((pixels.mean(axis=2)>100).mean()),4)}
+              imgs.append(img)
+          orig=np.asarray(imgs[0])[155:725,250:780,:].astype(np.int16)
+          for i in range(1,len(names)):
+              image=np.asarray(imgs[i])[155:725,250:780,:].astype(np.int16)
+              delta=np.abs(orig-image)
+              stats[names[i]]["mean_absolute_change"]=round(float(delta.mean()),3)
+              stats[names[i]]["pixels_changed_gt8_fraction"]=round(float((delta.max(axis=2)>8).mean()),4)
+              assert stats[names[i]]["pixels_changed_gt8_fraction"]>.01, "Source sky had no real visible effect"
+          board=Image.new("RGB",(2032,1792),(18,21,25))
+          draw=ImageDraw.Draw(board)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",22)
+          for i,(label,im) in enumerate(zip(labels,imgs)):
+              x=10+(i%2)*1014
+              y=34+(i//2)*886
+              draw.text((x,y-27),label,font=font,fill=(250,250,250))
+              board.paste(im,(x,y))
+          output=root/"real_godot_mobile_blackglass_2x2.png"
+          board.save(output)
+          report={"engine":"Godot 4.6.3 Mobile / Mesa software Vulkan",
+                  "source_glb_sha256":"ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f",
+                  "same_geometry_physical_mapping":True,
+                  "material_albedo_normal_roughness_unchanged":True,
+                  "desktop_mesa_not_android":True,
+                  "source_git_sha":"${{ github.sha }}",
+                  "pixel_diagnostics_not_aesthetic_acceptance":stats,
+                  "board_sha256":hashlib.sha256(output.read_bytes()).hexdigest()}
+          (root/"blackglass-real-source-metrics.json").write_text(json.dumps(report,indent=2)+"\n")
+          print("PASS_UNALTERED_GODOT_MOBILE_BLACKGLASS_AB",json.dumps(stats))
+          PY
+      - name: Publish genuine four PNG sources so owner can zoom them in GitHub
+        if: success()
+        run: |
+          set -eu
+          dest=docs/evidence/m5-d20-blackglass-2026-10-14
+          mkdir -p "$dest"
+          cp build/learned-d20/godot_brdf_ref.png "$dest/"
+          cp build/learned-d20/godot_black40_lowfill.png "$dest/"
+          cp build/learned-d20/godot_black40_specular.png "$dest/"
+          cp build/learned-d20/godot_black33_specular.png "$dest/"
+          cp build/learned-d20/real_godot_mobile_blackglass_2x2.png "$dest/"
+          cp build/learned-d20/blackglass-real-source-metrics.json "$dest/"
+          cp build/learned-d20/blackglass-studio-source.json "$dest/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$dest"
+          if git diff --cached --quiet; then
+            echo "PREVIEW_EVIDENCE_ALREADY_PUBLISHED"
+          else
+            git commit -m "evidence(m5): authentic Godot Mobile D20 black-studio screenshots"
+            git push origin "HEAD:refs/heads/experiment/m5-learn-codex-d20"
+          fi
+      - name: Preserve source PNGs, HDR and logs even if a gate fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: REAL-D20-blackglass-Godot-Mobile-sources
+          path: build/learned-d20/
+          retention-days: 14
+          if-no-files-found: warn
