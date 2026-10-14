@@ -1,0 +1,22 @@
+{
+  "as_downloaded": {
+    "godot_png_sha256": "3abaf348d58e350153ef191714bfdc587b2214024004a23950b608934faa94df",
+    "contrast_stddev": [
+      20.667862580191006,
+      18.26095671251521,
+      17.756098918992876
+    ],
+    "render": "ACTUAL Godot Mobile Vulkan on Mesa llvmpipe",
+    "not_physical_Nord3": true
+  },
+  "subdued_black": {
+    "godot_png_sha256": "57044a51c4a85687f49485aef04413937bdcfec411010968cb3dda240d9bb225",
+    "contrast_stddev": [
+      15.211488012382965,
+      14.291522766512262,
+      13.237388560738621
+    ],
+    "render": "ACTUAL Godot Mobile Vulkan on Mesa llvmpipe",
+    "not_physical_Nord3": true
+  }
+}

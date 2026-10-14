@@ -1,0 +1,111 @@
+{
+  "source_master_sha256": "67650874fe979f6b7b82ad0e596fd5ea8d3397c58c50fa0d5cf8e4c83c9edadf",
+  "real_external_CC0_maps": [
+    {
+      "file": "baseColor.png",
+      "original_path": "stone-nero-marquina-1k/baseColor.png",
+      "sha256": "8f69af8601b9eade6e8a807310b4bffca5f718600276f60d17cfdffa67b5a134",
+      "resolution": [
+        1024,
+        1024
+      ],
+      "mean_rgb": [
+        41.6,
+        40.42,
+        38.92
+      ]
+    },
+    {
+      "file": "height.png",
+      "original_path": "stone-nero-marquina-1k/height.png",
+      "sha256": "41f39ac4e91fd8f83689c3e40dc1e8aee50a9a986fa5a5deba4a3164a884736a",
+      "resolution": [
+        1024,
+        1024
+      ],
+      "mean_rgb": [
+        141.46,
+        141.46,
+        141.46
+      ]
+    },
+    {
+      "file": "normal.png",
+      "original_path": "stone-nero-marquina-1k/normal.png",
+      "sha256": "6ec048d99e0fa9f6f40811027321bc4368b947e7934921cede560ddaa9ba0982",
+      "resolution": [
+        1024,
+        1024
+      ],
+      "mean_rgb": [
+        127.08,
+        127.04,
+        255.0
+      ]
+    },
+    {
+      "file": "roughness.png",
+      "original_path": "stone-nero-marquina-1k/roughness.png",
+      "sha256": "dd73703a85289be83e3ecdb2061496b66c63726e4c55f57e1db47d66649f546d",
+      "resolution": [
+        1024,
+        1024
+      ],
+      "mean_rgb": [
+        13.0,
+        13.0,
+        13.0
+      ]
+    },
+    {
+      "file": "ambientOcclusion.png",
+      "original_path": "stone-nero-marquina-1k/ambientOcclusion.png",
+      "sha256": "3719b4a7b1f6140b8c9d46e7edd91520e5c24e26bc536d00e70348172744613b",
+      "resolution": [
+        1024,
+        1024
+      ],
+      "mean_rgb": [
+        254.9,
+        254.9,
+        254.9
+      ]
+    }
+  ],
+  "original_selected_BlenderKit_material_applied": false,
+  "alternate_material_publisher": "ProcTexture Nero Marquina, NOT actual obsidian",
+  "texture_modification_subdued_black": "neutral black mapping and real original normal/roughness; documented transformation",
+  "no_purple_light": true,
+  "gold_geometry_and_material_not_replaced": true,
+  "blender_variants": {
+    "as_downloaded": {
+      "path": "/__w/dice-metal-barbie/dice-metal-barbie/build/pbr-godot/results/D20_500K_CC0_as_downloaded.glb",
+      "sha256": "8e9098cec4dc9224edca56181b197f5debe83f6be32aa627966c32ee286cebb7",
+      "file_bytes": 16828772,
+      "glb_indexed_triangles": 500000,
+      "stone_triangles": 220000,
+      "gold_triangles": 280000,
+      "meshes": 21,
+      "materials": 2,
+      "basecolor_is_from_real_cc0_source": true,
+      "original_selected_blenderkit_obsidian": false,
+      "variant": "as_downloaded",
+      "blender_real_png_sha256": "b7c2f7a190c140563fc84410969e1f7e94a9f105f0983dbc791ab1a3b50cf756"
+    },
+    "subdued_black": {
+      "path": "/__w/dice-metal-barbie/dice-metal-barbie/build/pbr-godot/results/D20_500K_CC0_subdued_black.glb",
+      "sha256": "6def24e17a3fbbf2d6e2861ae4775b61e0b6928d8170c12fdd6a48412270ef6e",
+      "file_bytes": 16557164,
+      "glb_indexed_triangles": 500000,
+      "stone_triangles": 220000,
+      "gold_triangles": 280000,
+      "meshes": 21,
+      "materials": 2,
+      "basecolor_is_from_real_cc0_source": true,
+      "original_selected_blenderkit_obsidian": false,
+      "variant": "subdued_black",
+      "blender_real_png_sha256": "386aba018cb453bc97f5ed09de465a545a7e6b0e4522f36d78f3455f7040ad73"
+    }
+  },
+  "mobile_phone_fps": "NOT_VERIFIED"
+}
