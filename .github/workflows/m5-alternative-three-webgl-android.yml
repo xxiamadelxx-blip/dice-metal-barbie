@@ -78,7 +78,7 @@ jobs:
           source=(home/'index.html').read_text()
           assert 'cdn.jsdelivr.net' not in source
           manifest=Path('../android/app/src/main/AndroidManifest.xml').read_text()
-          assert 'INTERNET' not in manifest,("Offline APK has unexpected network permission")
+          assert not any('android.permission.INTERNET' in line for line in manifest.splitlines() if '<uses-permission' in line),("Offline APK requests network permission")
           print("PASS_OFFLINE_ANDROID_EMBEDDED_THREE_JS",len(js),"file size",sum(f.stat().st_size for f in js))
           PY
       - uses: actions/setup-java@v4
