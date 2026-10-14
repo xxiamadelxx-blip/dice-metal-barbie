@@ -1,0 +1,47 @@
+name: M5 Three.js standalone Android AVD actual screen verification
+on:
+  push:
+    branches: [experiment/m5-android-renderer-alternatives]
+    paths: [".github/workflows/m5-three-webview-android-avd-verify.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  actual-android-emulator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Allow Android hardware acceleration if available
+        run: |
+          if test -e /dev/kvm; then
+            sudo chmod 666 /dev/kvm
+            echo "KVM available"
+          else
+            echo "KVM absent; software emulator only"
+          fi
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38654290130
+          name: M5-ThreeJS-Android-WebView-real-offline-debug-APK
+          path: build/avd-apk
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-boot-timeout: 720
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: bash experiments/android-renderers/android/tests/avd_smoke.sh
+      - name: Preserve ONLY real Android emulator PNG and logs (no GLB license)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: M5-ThreeJS-Android-real-AVD-install-screen-logcat
+          path: build/avd-original-pixels/
+          retention-days: 21
+          if-no-files-found: warn
