@@ -118,6 +118,12 @@ jobs:
             exit 34
           fi
           cp build/learned-d20/godot_ibl.png build/repaired500k/results/godot_mobile_engraving_500k.png
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38607312075
+          name: M5-real-unique-500000-D20-GLB-Blender-Godot-Cycles
+          github-token: ${{ github.token }}
+          path: build/previous500k
       - name: Prepare actual source crops for sidewall, 16/20 and gold edge visual audit
         run: |
           python3 - <<'PY'
@@ -127,13 +133,13 @@ jobs:
           root=Path("build/repaired500k/results")
           shot=Image.open(root/"godot_mobile_engraving_500k.png").convert("RGB")
           assert shot.size==(1000,850) and max(ImageStat.Stat(shot).stddev)>5
-          original=Image.open("build/repaired500k/source/godot_ibl.png").convert("RGB")
+          original=Image.open("build/previous500k/results/godot_mobile_master_500k.png").convert("RGB")
           assert original.size==(1000,850)
           combined=Image.new("RGB",(2040,905),(15,17,20))
           draw=ImageDraw.Draw(combined)
           font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",21)
-          draw.text((16,8),"BEFORE: original exact source GLB, Godot Mobile",font=font,fill=(245,245,245))
-          draw.text((1032,8),"AFTER: corrected font/Boolean bevel 500k GLB, Godot Mobile",font=font,fill=(245,245,245))
+          draw.text((16,8),"BEFORE: original old 500k GLB, Godot Mobile",font=font,fill=(245,245,245))
+          draw.text((1032,8),"AFTER: repaired 500k GLB text/Boolean bevel, Godot Mobile",font=font,fill=(245,245,245))
           combined.paste(original,(10,40))
           combined.paste(shot,(1030,40))
           combined.save(root/"real_engraving_before_after_godot.png")
@@ -143,7 +149,7 @@ jobs:
           files=["godot_mobile_engraving_500k.png","real_engraving_before_after_godot.png","real_engraving_500k_detail.png",
                  "blender_cycles_master_500k.png"]
           diag={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in files}
-          (root/"real_screenshot_sha256.json").write_text(json.dumps({"real_render_pixels":True,"same_material_reference":False,
+          (root/"real_screenshot_sha256.json").write_text(json.dumps({"real_render_pixels":True,"old_and_new_pbr_are_own_authored_not_web_asset":True,
                 "image_shas":diag,
                 "owner_visual_review":"PENDING",
                 "material_from_selected_site":"NO"},indent=2)+"\n")
