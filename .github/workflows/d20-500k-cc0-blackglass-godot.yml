@@ -1,4 +1,4 @@
-name: M5 genuine CC0 black-stone 500k GLB 3 black-glass Godot lighting variants
+name: M5 black obsidian 500k actual CC0 GLB direct-light isolation on Godot Mobile
 on:
   push:
     branches: [experiment/m5-learn-codex-d20]
@@ -55,7 +55,7 @@ jobs:
       - name: Capture three genuine Mobile Renderer frames with the SAME 500k PBR die
         run: |
           set -eu
-          for flavor in black40_lowfill black40_specular black33_specular; do
+          for flavor in black40_lowfill_no_omni black33_specular_no_omni black40_specular_half_omni; do
             timeout 140 xvfb-run -a -s "-screen 0 1100x900x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/d20_brdf_lab_capture.gd -- --variant="$flavor" > "build/cc0-blackglass/$flavor.log" 2>&1 || { tail -90 "build/cc0-blackglass/$flavor.log"; exit 23; }
             grep -F "LEARNED_D20_GODOT_REAL_FRAME" "build/cc0-blackglass/$flavor.log"
             if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' "build/cc0-blackglass/$flavor.log"; then tail -100 "build/cc0-blackglass/$flavor.log"; exit 25; fi
@@ -69,7 +69,7 @@ jobs:
           from PIL import Image,ImageDraw,ImageFont,ImageStat
           import numpy as np
           p=Path("build/cc0-blackglass")
-          names=["original_IBL","black40_lowfill","black40_specular","black33_specular"]
+          names=["original_IBL","black40_lowfill_no_omni","black33_specular_no_omni","black40_specular_half_omni"]
           files=[Path("build/cc0-500k-upstream/results/godot_mobile_cc0_subdued_black.png")]+[p/("godot_"+x+".png") for x in names[1:]]
           board=Image.new("RGB",(2040,1795),(15,16,20))
           d=ImageDraw.Draw(board)
@@ -99,7 +99,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: M5-500K-CC0-black-polished-stone-4-real-Godot-renders
+          name: M5-500K-CC0-black-stone-noOmni-3-real-Godot-frames
           path: build/cc0-blackglass/
           retention-days: 30
           if-no-files-found: warn
