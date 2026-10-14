@@ -1,0 +1,103 @@
+{
+  "source_glb_sha256": "ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f",
+  "master_glb_sha256": "b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e",
+  "master_glb_bytes": 19361020,
+  "real_unique_rendered_triangles": 500000,
+  "stone_tris": 212464,
+  "gold_tris": 287536,
+  "mesh_count": 21,
+  "gold_glyph_meshes": 20,
+  "source_materials": [
+    "PolishedObsidian",
+    "PolishedObsidian_EdgeSatin",
+    "GoldRecessedNoEmission"
+  ],
+  "actual_external_original_obsidian_material_downloaded": false,
+  "model_not_multimesh": true,
+  "parts": [
+    {
+      "name": "D20_Engraved_Obsidian",
+      "triangles": 212464
+    },
+    {
+      "name": "Gold_02",
+      "triangles": 11210
+    },
+    {
+      "name": "Gold_01",
+      "triangles": 1484
+    },
+    {
+      "name": "Gold_03",
+      "triangles": 20662
+    },
+    {
+      "name": "Gold_04",
+      "triangles": 2464
+    },
+    {
+      "name": "Gold_05",
+      "triangles": 14224
+    },
+    {
+      "name": "Gold_06",
+      "triangles": 20000
+    },
+    {
+      "name": "Gold_07",
+      "triangles": 1210
+    },
+    {
+      "name": "Gold_08",
+      "triangles": 26326
+    },
+    {
+      "name": "Gold_09",
+      "triangles": 20000
+    },
+    {
+      "name": "Gold_10",
+      "triangles": 14634
+    },
+    {
+      "name": "Gold_12",
+      "triangles": 12694
+    },
+    {
+      "name": "Gold_11",
+      "triangles": 2968
+    },
+    {
+      "name": "Gold_15",
+      "triangles": 15708
+    },
+    {
+      "name": "Gold_14",
+      "triangles": 3950
+    },
+    {
+      "name": "Gold_13",
+      "triangles": 22148
+    },
+    {
+      "name": "Gold_17",
+      "triangles": 2694
+    },
+    {
+      "name": "Gold_16",
+      "triangles": 21484
+    },
+    {
+      "name": "Gold_20",
+      "triangles": 24382
+    },
+    {
+      "name": "Gold_19",
+      "triangles": 21484
+    },
+    {
+      "name": "Gold_18",
+      "triangles": 27810
+    }
+  ]
+}

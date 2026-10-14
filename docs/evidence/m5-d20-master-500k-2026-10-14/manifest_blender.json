@@ -1,0 +1,16 @@
+{
+  "authoring": "Blender true imported/modified mesh; no instancing",
+  "source_glb_sha256": "ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f",
+  "exported_glb_sha256": "b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e",
+  "exported_glb_bytes": 19361020,
+  "triangle_count_blender_before_export": 500000,
+  "stone_tris": 212464,
+  "gold_tris": 287536,
+  "stone_blender_object": "D20_Engraved_Obsidian",
+  "gold_meshes": 20,
+  "materials_from_original_gltf": true,
+  "selected_blenderkit_material_obtained": false,
+  "physics_and_android_tests": "NOT_RUN",
+  "artistic_quality": "NOT_ACCEPTED",
+  "blender_version": "4.0.2"
+}
