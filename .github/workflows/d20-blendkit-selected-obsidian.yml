@@ -1,0 +1,84 @@
+name: M5 user-selected free Blendkit obsidian real D20 Blender proof
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/materials/probe_blendkit_obsidian.py"
+      - "tools/materials/preview_blendkit_on_d20.py"
+      - ".github/workflows/d20-blendkit-selected-obsidian.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: selected-free-obsidian-real-blender
+  cancel-in-progress: true
+jobs:
+  material-source-and-cycles:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install actual Blender CPU rendering and image inspection
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil fonts-dejavu-core
+          blender --version
+      - uses: actions/download-artifact@v4
+        with:
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          run-id: 38281898713
+          github-token: ${{ github.token }}
+          path: build/learned-d20
+      - name: Verify unchanged input mesh with 20 real inset gold numbers
+        run: |
+          mkdir -p build/selected-obsidian
+          echo "ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f  build/learned-d20/learned_d20.glb" | sha256sum --check
+      - name: Anonymous license-guarded download of exact selected Blendkit material
+        run: |
+          python3 tools/materials/probe_blendkit_obsidian.py \
+            --download-to /tmp/dice-selected-free-obsidian.blend \
+            --manifest build/selected-obsidian/source-manifest.json
+      - name: Apply selected procedural shader to original D20 faces ONLY; render real Cycles
+        run: |
+          blender -b -t 3 --python-exit-code 2 \
+            --python tools/materials/preview_blendkit_on_d20.py \
+            -- /tmp/dice-selected-free-obsidian.blend \
+            build/learned-d20/learned_d20.glb build/selected-obsidian \
+            > build/selected-obsidian/blender-render.log 2>&1 || { tail -100 build/selected-obsidian/blender-render.log; exit 30; }
+          grep -F PASS_REAL_CYCLES_SELECTED_OBSIDIAN_D20 build/selected-obsidian/blender-render.log
+      - name: Validate original Blender image pixels and publication safety
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          from PIL import Image,ImageStat
+          d=Path("build/selected-obsidian")
+          mat=json.loads((d/"source-manifest.json").read_text())
+          audit=json.loads((d/"preview_manifest.json").read_text())
+          assert mat["status"]=="ANONYMOUS_FREE_ASSET_DOWNLOADED",mat
+          assert audit["faces_replaced"]==1 and audit["bevel_surfaces_unchanged"]>=1,audit
+          assert audit["gold_meshes_unchanged"]==20 and not audit["jolt_physics_modified"],audit
+          manifest={}
+          for filename in ("blendkit_obsidian_d20_oblique.png","blendkit_obsidian_d20_overhead.png"):
+              p=d/filename
+              with Image.open(p) as source:
+                  im=source.convert("RGB")
+              assert im.size==(1000,850),(filename,im.size)
+              assert max(ImageStat.Stat(im).stddev)>6,(filename,"uniform fake/blank frame")
+              manifest[filename]={"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),
+                                  "size":list(im.size)}
+          (d/"pixel-manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
+          assert not list(d.glob("*.blend")), "Royalty-free raw material must stay outside artifact"
+          print("PASS_REAL_UNRETOUCHED_BLENDKIT_OBSIDIAN_RENDER",manifest)
+          PY
+      - name: Publish original rendered PNGs and audit ONLY, never source material .blend
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selected-Blendkit-obsidian-real-Blender-D20-previews
+          path: build/selected-obsidian/
+          retention-days: 14
+          if-no-files-found: warn
