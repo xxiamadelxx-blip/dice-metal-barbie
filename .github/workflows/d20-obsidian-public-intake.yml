@@ -1,0 +1,41 @@
+name: M5 public obsidian materials and 3D models legal intake
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/materials/audit_obsidian_public_sources.py"
+      - ".github/workflows/d20-obsidian-public-intake.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-10-sources:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python-only license-aware public catalog parsing
+        run: |
+          set -eu
+          python3 -m py_compile tools/materials/audit_obsidian_public_sources.py
+          timeout 170 python3 tools/materials/audit_obsidian_public_sources.py build/material-intake | tee build-source-report.log
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path("build/material-intake/polished_obsidian_public_source_audit.json")
+          j=json.loads(p.read_text())
+          assert len(j["candidates"])==10
+          assert not j["pbr_png_files_downloaded"]
+          assert j["candidates"][0]["priority"]=="OWNER_SELECTED"
+          assert all(x["status"]!="NOT_REQUESTED" for x in j["candidates"])
+          print("PASS_REAL_PUBLIC_OBSIDIAN_CATALOG_10",[(x["name"],x["status"]) for x in j["candidates"]])
+          PY
+      - name: Preserve observed source data, no third-party files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: M5-legal-free-obsidian-models-and-PBR-source-audit
+          path: |
+            build/material-intake/
+            build-source-report.log
+          retention-days: 21
+          if-no-files-found: warn
