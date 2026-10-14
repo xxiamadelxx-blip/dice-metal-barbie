@@ -118,28 +118,67 @@ jobs:
           (root/"blackglass-real-source-metrics.json").write_text(json.dumps(report,indent=2)+"\n")
           print("PASS_UNALTERED_GODOT_MOBILE_BLACKGLASS_AB",json.dumps(stats))
           PY
-      - name: Publish genuine four PNG sources so owner can zoom them in GitHub
+      - name: Publish original source frames through GitHub Git Data API
         if: success()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          set -eu
-          dest=docs/evidence/m5-d20-blackglass-2026-10-14
-          mkdir -p "$dest"
-          cp build/learned-d20/godot_brdf_ref.png "$dest/"
-          cp build/learned-d20/godot_black40_lowfill.png "$dest/"
-          cp build/learned-d20/godot_black40_specular.png "$dest/"
-          cp build/learned-d20/godot_black33_specular.png "$dest/"
-          cp build/learned-d20/real_godot_mobile_blackglass_2x2.png "$dest/"
-          cp build/learned-d20/blackglass-real-source-metrics.json "$dest/"
-          cp build/learned-d20/blackglass-studio-source.json "$dest/"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$dest"
-          if git diff --cached --quiet; then
-            echo "PREVIEW_EVIDENCE_ALREADY_PUBLISHED"
-          else
-            git commit -m "evidence(m5): authentic Godot Mobile D20 black-studio screenshots"
-            git push origin "HEAD:refs/heads/experiment/m5-learn-codex-d20"
-          fi
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+
+          repo=os.environ["GITHUB_REPOSITORY"]
+          token=os.environ["GITHUB_TOKEN"]
+          base=f"https://api.github.com/repos/{repo}"
+          branch="experiment/m5-learn-codex-d20"
+          root=Path("build/learned-d20")
+          files=[
+            "godot_brdf_ref.png",
+            "godot_black40_lowfill.png",
+            "godot_black40_specular.png",
+            "godot_black33_specular.png",
+            "real_godot_mobile_blackglass_2x2.png",
+            "blackglass-real-source-metrics.json",
+            "blackglass-studio-source.json"]
+          def api(method,path,body=None):
+              data=json.dumps(body).encode("utf-8") if body is not None else None
+              request=Request(base+path,data=data,method=method,
+                headers={"Authorization":"Bearer "+token,
+                         "Accept":"application/vnd.github+json",
+                         "X-GitHub-Api-Version":"2022-11-28",
+                         "Content-Type":"application/json",
+                         "User-Agent":"Dice-M5-proof-github-action"})
+              with urlopen(request,timeout=90) as resp:
+                  return json.loads(resp.read().decode("utf-8"))
+
+          head=api("GET","/git/ref/heads/"+branch)["object"]["sha"]
+          head_tree=api("GET","/git/commits/"+head)["tree"]["sha"]
+          items=[]
+          for name in files:
+              content=(root/name).read_bytes()
+              assert len(content)>40,(name,"empty")
+              is_png=name.endswith(".png")
+              if is_png:
+                  assert content.startswith(b"\x89PNG\r\n\x1a\n"),"PNG signature mismatch: "+name
+              blob=api("POST","/git/blobs",{"content":base64.b64encode(content).decode("ascii"),
+                                           "encoding":"base64"})["sha"]
+              items.append({"path":"docs/evidence/m5-d20-blackglass-2026-10-14/"+name,
+                            "mode":"100644","type":"blob","sha":blob})
+              print("PROVEN_SOURCE_BLOB",name,hashlib.sha256(content).hexdigest(),len(content))
+          new_tree=api("POST","/git/trees",{"base_tree":head_tree,"tree":items})["sha"]
+          commit=api("POST","/git/commits",{
+              "message":"evidence(m5): real four-mode Godot Mobile obsidian studio frames",
+              "tree":new_tree,"parents":[head]})["sha"]
+          updated=api("PATCH","/git/refs/heads/"+branch,
+                      {"sha":commit,"force":False})
+          assert updated["object"]["sha"]==commit
+          print("PASS_PUBLISHED_REAL_GODOT_PNG_TO_REPOSITORY",commit)
+          PY
       - name: Preserve source PNGs, HDR and logs even if a gate fails
         if: always()
         uses: actions/upload-artifact@v4
