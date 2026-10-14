@@ -1,0 +1,24 @@
+# M5 D20 gold numeral jagged edge: implemented repair and proof
+
+2026-10-14 · Route `creative-3d` · isolated `experiment/m5-learn-codex-d20` branch. Never promote to `main` or PR #23 without visual review and full Android validation.
+
+## Root cause from authored geometry (verified source)
+- Original `tools/blender/learn_codex_d20.py` used text curve resolution `resolution_u=6` at 0.43 units; its Boolean cutter sidewalls had visibly jagged angular loops.
+- First shell bevel `.010/3 segments` happened **before Boolean**, so newly created holes had unrounded razor sharp edges. It also left empty, large shadow recess above gold: cutter depth top at -0.008 and gold at -0.032 from face.
+- Old 500k master performed `subdivide_edges` and `poke` on the above broken geometry to reach exactly 500k, which adds triangles but does **not** improve outline topology or gold inset profile. Original exported GLB SHA256 `b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e`, 212464 stone/287536 gold triangles, was honestly physically real but of poor art quality.
+
+## What source code actually changed
+- Real high-res authoring: `tools/blender/learn_codex_d20.py`, commit `be4cd5f33ecb2ad58cf9e0c7407d94c7661e44fb`. `FONT resolution_u=24` (4×); `bevel_resolution=4`; cutter extrude `.05`; gold extrude `.0025`; gold curve roundover `.0014`; inset gold center closer to stone plane `-.011`, face top approx `-.0085`.
+- Applied an actual angle-limited Bevel to the stone mesh **after** the cutter union Boolean `ActualDeepNumeralRecesses`: `AFTER_BOOLEAN_GLYPH_LIP_ROUNDOVER`, `width=.0022`, `segments=3`, angle >.38rad, edge material satin.
+- Original sourced Blender source after changes: **315248 real GLB triangles** (131820 stone and 183428 gold), source SHA256 `bed9de968ade79d105fee894d5202369be4299573fd6facf3e8016f293ebab4e`. Genuine Blender4.0.2 real Cycles screenshot exists in [source Actions #38613525040](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38613525040) (**SUCCESS**: Blender roundtrip, GLB PBR, Godot Mobile).
+- New `tools/blender/build_d20_master_500k_v2.py` does geometry-count-driven 500k indexed triangles AFTER the corrected 315k source. Its first real proof [CI #38613501837](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38613501837) verified 500000 actual GLB indexed triangles (220000 obsidian stone, 280000 gold, 21 meshes), SHA256 `67650874fe979f6b7b82ad0e596fd5ea8d3397c58c50fa0d5cf8e4c83c9edadf` and rendered new actual Godot4.6.3 Mobile native PNG. That CI was red only because comparison script requested nonexisting `source/godot_ibl.png` from prior source failed importer run, **not a Blender or Godot master failure**. [Fixed rerun #38614293661](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38614293661) uses exact real previous 500k Godot screenshot from #38607312075, same camera and `ibl` variant.
+- True controlled original/updated native Godot 1000×850 PNG side by side and crop of glyphs `20` and `16/17` generated from respective actual native engine originals. User-visible directly zoomable PNG files are in the conversation. Small black jagged edge artifacts near 20/16 visibly improved; this is evidence for geometric repair, not proof of perfect AA or natural obsidian material.
+
+## Separate material blocker (NOT resolved)
+- Repaired GLB still includes **self-authored synthetic PBR albedo, normal, roughness**, NOT the chosen downloaded external `BlenderKit Procedural Obsidian` material.
+- Legitimate exact external `.blend` remains unavailable (selected BlenderKit public asset endpoint HTTP403), third-party true PBR map material import not verified. Do not call current obsidian visually approved, claim selected site texture was used, or pretend that HDR changes replace the physical material. `tools/materials/preview_blendkit_on_d20.py` can apply the exact material when legitimately obtained.
+- Found a [FreePBR Obsidian PBR Material](https://freepbr.com/product/obsidian-pbr-material/) listed at $0 with 2K maps. Its [publisher's license](https://freepbr.com/about-free-pbr/) is noncommercial-use only and forbids redistribution of source maps; **do not place these maps or GLB containing them in this public GitHub repository**. It is not the owner-selected Blendkit material and no replacement is approved.
+- Gold edge improved within lab; true black glossy polished obsidian artistic grade, device FPS/Jolt and independent Qwen review still **NOT VERIFIED**.
+
+## Gauntlet
+Builder native highres Blender and source glTF PBR roundtrip: PASS #38613525040. 500k indexed GLB and native Godot Mobile capture: PASS within stages of #38613501837; final workflow red because absent baseline comparison source PNG, now fixed and retesting in #38614293661. Independent local Qwen critic: NOT_VERIFIED. On-device Nord3 render/app FPS/Jolt in-play: NOT_VERIFIED. Owner aesthetic: pending. Main/PR23 unchanged.
