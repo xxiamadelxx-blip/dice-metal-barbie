@@ -1,0 +1,157 @@
+name: M5 rebuild actually repaired engraved D20 500k Blender Godot
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/blender/build_d20_master_500k_v2.py"
+      - ".github/workflows/d20-500k-repaired-engraving.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  real-repaired-glyph-master:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install actual Blender Godot Mobile native dependencies
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil fonts-dejavu-core xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          blender --version | head -3
+          godot --version
+      - name: Wait bounded for repaired native Blender source from existing run
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json,os,time
+          from urllib.request import Request,urlopen
+          token=os.environ["GITHUB_TOKEN"]
+          api="https://api.github.com/repos/"+os.environ["GITHUB_REPOSITORY"]
+          def get(path):
+            with urlopen(Request(api+path,headers={
+              "Authorization":"Bearer "+token,"Accept":"application/vnd.github+json",
+              "User-Agent":"Dice-m5-source-artifact-wait"}),timeout=30) as response:
+              return json.load(response)
+          for i in range(65):
+            status=get("/actions/runs/38612852492")
+            assets=get("/actions/runs/38612852492/artifacts")
+            ready=[a for a in assets.get("artifacts",[]) if a["name"]=="LEARNED-CODEX-D20-real-source-Blender-Godot" and not a["expired"]]
+            if ready and status["status"]=="completed":
+              assert status["conclusion"]=="success",("Repaired source validation must PASS",status["conclusion"])
+              print("PASS_REPAIRED_SOURCE_AVAILABLE",ready[0]["id"],flush=True)
+              break
+            if status["status"]=="completed" and status["conclusion"]!="success":
+              raise RuntimeError("Repaired source pipeline failed "+str(status["conclusion"]))
+            print("SOURCE_AWAIT_NATIVE_BLENDER",i,status["status"],flush=True)
+            time.sleep(12)
+          else:
+            raise TimeoutError("Source Blender did not complete within 13 minutes")
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38612852492
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          path: build/repaired500k/source
+      - name: Create genuinely repaired engraved D20 with exact 500,000 unique GLB triangles
+        run: |
+          set -eu
+          mkdir -p build/repaired500k/results src/assets/generated
+          timeout 780 blender -b -t 3 --python-exit-code 2 -P tools/blender/build_d20_master_500k_v2.py -- build/repaired500k/source/learned_d20.glb build/repaired500k/results > build/repaired500k/blender-v2.log 2>&1 || { tail -110 build/repaired500k/blender-v2.log; exit 21; }
+          grep -F "PASS_ONE_REPAIRED_D20_500000_TRIANGLES_BLENDER" build/repaired500k/blender-v2.log
+          test -s build/repaired500k/results/blender_cycles_master_500k.png
+      - name: Strict inspect real final GLB indexed triangle data and gold geometry
+        run: |
+          python3 - <<'PY'
+          import struct,json,hashlib
+          from pathlib import Path
+          p=Path("build/repaired500k/results/d20_obsidian_gold_master_500k.glb")
+          data=p.read_bytes()
+          assert data[:4]==b"glTF"
+          jl,tag=struct.unpack_from("<II",data,12)
+          assert tag==0x4e4f534a
+          obj=json.loads(data[20:20+jl])
+          parts=[]
+          for n in obj["nodes"]:
+            if "mesh" not in n:continue
+            tr=0
+            for prim in obj["meshes"][n["mesh"]]["primitives"]:
+              assert prim.get("mode",4)==4
+              tr+=obj["accessors"][prim["indices"]]["count"]//3
+            parts.append((n["name"],tr))
+          assert len(parts)==21 and sum(x[1] for x in parts)==500000,parts
+          assert len([x for x,n in parts if x.startswith("Gold_")])==20
+          assert len([x for x,n in parts if x.startswith("D20_Engraved")])==1
+          result={"GLB_SHA256":hashlib.sha256(data).hexdigest(),"unique_rendered_triangles":500000,
+             "gold_instances":20,"true_unique_mesh_count":21,"subdivision_not_benchmark_instancing":True,
+             "chosen_blenderkit_external_material_acquired":False,
+             "parts":[{"name":n,"triangles":t} for n,t in parts]}
+          Path("build/repaired500k/results/manifest_actual_gltf_500k.json").write_text(json.dumps(result,indent=2)+"\n")
+          print("PASS_ACTUAL_REPAIRED_500000_GLTF",result["GLB_SHA256"])
+          PY
+      - name: Actual native Godot Mobile import and PNG, no image generation
+        run: |
+          set -eu
+          cp build/repaired500k/results/d20_obsidian_gold_master_500k.glb src/assets/generated/learned_d20.glb
+          cp build/repaired500k/source/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          touch docs/.gdignore build/.gdignore
+          timeout 130 godot --headless --path . --editor --import --quit > build/repaired500k/godot-import.log 2>&1 || { tail -90 build/repaired500k/godot-import.log; exit 31; }
+          if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' build/repaired500k/godot-import.log; then
+            tail -90 build/repaired500k/godot-import.log
+            exit 32
+          fi
+          timeout 140 xvfb-run -a -s "-screen 0 1100x900x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant=ibl > build/repaired500k/godot-500k.log 2>&1 || { tail -100 build/repaired500k/godot-500k.log; exit 33; }
+          grep -F "LEARNED_D20_GODOT_REAL_FRAME" build/repaired500k/godot-500k.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error|Invalid call|ERROR:' build/repaired500k/godot-500k.log; then
+            cat build/repaired500k/godot-500k.log
+            exit 34
+          fi
+          cp build/learned-d20/godot_ibl.png build/repaired500k/results/godot_mobile_engraving_500k.png
+      - name: Prepare actual source crops for sidewall, 16/20 and gold edge visual audit
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageDraw,ImageFont,ImageStat
+          from pathlib import Path
+          import hashlib,json
+          root=Path("build/repaired500k/results")
+          shot=Image.open(root/"godot_mobile_engraving_500k.png").convert("RGB")
+          assert shot.size==(1000,850) and max(ImageStat.Stat(shot).stddev)>5
+          original=Image.open("build/repaired500k/source/godot_ibl.png").convert("RGB")
+          assert original.size==(1000,850)
+          combined=Image.new("RGB",(2040,905),(15,17,20))
+          draw=ImageDraw.Draw(combined)
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",21)
+          draw.text((16,8),"BEFORE: original exact source GLB, Godot Mobile",font=font,fill=(245,245,245))
+          draw.text((1032,8),"AFTER: corrected font/Boolean bevel 500k GLB, Godot Mobile",font=font,fill=(245,245,245))
+          combined.paste(original,(10,40))
+          combined.paste(shot,(1030,40))
+          combined.save(root/"real_engraving_before_after_godot.png")
+          box=(245,90,790,745)
+          focus=shot.crop(box)
+          focus.save(root/"real_engraving_500k_detail.png")
+          files=["godot_mobile_engraving_500k.png","real_engraving_before_after_godot.png","real_engraving_500k_detail.png",
+                 "blender_cycles_master_500k.png"]
+          diag={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in files}
+          (root/"real_screenshot_sha256.json").write_text(json.dumps({"real_render_pixels":True,"same_material_reference":False,
+                "image_shas":diag,
+                "owner_visual_review":"PENDING",
+                "material_from_selected_site":"NO"},indent=2)+"\n")
+          print("PASS_NATIVE_SOURCE_PNG_AND_CLOSEUP",json.dumps(diag))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-repaired-real-500k-engraving-Blender-Godot
+          path: |
+            build/repaired500k/results/
+            build/repaired500k/blender-v2.log
+            build/repaired500k/godot-500k.log
+            build/repaired500k/godot-import.log
+          retention-days: 30
+          if-no-files-found: warn
