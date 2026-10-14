@@ -1,0 +1,31 @@
+{
+  "glb_sha256": "b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e",
+  "one_unique_d20_triangles": 500000,
+  "has_false_multimesh": false,
+  "render_engine": "Godot 4.6.3 Mobile / Mesa software GPU",
+  "on_android": false,
+  "no_mesh_texture_or_gold_change_between_the_four": true,
+  "art_accepted": false,
+  "screens": {
+    "Baseline source GLB / neutral HDR": {
+      "mean_rgb_brightness_roi": 52.43,
+      "bright_above_100_fraction_roi": 0.04375,
+      "sha256": "3a82acd8c3cab33caf03fa6e8d888cf56293d5ce6bb7278f48d9c0f699401d0d"
+    },
+    "Same GLB / black black40_lowfill": {
+      "mean_rgb_brightness_roi": 43.34,
+      "bright_above_100_fraction_roi": 0.04452,
+      "sha256": "ad56279c755c135740006f9ef52eea5283bf1ef74b8161e7fb9e97de5f2c0c8a"
+    },
+    "Same GLB / black black40_specular": {
+      "mean_rgb_brightness_roi": 45.65,
+      "bright_above_100_fraction_roi": 0.04932,
+      "sha256": "60d8dfd626dabc3a97e730c876c8a7140a9adca2f6648e77684dfb7689e758b3"
+    },
+    "Same GLB / black black33_specular": {
+      "mean_rgb_brightness_roi": 40.39,
+      "bright_above_100_fraction_roi": 0.04077,
+      "sha256": "ab1a530355c6f2bedc8834855048b0ff5347c329d6239f1ac6ec25034e92eb10"
+    }
+  }
+}
