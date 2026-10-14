@@ -28,7 +28,7 @@ func _capture_main() -> void:
             variant = "narrow30"
         elif arg == "--variant=narrow50_no_omni":
             variant = "narrow50_no_omni"
-        elif arg.begins_with("--variant=brdf_"):
+        elif arg.begins_with("--variant=brdf_") or arg.begins_with("--variant=black"):
             variant = arg.trim_prefix("--variant=")
         elif arg in ["--variant=lab_reference", "--variant=lab_clay",
                 "--variant=lab_normals", "--variant=lab_normal_off",
@@ -79,7 +79,7 @@ func _capture_main() -> void:
     e.ambient_light_energy = 1.05
     e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     e.tonemap_mode = Environment.TONE_MAPPER_ACES
-    if variant.begins_with("brdf_") or variant in ["ibl", "ibl90", "aligned", "aligned_boost", "narrow50", "narrow30", "narrow50_no_omni", "lab_reference", "lab_clay", "lab_normals", "lab_normal_off", "lab_spec_off", "lab_direct", "lab_ibl", "lab_probe"]:
+    if variant.begins_with("brdf_") or variant.begins_with("black") or variant in ["ibl", "ibl90", "aligned", "aligned_boost", "narrow50", "narrow30", "narrow50_no_omni", "lab_reference", "lab_clay", "lab_normals", "lab_normal_off", "lab_spec_off", "lab_direct", "lab_ibl", "lab_probe"]:
         # Godot 4.6 documented sky ambient/AGX/exposure; follow Codex
         # real-runtime lessons instead of compensating black material via emission.
         e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
@@ -96,7 +96,7 @@ func _capture_main() -> void:
     var panorama_path := "res://src/assets/generated/learned_studio_mobile_aligned.hdr" if use_correct_axis_hdr else "res://src/assets/generated/learned_studio.hdr"
     if variant in ["narrow50", "narrow30"]:
         panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant
-    if variant == "narrow50_no_omni" or variant.begins_with("lab_") or variant.begins_with("brdf_"):
+    if variant.begins_with("black"):\n        panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant\n    if variant == "narrow50_no_omni" or variant.begins_with("lab_") or variant.begins_with("brdf_"):
         panorama_path = "res://src/assets/generated/learned_studio_mobile_narrow50.hdr"
     var same_studio_hdr := load(panorama_path) as Texture2D
     if same_studio_hdr == null:
