@@ -147,6 +147,18 @@ for tag,amplitude in AMPLITUDES.items():
     ordered=sorted(gold,key=lambda x:x.name)
     for i,g in enumerate(ordered):
         info[g.name]=sculpt(g,centers,amplitude,gold_own_center=centers[i])
+    # Imported glTF custom vertex normals may otherwise keep all ~500k
+    # triangles visually flat even though their real positions are curved.
+    # Clear custom split normals only on the stone, then Blender regenerates
+    # actual geometric normals on export, proving that the geometry matters.
+    if getattr(stone.data,"has_custom_normals",False):
+        bpy.ops.object.select_all(action="DESELECT")
+        stone.select_set(True)
+        bpy.context.view_layer.objects.active=stone
+        bpy.ops.mesh.customdata_custom_splitnormals_clear()
+        info["stone"]["old_custom_normals_cleared"]=True
+    else:
+        info["stone"]["old_custom_normals_cleared"]=False
     assert info["stone"]["max_displacement"]>.75*amplitude
     assert len(ordered)==20
     bpy.ops.object.select_all(action="DESELECT")
