@@ -17,8 +17,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: experiments/android-renderers/web/package-lock.json
       - name: Install bundled Three.js and build offline HTML/CSS/JS
         working-directory: experiments/android-renderers/web
         run: |
@@ -49,5 +47,59 @@ jobs:
             experiments/android-renderers/web/build/browser-evidence/
             experiments/android-renderers/web/build/vite-preview.log
             experiments/android-renderers/web/dist/
+          retention-days: 21
+          if-no-files-found: warn
+  build-real-debug-apk:
+    needs: real-webgl2-render
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Package actual Three.js r184 into offline Android assets
+        working-directory: experiments/android-renderers/web
+        run: |
+          npm install --no-audit --no-fund --package-lock-only
+          npm ci --no-audit --no-fund
+          npm run build
+          mkdir -p ../android/app/src/main/assets
+          cp -a dist/. ../android/app/src/main/assets/
+          test -s ../android/app/src/main/assets/index.html
+          test -n "$(find ../android/app/src/main/assets/assets -name '*.js' -print -quit)"
+          python3 - <<'PY'
+          from pathlib import Path
+          home=Path('../android/app/src/main/assets')
+          assert (home/'index.html').is_file()
+          js=list(home.glob('assets/*.js'))
+          assert js
+          assert sum(f.stat().st_size for f in js)>450000,("Three library not bundled",js)
+          source=(home/'index.html').read_text()
+          assert 'cdn.jsdelivr.net' not in source
+          manifest=Path('../android/app/src/main/AndroidManifest.xml').read_text()
+          assert 'INTERNET' not in manifest,("Offline APK has unexpected network permission")
+          print("PASS_OFFLINE_ANDROID_EMBEDDED_THREE_JS",len(js),"file size",sum(f.stat().st_size for f in js))
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile real installable offline Android debug APK
+        working-directory: experiments/android-renderers/android
+        run: |
+          gradle --no-daemon :app:assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+      - name: Preserve actual built APK (no original licensed GLB included)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-ThreeJS-Android-WebView-real-offline-debug-APK
+          path: experiments/android-renderers/android/app/build/outputs/apk/debug/
           retention-days: 21
           if-no-files-found: warn
