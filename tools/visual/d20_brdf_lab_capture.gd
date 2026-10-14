@@ -96,7 +96,9 @@ func _capture_main() -> void:
     var panorama_path := "res://src/assets/generated/learned_studio_mobile_aligned.hdr" if use_correct_axis_hdr else "res://src/assets/generated/learned_studio.hdr"
     if variant in ["narrow50", "narrow30"]:
         panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant
-    if variant.begins_with("black"):\n        panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant\n    if variant == "narrow50_no_omni" or variant.begins_with("lab_") or variant.begins_with("brdf_"):
+    if variant.begins_with("black"):
+        panorama_path = "res://src/assets/generated/learned_studio_mobile_%s.hdr" % variant
+    if variant == "narrow50_no_omni" or variant.begins_with("lab_") or variant.begins_with("brdf_"):
         panorama_path = "res://src/assets/generated/learned_studio_mobile_narrow50.hdr"
     var same_studio_hdr := load(panorama_path) as Texture2D
     if same_studio_hdr == null:
