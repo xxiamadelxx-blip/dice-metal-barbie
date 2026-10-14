@@ -98,7 +98,10 @@ jobs:
           set -eu
           cp build/master500k/results/d20_obsidian_gold_master_500k.glb src/assets/generated/learned_d20.glb
           cp build/master500k/source/learned_studio.hdr src/assets/generated/learned_studio.hdr
-          touch build/.gdignore
+          # Evidence CSV inside docs is not a Godot game asset. Its CSV importer
+          # hits a known empty-translation bucket assertion. Exclude docs from
+          # runtime imports; retain strict errors for actual src/assets.
+          touch build/.gdignore docs/.gdignore
           timeout 160 godot --headless --path . --editor --import --quit > build/master500k/godot-import.log 2>&1 || { tail -90 build/master500k/godot-import.log; exit 21; }
           if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' build/master500k/godot-import.log; then
             tail -100 build/master500k/godot-import.log
