@@ -1,0 +1,54 @@
+name: M5 alternative native Google Filament glTF Android APK
+on:
+  push:
+    branches: [experiment/m5-android-renderer-alternatives]
+    paths:
+      - "experiments/android-renderers/filament-android/**"
+      - ".github/workflows/m5-alternative-filament-native.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-real-filament-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Verify offline original-GLB source-free Filament Android app
+        run: |
+          python3 - <<'PY'
+          import pathlib,xml.etree.ElementTree as ET
+          base=pathlib.Path("experiments/android-renderers/filament-android")
+          content=(base/"app/src/main/java/com/adeldice/filamentlab/MainActivity.kt").read_text()
+          xml=ET.parse(base/"app/src/main/AndroidManifest.xml").getroot()
+          permission=[x.attrib.get("{http://schemas.android.com/apk/res/android}name","") for x in xml.findall("uses-permission")]
+          assert "android.permission.INTERNET" not in permission,permission
+          assert "com.google.android.filament.utils.ModelViewer" in content
+          assert "60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39" in content
+          assert not list(base.glob("**/*.glb"))
+          print("PASS_FILAMENT_NATIVE_PRIVATE_SOURCE_NOT_COMMITTED")
+          PY
+      - name: Build independent native Filament Android package
+        working-directory: experiments/android-renderers/filament-android
+        run: |
+          set -eu
+          echo "ANDROID_HOME=${ANDROID_HOME:?Android SDK missing}"
+          test -e "$ANDROID_HOME/platforms/android-35/android.jar" ||             "$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+          gradle --no-daemon --stacktrace :app:assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+      - name: Preserve real built native Filament APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: M5-Filament-native-Android-PBR-debug-APK
+          path: experiments/android-renderers/filament-android/app/build/outputs/apk/debug/
+          retention-days: 21
+          if-no-files-found: warn
