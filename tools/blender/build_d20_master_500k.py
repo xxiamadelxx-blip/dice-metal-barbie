@@ -138,6 +138,9 @@ sc.world=world
 sc.render.engine="CYCLES"
 sc.cycles.device="CPU"
 sc.cycles.samples=20
+# Blender 4.0 Debian package is built without Intel OpenImageDenoise:
+# prevent Cycles from failing AFTER correct GLB has been exported.
+bpy.context.view_layer.cycles.use_denoising=False
 sc.render.resolution_x=720
 sc.render.resolution_y=720
 sc.render.resolution_percentage=100
