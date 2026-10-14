@@ -1,0 +1,71 @@
+name: M5 private locally executable Vulkan Mobile software GPU toolkit
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/m5-offline-vulkan-lavapipe.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export-open-source-software-vulkan-ICD:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Mesa lavapipe Vulkan software ICD (only public open-source libraries)
+        run: |
+          set -eu
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mesa-vulkan-drivers libvulkan1
+          ls -l /usr/share/vulkan/icd.d
+      - name: Bundle lavapipe runtime and all directly required library sonames
+        run: |
+          python3 - <<'PY'
+          import json,pathlib,subprocess,shutil,re
+          root=pathlib.Path('build/vulkan-icd')
+          libroot=root/'lib'
+          libroot.mkdir(parents=True,exist_ok=True)
+          drivers=sorted(pathlib.Path('/usr/share/vulkan/icd.d').glob('*lvp*.json'))
+          assert len(drivers)>=1,drivers
+          cfg=json.loads(drivers[0].read_text())
+          origin=cfg['ICD']['library_path']
+          actual=pathlib.Path(origin)
+          if not actual.is_absolute():
+            actual=pathlib.Path('/usr/lib/x86_64-linux-gnu')/actual
+          assert actual.is_file(),(cfg,actual)
+          libs={str(actual.resolve())}
+          todo=[actual.resolve()]
+          skip={'libc.so.6','libm.so.6','libpthread.so.0','libdl.so.2','librt.so.1','ld-linux-x86-64.so.2','libstdc++.so.6','libgcc_s.so.1'}
+          for dep in todo:
+            lines=subprocess.run(['ldd',str(dep)],capture_output=True,text=True).stdout.splitlines()
+            for line in lines:
+              names=re.findall(r'(/[^\s]+)',line)
+              if not names:continue
+              linked=pathlib.Path(names[0])
+              if linked.name in skip or linked.name.startswith('libc.so'):continue
+              if linked.is_file():
+                resolved=str(linked.resolve())
+                if resolved not in libs:
+                  libs.add(resolved)
+                  todo.append(linked.resolve())
+          for path in sorted(libs):
+            src=pathlib.Path(path)
+            dst=libroot/src.name
+            shutil.copy2(src,dst)
+            # ldd linker requests SO-name, which differs from target resolved basename.
+            info=subprocess.run(['readelf','-d',str(src)],capture_output=True,text=True).stdout
+            match=re.search(r'\(SONAME\).*?\[(.*?)\]',info)
+            if match and match.group(1) != dst.name and not (libroot/match.group(1)).exists():
+              (libroot/match.group(1)).symlink_to(dst.name)
+          (root/'icd_source.json').write_text(json.dumps(cfg,indent=2)+'\n')
+          (root/'lavapipe_source.txt').write_text(str(actual)+'\n')
+          print('PASS_REAL_MESA_LAVAPIPE_ICD',len(libs),'libraries')
+          PY
+          tar -C build -czf build/m5-lavapipe-software-vulkan.tar.gz vulkan-icd
+          rm -rf build/vulkan-icd
+          ls -lh build/m5-lavapipe-software-vulkan.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M5-offline-software-Vulkan-lavapipe-ICD
+          path: build/m5-lavapipe-software-vulkan.tar.gz
+          retention-days: 14
