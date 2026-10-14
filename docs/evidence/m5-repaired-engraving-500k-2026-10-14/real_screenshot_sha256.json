@@ -1,0 +1,12 @@
+{
+  "real_render_pixels": true,
+  "old_and_new_pbr_are_own_authored_not_web_asset": true,
+  "image_shas": {
+    "godot_mobile_engraving_500k.png": "3ae85185e01e481e2ebdc106dc305337b7c7fd35f46c3473ea0a254407711e33",
+    "real_engraving_before_after_godot.png": "829f80b6e45ed5f7d51d4dc9b0cc20bb1ebfbf89a90e1886543f7901ac9a635c",
+    "real_engraving_500k_detail.png": "903aa912bce063626038a82507a88f5e2e8c81ead85f4f988df5d1e43f9d8f97",
+    "blender_cycles_master_500k.png": "b013fc6d90463b3ba9f5256254338a673ca5d7bd32a14a0b53c0e40271fb8059"
+  },
+  "owner_visual_review": "PENDING",
+  "material_from_selected_site": "NO"
+}
