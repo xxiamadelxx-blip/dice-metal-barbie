@@ -2,7 +2,7 @@ import { chromium } from 'playwright-core';
 import { readFileSync, mkdirSync, writeFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const URL = process.env.RENDER_LAB_URL ?? 'http://127.0.0.1:4173/';
+const BASE_URL = process.env.RENDER_LAB_URL ?? 'http://127.0.0.1:4173/';
 const ARTIFACT_DIR = process.env.RENDER_LAB_EVIDENCE ?? './build/browser-evidence';
 const TEST_GLB = process.env.RENDER_LAB_TEST_GLB ?? './build/synthetic_nonpremium_500k.glb';
 const executable = process.env.CHROME_BIN
@@ -27,7 +27,7 @@ try{
     errors.push('EXTERNAL_NETWORK_ATTEMPT '+request.url());
     return route.abort();
   });
-  await page.goto(URL,{waitUntil:'networkidle',timeout:60000});
+  await page.goto(BASE_URL,{waitUntil:'networkidle',timeout:60000});
   await page.waitForFunction(()=>window.__diceLab?.state?.includes('WebGL2 работает'),{timeout:45000});
   const before=await page.evaluate(()=>({state:window.__diceLab.state,frames:window.__diceLab.renderedFrames,
     webgl:window.__diceLab.glVersion}));
