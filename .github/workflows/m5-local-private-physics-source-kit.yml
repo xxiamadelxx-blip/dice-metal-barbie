@@ -1,0 +1,38 @@
+name: M5 local private Jolt 500k game source test kit (no licensed assets)
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/m5-local-private-physics-source-kit.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export-exact-source-tree:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package source without user licensed assets
+        run: |
+          set -eu
+          mkdir -p build/m5-qa-source
+          cp project.godot build/m5-qa-source/
+          cp -a src tests build/m5-qa-source/
+          mkdir -p build/m5-qa-source/tools
+          cp tools/visual/owner_selected_m5_500k_mobile_capture.gd build/m5-qa-source/tools/
+          rm -rf build/m5-qa-source/src/assets/private
+          find build/m5-qa-source -type f \( -name '*.glb' -o -name '*.blend' -o -name '*.hdr' -o -name '*.png' -o -name '*.keystore' -o -name '*.apk' \) -print -delete
+          python3 - <<'PY'
+          from pathlib import Path
+          files=list(Path("build/m5-qa-source").rglob("*"))
+          assert any(f.name=="d20_body.gd" for f in files)
+          assert any(f.name=="icosahedron.gd" for f in files)
+          assert not any(f.suffix.lower() in (".glb",".blend",".hdr",".png",".apk",".keystore") for f in files)
+          print("PASS_PRIVATE_QA_SOURCE_NO_LICENSED_ASSETS",len(files))
+          PY
+          echo "${{ github.sha }}" > build/m5-qa-source/SOURCE_COMMIT_SHA.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M5-private-native-Jolt-asset-mapping-open-source
+          path: build/m5-qa-source/
+          retention-days: 14
