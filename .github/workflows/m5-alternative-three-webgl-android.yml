@@ -1,0 +1,53 @@
+name: M5 alternative Three.js WebGL2 Android APK (no Godot)
+on:
+  push:
+    branches: [experiment/m5-android-renderer-alternatives]
+    paths:
+      - "experiments/android-renderers/**"
+      - ".github/workflows/m5-alternative-three-webgl-android.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-webgl2-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: experiments/android-renderers/web/package-lock.json
+      - name: Install bundled Three.js and build offline HTML/CSS/JS
+        working-directory: experiments/android-renderers/web
+        run: |
+          npm install --no-audit --no-fund --package-lock-only
+          npm ci --no-audit --no-fund
+          npm run build
+          if grep -E 'cdn.jsdelivr.net|unpkg.com' dist/index.html; then
+            echo "Unexpected external module" && exit 3
+          fi
+      - name: Generate exact public synthetic 500k glTF (NOT user PBR)
+        run: |
+          python3 experiments/android-renderers/web/tools/make_synthetic_500k_glb.py experiments/android-renderers/web/build/synthetic_nonpremium_500k.glb
+      - name: Render real 500k GLB on Chromium WebGL2 software GPU
+        working-directory: experiments/android-renderers/web
+        run: |
+          set -eu
+          command -v google-chrome || command -v chromium
+          npm run preview -- --host 127.0.0.1 --port 4173 > build/vite-preview.log 2>&1 &
+          echo "$!" > build/server.pid
+          sleep 4
+          RENDER_LAB_EVIDENCE=build/browser-evidence npm run smoke
+      - name: Upload real browser screenshot, GPU counters and offline web bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: M5-ThreeJS-WebGL2-500k-actual-render-and-offline-bundle
+          path: |
+            experiments/android-renderers/web/build/browser-evidence/
+            experiments/android-renderers/web/build/vite-preview.log
+            experiments/android-renderers/web/dist/
+          retention-days: 21
+          if-no-files-found: warn
