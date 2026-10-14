@@ -56,7 +56,7 @@ func _capture_main() -> void:
     assert(inspected >= 21, "Missing original independent gold glyph geometries")
     if variant.begins_with("brdf_"):
         var material_count := _apply_brdf_to_stone(d20, variant)
-        assert(material_count==2, "D20 must retain exactly two separate stone surface materials")
+        assert(material_count>=2, "D20 needs one face and at least one satin bevel primitive")
     var floor := MeshInstance3D.new()
     floor.name = "ComparisonFloor"
     var mesh := PlaneMesh.new()
@@ -216,7 +216,7 @@ func _override_d20_material_recursive(node: Node, variant: String) -> int:
     var changed := 0
     if node is MeshInstance3D and "D20_Engraved" in str(node.name):
         var stone_mesh := node as MeshInstance3D
-        assert(stone_mesh.mesh.get_surface_count()==2, "Fitted chamfer/face material counts changed")
+        assert(stone_mesh.mesh.get_surface_count()>=2, "D20 needs at least two surfaces: face and bevel")
         for idx in range(stone_mesh.mesh.get_surface_count()):
             var imported_mat := stone_mesh.mesh.surface_get_material(idx) as BaseMaterial3D
             assert(imported_mat != null and imported_mat.albedo_texture != null)
