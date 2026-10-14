@@ -1,0 +1,37 @@
+{
+  "engine": "Godot 4.6.3 Mobile / Mesa software Vulkan",
+  "source_glb_sha256": "ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f",
+  "same_geometry_physical_mapping": true,
+  "material_albedo_normal_roughness_unchanged": true,
+  "desktop_mesa_not_android": true,
+  "source_git_sha": "ef688293cd0e39797bbdb825f90e311d30470424",
+  "pixel_diagnostics_not_aesthetic_acceptance": {
+    "brdf_ref": {
+      "file_sha256": "788fa3ac05fd02c87646911bb8757af6a67f3d03ae2ec219481c0a7840015c65",
+      "mean_roi_rgb": 58.17,
+      "bright_fraction_100": 0.0866
+    },
+    "black40_lowfill": {
+      "file_sha256": "9c4cb709fce09a47f83b891dbcb73214f08fc75c5756d8ed46f15d7b3bb49e4e",
+      "mean_roi_rgb": 43.42,
+      "bright_fraction_100": 0.0449,
+      "mean_absolute_change": 14.75,
+      "pixels_changed_gt8_fraction": 0.9779
+    },
+    "black40_specular": {
+      "file_sha256": "c5bd41f65cccaf3d381db9cf271970b7f70521e12869c35f0baaacff26bd42db",
+      "mean_roi_rgb": 45.75,
+      "bright_fraction_100": 0.0498,
+      "mean_absolute_change": 12.425,
+      "pixels_changed_gt8_fraction": 0.8416
+    },
+    "black33_specular": {
+      "file_sha256": "7ea9f0999753057e6beda74c21beae0dc9fdba430fd9d9f5a053dac13dd4edb1",
+      "mean_roi_rgb": 40.49,
+      "bright_fraction_100": 0.0413,
+      "mean_absolute_change": 17.681,
+      "pixels_changed_gt8_fraction": 0.9986
+    }
+  },
+  "board_sha256": "51b9419732120c143cb7e21781f029c68cf70a43c14c563ea5f243527574aff6"
+}

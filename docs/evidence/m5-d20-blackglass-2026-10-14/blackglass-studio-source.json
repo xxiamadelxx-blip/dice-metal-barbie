@@ -1,0 +1,35 @@
+{
+  "black40_lowfill": {
+    "parameters": {
+      "width": 0.4,
+      "ambient": 0.5,
+      "cards": 1.0
+    },
+    "card_coverage_fraction": 0.01876,
+    "sha256": "831c2e51f5ef1a66c9cc30e7a47be86039f5940c69264e2a9d10937bd3be6ab1",
+    "file_bytes": 529457,
+    "transform": "Blender Z-up -> Godot Y-up correct longitude"
+  },
+  "black40_specular": {
+    "parameters": {
+      "width": 0.4,
+      "ambient": 0.5,
+      "cards": 1.6
+    },
+    "card_coverage_fraction": 0.01876,
+    "sha256": "060c294a40c7bfb8f2417b6d8659e4be31ecc5558671a4875897f1508970c05c",
+    "file_bytes": 529457,
+    "transform": "Blender Z-up -> Godot Y-up correct longitude"
+  },
+  "black33_specular": {
+    "parameters": {
+      "width": 0.33,
+      "ambient": 0.42,
+      "cards": 1.75
+    },
+    "card_coverage_fraction": 0.00983,
+    "sha256": "e1d1a7d3af41554fa5c443da01c84a4e94e66e8dab2af5004224aa03fd6be393",
+    "file_bytes": 529457,
+    "transform": "Blender Z-up -> Godot Y-up correct longitude"
+  }
+}
