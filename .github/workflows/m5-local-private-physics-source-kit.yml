@@ -2,7 +2,11 @@ name: M5 local private Jolt 500k game source test kit (no licensed assets)
 on:
   push:
     branches: [experiment/m5-learn-codex-d20]
-    paths: [".github/workflows/m5-local-private-physics-source-kit.yml"]
+    paths:
+      - ".github/workflows/m5-local-private-physics-source-kit.yml"
+      - "src/dice/d20_body.gd"
+      - "src/dice/m5_original_obsidian_art.gd"
+      - "src/core/physical_roll_pool.gd"
   workflow_dispatch:
 permissions:
   contents: read
