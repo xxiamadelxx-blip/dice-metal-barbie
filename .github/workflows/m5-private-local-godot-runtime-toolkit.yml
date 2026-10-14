@@ -1,0 +1,35 @@
+name: M5 private D20 local Godot 4.6.3 runtime toolkit (no user material)
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - ".github/workflows/m5-private-local-godot-runtime-toolkit.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  godot-only-toolkit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - name: Validate genuine native 4.6.3 Godot executable
+        run: |
+          set -eu
+          binary="$(command -v godot)"
+          echo "Installed Godot binary: $binary"
+          godot --version
+          test -x "$binary"
+          mkdir -p build/private-godot-runtime
+          cp "$(readlink -f "$binary")" build/private-godot-runtime/godot
+          chmod 755 build/private-godot-runtime/godot
+          sha256sum build/private-godot-runtime/godot > build/private-godot-runtime/SHA256SUMS
+          ldd build/private-godot-runtime/godot > build/private-godot-runtime/ldd.txt || true
+          du -h build/private-godot-runtime/godot
+          echo "Only open source Godot engine binary, NO proprietary/private materials"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M5-Godot-4-6-3-local-private-material-render-toolkit
+          path: build/private-godot-runtime/
+          retention-days: 7
