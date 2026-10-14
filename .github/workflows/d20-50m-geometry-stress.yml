@@ -22,13 +22,13 @@ jobs:
       - name: Install software Mesa/Xvfb
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers python3
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers python3 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0 libfontconfig1
           godot --version
       - name: Import GDScript and test 500000 true submitted triangles
         run: |
           mkdir -p build/d20-50m
           timeout 120 godot --headless --path . --editor --import --quit > build/d20-50m/smoke-import.log 2>&1 || { tail -100 build/d20-50m/smoke-import.log; exit 11; }
-          timeout 140 xvfb-run -a -s "-screen 0 800x800x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/perf/d20_50m_multimesh_bench.gd -- --from=1 --to=1 > build/d20-50m/smoke.log 2>&1 || { tail -100 build/d20-50m/smoke.log; exit 12; }
+          timeout 140 xvfb-run -a -s "-screen 0 800x800x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/perf/d20_50m_multimesh_bench.gd -- --from=1 --to=1 > build/d20-50m/smoke.log 2>&1 || { tail -100 build/d20-50m/smoke.log; exit 12; }
           cat build/d20-50m/smoke.log | grep D20_PERF_REAL_STAGE | tail -5
           python3 - <<'PY'
           import json
@@ -65,7 +65,7 @@ jobs:
       - name: Prepare native Mesa software renderer
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers python3
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers python3 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0 libfontconfig1
           godot --version
       - name: Godot source import
         run: |
@@ -74,7 +74,7 @@ jobs:
       - name: Measure actual 0.5-million incremental GPU draw frames
         run: |
           set -eu
-          timeout 650 xvfb-run -a -s "-screen 0 800x800x24" godot --path . --rendering-method mobile --audio-driver Dummy --script res://tools/perf/d20_50m_multimesh_bench.gd -- --from=${{ matrix.first }} --to=${{ matrix.last }} > build/d20-50m/progress.log 2>&1 || { tail -100 build/d20-50m/progress.log; exit 22; }
+          timeout 650 xvfb-run -a -s "-screen 0 800x800x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/perf/d20_50m_multimesh_bench.gd -- --from=${{ matrix.first }} --to=${{ matrix.last }} > build/d20-50m/progress.log 2>&1 || { tail -100 build/d20-50m/progress.log; exit 22; }
           tail -8 build/d20-50m/progress.log
           python3 - <<'PY'
           import json,glob
