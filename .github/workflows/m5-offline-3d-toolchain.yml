@@ -1,0 +1,71 @@
+name: M5 recover standalone local Blender and Godot executables (open source only)
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - ".github/workflows/m5-offline-3d-toolchain.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export-open-source-native-engines:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    container:
+      image: barichello/godot-ci:4.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Debian Blender locally for offline export
+        run: |
+          set -eu
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil libgl1-mesa-dri libglx-mesa0 xvfb zstd binutils
+          blender -b --version | head -4
+          godot --version
+      - name: Bundle executable and linked dependencies without any user materials
+        run: |
+          set -eu
+          mkdir -p build/toolchain/root
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess,shutil,os,json
+          root=Path('build/toolchain/root')
+          names=['blender','godot']
+          receipts={}
+          for name in names:
+            exe=shutil.which(name)
+            assert exe, name
+            resolved=os.path.realpath(exe)
+            print('EXE',name,resolved,flush=True)
+            deps=subprocess.run(['ldd',resolved],capture_output=True,text=True,check=False)
+            linked=[]
+            for line in deps.stdout.splitlines():
+              toks=line.strip().split()
+              for token in toks:
+                if token.startswith('/') and os.path.isfile(token):
+                  linked.append(os.path.realpath(token))
+                  break
+            all_paths=set([resolved]+linked)
+            if name=='blender':
+              for base in ['/usr/lib/blender','/usr/share/blender']:
+                folder=Path(base)
+                if folder.exists():
+                  all_paths.update(str(f) for f in folder.rglob('*') if f.is_file() and not f.is_symlink())
+            for orig in sorted(all_paths):
+              src=Path(orig)
+              if not src.is_file(): continue
+              dest=root/str(src).lstrip('/')
+              dest.parent.mkdir(parents=True,exist_ok=True)
+              shutil.copyfile(src,dest)
+              dest.chmod(src.stat().st_mode)
+            receipts[name]={'exe':resolved,'deps':len(linked),'bundled_paths':len(all_paths)}
+          (Path('build/toolchain/manifest.json')).write_text(json.dumps(receipts,indent=2))
+          print('PASS_OPEN_SOURCE_3D_BINARIES_ONLY',receipts)
+          PY
+          tar -C build/toolchain/root -cf - . | zstd -T2 -6 -o build/toolchain/blender-godot-deps.tar.zst
+          ls -lh build/toolchain/blender-godot-deps.tar.zst build/toolchain/manifest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M5-open-source-Blender-Godot-offline-native-toolchain
+          path: build/toolchain/
+          retention-days: 14
