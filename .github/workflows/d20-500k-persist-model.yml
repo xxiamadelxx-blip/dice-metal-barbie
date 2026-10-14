@@ -42,7 +42,7 @@ jobs:
           assert len([x for x,n in parts if x.startswith("Gold_")])==20
           assert sum(n for x,n in parts if x.startswith("D20_Engraved"))==212464
           assert sum(n for x,n in parts if x.startswith("Gold_"))==287536
-          assert (root/"blender_cycles_master_500k.png").read_bytes()[:8]==b"\\x89PNG\\r\\n\\x1a\\n"
+          assert (root/"blender_cycles_master_500k.png").read_bytes()[:8]==bytes((137,80,78,71,13,10,26,10))
           print("PASS_PRESERVE_REAL_EXACT_500000",digest,p.stat().st_size)
           PY
       - name: Preserve GLB, original Cycles pixels and exact verification manifest in experiment branch
