@@ -1,0 +1,76 @@
+name: M5 publish actual completed D20 100-stage evidence in experiment branch
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - ".github/workflows/d20-50m-publish-results.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish-frozen-proofs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38599056847
+          name: D20-50m-real-100-stage-report
+          github-token: ${{ github.token }}
+          path: build/perf-report
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38599056847
+          name: D20-50m-Godot-part-76-100
+          github-token: ${{ github.token }}
+          path: build/last-frames
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 38598528322
+          name: M5-legal-free-obsidian-models-and-PBR-source-audit
+          github-token: ${{ github.token }}
+          path: build/material-source
+      - name: Inspect original 100-source-stage exact report, last real PNG and legal source scans
+        run: |
+          python3 - <<'PY'
+          import csv,hashlib,json,pathlib
+          x=pathlib.Path("build/perf-report")
+          stats=json.loads((x/"summary.json").read_text())
+          assert stats["measured_stages"]==100 and stats["not_measured_stages"]==0
+          assert stats["max_measured_triangles"]==50000000
+          assert stats["run_sha"]=="7743e5a8828bd5b90b0554ddc77f6d68aed6a3c4"
+          rows=list(csv.DictReader((x/"d20_100_stages.csv").open()))
+          assert len(rows)==100 and all(z["status"]=="MEASURED" for z in rows)
+          assert [int(z["target_triangles"]) for z in rows]==list(range(500000,50000001,500000))
+          assert float(rows[-1]["wall_frame_ms"])==5660.54
+          img=pathlib.Path("build/last-frames/real_step_100.png").read_bytes()
+          assert img[:8]==bytes((137,80,78,71,13,10,26,10))
+          report=pathlib.Path("build/material-source/build/material-intake/polished_obsidian_public_source_audit.json")
+          legal=json.loads(report.read_text())
+          assert len(legal["candidates"])==10
+          assert legal["candidates"][0]["status"]=="HTTP_403"
+          print("PASS_PUBLISH_SOURCE_PROVENANCE",len(rows),hashlib.sha256(img).hexdigest())
+          PY
+      - name: Publish permanent source CSV JSON Markdown and original last source PNG
+        run: |
+          set -eu
+          dst=docs/evidence/m5-d20-50m-2026-10-14
+          mkdir -p "$dst"
+          cp build/perf-report/d20_100_stages.csv "$dst/"
+          cp build/perf-report/report.md "$dst/"
+          cp build/perf-report/summary.json "$dst/"
+          cp build/last-frames/real_step_100.png "$dst/"
+          cp build/material-source/build/material-intake/polished_obsidian_public_source_audit.json "$dst/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$dst"
+          if git diff --cached --quiet; then
+            echo "SOURCE_DATA_ALREADY_COMMITTED"
+          else
+            git commit -m "evidence(m5): preserve 100 real Godot 500k–50M stages and material-source scan"
+            git push origin HEAD:refs/heads/experiment/m5-learn-codex-d20
+          fi
