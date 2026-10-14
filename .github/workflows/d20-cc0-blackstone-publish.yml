@@ -1,0 +1,77 @@
+name: M5 persist sourced CC0 black polished D20 prototype and actual engine evidence
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths: [".github/workflows/d20-cc0-blackstone-publish.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  permanent-experimental-cc0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38617713494
+          name: M5-actual-external-CC0-PBR-500k-Blender-Godot-A-B
+          path: build/cc0-original
+      - name: Independently validate real unchanged source texture GLB and PNGs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,struct
+          root=Path("build/cc0-original/results")
+          glb=root/"D20_500K_CC0_subdued_black.glb"
+          data=glb.read_bytes()
+          assert hashlib.sha256(data).hexdigest()=="6def24e17a3fbbf2d6e2861ae4775b61e0b6928d8170c12fdd6a48412270ef6e"
+          n,tag=struct.unpack_from("<II",data,12)
+          assert data[:4]==b"glTF" and tag==0x4e4f534a
+          g=json.loads(data[20:20+n])
+          parts=[(node["name"],sum(g["accessors"][p["indices"]]["count"]//3 for p in g["meshes"][node["mesh"]]["primitives"]))
+                 for node in g["nodes"] if "mesh" in node]
+          assert len(parts)==21 and sum(x[1] for x in parts)==500000
+          assert sum(t for n,t in parts if n.startswith("Gold_"))==280000
+          art=json.loads((root/"CC0_nero_genuine_500k_blender_manifest.json").read_text())
+          assert art["original_selected_BlenderKit_material_applied"] is False
+          for name in ("blender_cycles_cc0_subdued_black.png","godot_mobile_cc0_subdued_black.png","real_godot_CC0_black_stone_vs_gray_placeholder.png"):
+            assert (root/name).read_bytes()[:8]==bytes((137,80,78,71,13,10,26,10))
+          print("PASS_PERSIST_REAL_500K_GLB_EXTERNAL_PBR",hashlib.sha256(data).hexdigest())
+          PY
+      - name: Permanently commit only real source evidence and derivative candidate, NOT approved production material
+        run: |
+          set -eu
+          dst=docs/evidence/m5-500k-cc0-blackstone-prototype-2026-10-14
+          mkdir -p "$dst"
+          src=build/cc0-original/results
+          for file in D20_500K_CC0_subdued_black.glb \
+                      godot_mobile_cc0_subdued_black.png \
+                      blender_cycles_cc0_subdued_black.png \
+                      real_godot_CC0_black_stone_vs_gray_placeholder.png \
+                      CC0_nero_genuine_500k_blender_manifest.json \
+                      godot_real_CC0_comparison_manifest.json; do
+            cp "$src/$file" "$dst/$file"
+          done
+          cat > "$dst/README.md" <<'EOF'
+          # REAL sourced CC0 black stone on engraved 500k D20 (lookdev only)
+
+          **Not production and not owner art acceptance.**
+          The external 1024px PBR data were actually downloaded from [ProcTexture Nero Marquina](https://proctexture.com/textures) under CC0. This is black marble, NOT the owner-selected BlenderKit polished obsidian, whose source remains HTTP403. This D20's diffuse has been deliberately subdued to remove white veins. The true source OpenGL normal and numeric roughness were preserved/calibrated; see script for exact transformations. Gold PBR and physical high-res engraving stay from corrected 500k master. Source binaries and checksums: [CI #38616429603](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38616429603).
+          
+          Original 500k GLB, Blender Cycles screenshot and Godot Mobile on Mesa screenshot were validated in [CI #38617713494](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38617713494). Real studio lighting is **under review** and screenshot has excessive silver-white facets on one side. Not on physical Android, not art approved. Source: [tools/blender/apply_licensed_cc0_black_stone_d20.py](../../../../tools/blender/apply_licensed_cc0_black_stone_d20.py).
+
+          Do not automatically replace the real gameplay material with this diagnostic candidate.
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$dst"
+          if git diff --cached --quiet; then
+            echo "ALREADY_SAVED"
+          else
+            git commit -m "evidence(m5): sourced CC0 black polished stone 500k D20 GLB and real Blender Godot PNGs"
+            git pull --rebase origin experiment/m5-learn-codex-d20
+            git push origin HEAD:refs/heads/experiment/m5-learn-codex-d20
+          fi
