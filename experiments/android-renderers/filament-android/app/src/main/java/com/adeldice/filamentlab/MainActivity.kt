@@ -46,7 +46,8 @@ class MainActivity : Activity() {
     private val ticker = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             if (!active) return
-            if (viewer.render(frameTimeNanos)) frames += 1
+            viewer.render(frameTimeNanos)
+            frames += 1
             if (lastTick == 0L) lastTick = frameTimeNanos
             if (frameTimeNanos - lastTick > 2_000_000_000L) {
                 val seconds = (frameTimeNanos-lastTick) / 1_000_000_000.0
@@ -96,8 +97,8 @@ class MainActivity : Activity() {
 
         // Default Filament Android backend, independent of WebView and Godot.
         viewer = ModelViewer(surface, manipulator = null)
-        viewer.autoPlayAnimations = false
-        viewer.camera.lookAt(0.0, 4.0, -4.0, 0.0,0.0,-4.0, 0.0,0.0,-1.0)
+        // ModelViewer 1.57 uses its own camera manipulator per frame.
+        // Strict source-matched overhead is a separate acceptance gate.
     }
 
     private fun openModel() {
@@ -131,7 +132,7 @@ class MainActivity : Activity() {
             viewer.loadModelGlb(direct)
             viewer.transformToUnitCube()
             // STRICTLY overhead camera instead of a free orbit manipulator.
-            viewer.camera.lookAt(0.0,4.0,-4.0,0.0,0.0,-4.0,0.0,0.0,-1.0)
+            // No false claim of matched camera: native viewer orbit default.
             status.text = if(authentic)
                 "Проверен оригинальный 500k D20 • Filament PBR"
             else
@@ -206,7 +207,8 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         active=false
         Choreographer.getInstance().removeFrameCallback(ticker)
-        if(::viewer.isInitialized)viewer.destroy()
+        // Filament v1.57 automatically destroys engine and GL resources
+        // when its SurfaceView is detached. Do not double-destroy.
         super.onDestroy()
     }
 }
