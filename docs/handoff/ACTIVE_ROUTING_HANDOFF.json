@@ -2,16 +2,17 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 isolated 100-stage D20 render load proof 500K–50M: 100/100 measured in actual Godot Mobile llvmpipe, and public/free polished black obsidian source audit; exact selected BlenderKit material still inaccessible",
+    "task": "M5 single 500k actual Blender GLB and real Godot Mobile render PASS; black obsidian three HDR variants real captures PASS but premium art review still OPEN",
     "route": "creative-3d",
     "status": "not_verified",
-    "owner": "Next Dice Godot/Blender material and Android performance agent; GitHub research persisted",
-    "next_action": "See permanent evidence original CSV+summary+source png and HTTP audit at docs/evidence/m5-d20-50m-2026-10-14/ (commit c0c30b869e4b368eeb00760c349594a9e38a8586), details docs/research/M5_D20_100_STAGES_500K_TO_50M_AND_FREE_OBSIDIAN_AUDIT_2026-10-14.md. Actual engine 100/100 instanced GPU load to 50M PASS, not a single mesh and not phone. Next separate memory-safe experiment: author and test genuinely unique indexed highpoly die and actual on-phone FPS; seek legally obtained user-selected polished black obsidian .blend/PBR, compare real Blender and Godot gold engraving, no purple; preserve all M4/PR #23 work.",
+    "owner": "Dice Blender/Godot visual 3D agent",
+    "next_action": "Model completed: 500000 genuine GLB triangles in one 21-mesh D20; source exact GLB SHA b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e permanently committed at docs/evidence/m5-d20-master-500k-2026-10-14/; native Godot Blender source CI #38607312075 PASS and permanent CI #38607566531 PASS. Three real Godot Mobile blackgloss source HDR visual A/B CI #38608045164 SUCCESS and original PNGs published; visual review sees whole stone faces gray/flat (reflection sky panel on planar facets), NOT premium. NEXT requires real geometry deformation with small curvature at facet interiors or properly sculpted facets + small nonpurple physically real black obsidian PBR (exact user-selected material 403); black environment alone cannot create highlights when flat normals are constant. Preserve correct 20 face normals and recessed inlays, maintain exact 500k if possible and do real Blender/Cycles/Godot A/B, no fake images. On-device OnePlus Nord 3 and true Jolt per die still NOT VERIFIED; no main or PR23 change. External Qwen independent visual critic NOT_VERIFIED.",
     "blockers": [
-      "Selected original free BlenderKit Procedural Obsidian UUID 92e31cbc-5b4e-4ead-a966-84bf106808c3 still denies HTTP403 on exact source and alternative. No true original .blend or verified PBR map bytes acquired; avoid unlicensed proxy/cookies, paid materials and purple substitutes.",
-      "Technical benchmark PASS only for Godot Mobile on software Mesa llvmpipe with instanced 50K tessellated icosahedron × 10–1000, 100/100 exact submitted triangles. NOT a single unique 50M polygon mesh, not premium gold/numeral geometry, no Jolt or textures, not Android hardware. Cross-shard frame times uncalibrated.",
-      "Single high-poly real mesh import, peak CPU/GPU RAM, performance/thermal FPS on Nord 3 or Android AVD NOT VERIFIED. Analytic one-mesh ~1.8 GB buffer estimate at 50M indexed triangles is NOT observed memory.",
-      "User-approved black glossy obsidian and deeply engraved gold text still ART NOT_VERIFIED; #38593819713 4 native blackglass studio original frames are diagnostic only, no independent vision critic/owner signoff. Original M4 PR #23 unresolved CI gates. No integration into main."
+      "Visual premium look NOT_ACCEPTED: 500k achieved by tessellating mostly unchanged flat shape; same silhouette exact; new Blender source underlit, Godot Mobile image still has flat grey planar specular fields. Blackgloss 3 variant engine screens from 38608045164 show only lighting changes, not genuine obsidian PBR or curve/volume gain.",
+      "User-selected exact free BlenderKit Procedural Obsidian original file still HTTP403; PBR exact source not retrieved. Do NOT replace with purple or unpaid unauthorized models.",
+      "Gold 20 separate recessed meshes; user art approval of engraving appearance and micro-geometry not performed; prior 59k model quality still similar.",
+      "Godot 4.6.3 Mobile llvmpipe (not physical OnePlus Nord3): true 500k GLB import and native rendering verified CI #38607312075. Android FPS, offline app swap, physics Jolt face-authority untested, preserve original collision body.",
+      "Independent Qwen local critic and external art acceptance NOT_VERIFIED. main and draft M4 PR23 untouched."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -144,13 +145,19 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_D20_100_STAGES_500K_TO_50M_AND_FREE_OBSIDIAN_AUDIT_2026-10-14.md",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38601294526",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/evidence/m5-d20-50m-2026-10-14/d20_100_stages.csv",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/evidence/m5-d20-50m-2026-10-14/polished_obsidian_public_source_audit.json"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/evidence/m5-d20-50m-2026-10-14/polished_obsidian_public_source_audit.json",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38607312075",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38607566531",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38608045164",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/evidence/m5-d20-master-500k-2026-10-14/d20_obsidian_gold_master_500k.glb",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/evidence/m5-d20-master-500k-2026-10-14/real_one_d20_500k_blackglass_comparison.png",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/evidence/m5-d20-master-500k-2026-10-14/source_pixel_metrics.json"
     ],
-    "last_observed_sha": "c0c30b869e4b368eeb00760c349594a9e38a8586",
-    "last_verified_sha": "7743e5a8828bd5b90b0554ddc77f6d68aed6a3c4",
+    "last_observed_sha": "10fba910755d88509acf562584bdaf757b40d6f4",
+    "last_verified_sha": "81e191412e21af14fb1348e3f2f8d5beac5cd86f",
     "branch": "experiment/m5-learn-codex-d20",
     "updated_at": "2026-10-14",
-    "verification_note": "2026-10-14: real source Godot 4.6.3 Mobile llvmpipe GitHub Actions CI #38599056847 SUCCESS on frozen benchmark commit 7743e5a8828bd5b90b0554ddc77f6d68aed6a3c4; each of 4 stage shards SUCCESS; aggregate source original 100/100 exact 500K increments to 50M, all actual Godot Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME equals submitted stage count, single MultiMesh draw call each; 4 warmup+2 measured wall-clock frames, first 500K 57.27ms, final 50M 5660.54ms. NOT Android GPU, NOT one unique mesh, NOT fps. Source audit CI #38598528322 SUCCESS, 10 public listed materials/models (8 HTTP200 and both BlendKit 403); MIT preview 25 material CI #38599475260 SUCCESS; actual selected PBR source not obtained and none approved. Main SHA 5f9333cf4a4e8f1fe979b0c7498a30e33222f601 and PR #23 draft SHA 8ec1d7fcd52e794024210358d676451c449add46 unchanged. Entry through GitHub connector, local engineering_router.py enter CLI NOT_VERIFIED because full local repo checkout unavailable; research and checkpoint persisted through GitHub connector. Optional independent Qwen vision critic NOT_VERIFIED, Android Nord3 NOT_VERIFIED. Permanent original source evidence publication workflow #38601294526 SUCCESS, commit c0c30b869e4b368eeb00760c349594a9e38a8586, files CSV 100 rows, 100th source PNG, summary and public obsidian JSON now available in experimental GitHub branch. No source proof requires ephemeral artifact only."
+    "verification_note": "Real 500k Blender 4.0.2 and GLB sha b84b2cbf6c4af6ada5fddac23de053e78ac5556aa366ecfba78ca605b0d3db0e, exact 500000 indexed triangles stone212464 gold287536, 20 Gold glyph meshes one stone, native Godot4.6.3 Mobile success CI #38607312075 with source PNG, Blender Cycles scene. Permanent real model/preview CI #38607566531 success, no overwriting gameplay. Real same SHA 3 black glossier HDR studio Godot Mobile CI #38608045164 success published original 4-way PNG and metrics: neutral mean ROI52.43, black40 lowfill43.34, black40 specular45.65, black33 specular40.39; these are brightness not art scores. Model remains visually insufficient: multiple facets uniformly gray despite high mesh count, no true selected user obsidian maps. On-device/independent reviewer not verified. CLI router entry NOT_VERIFIED because no local repo clone, mandated files read via GitHub and durable checkpoint via connector."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
