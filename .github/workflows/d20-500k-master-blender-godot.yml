@@ -1,0 +1,171 @@
+name: M5 real single D20 500000 triangle master Blender and Godot Mobile
+on:
+  push:
+    branches: [experiment/m5-learn-codex-d20]
+    paths:
+      - "tools/blender/build_d20_master_500k.py"
+      - ".github/workflows/d20-500k-master-blender-godot.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  one-real-500k-d20:
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.3
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install actual Blender, Mesa Vulkan, Pillow and runtime X11
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-numpy python3-pil fonts-dejavu-core xvfb libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers libfontconfig1 libxcursor1 libxrandr2 libxi6 libxinerama1 libxrender1 libxext6 libxfixes3 libxkbcommon0 libwayland-cursor0
+          blender --version | head -3
+          godot --version
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38281898713
+          name: LEARNED-CODEX-D20-real-source-Blender-Godot
+          path: build/master500k/source
+      - name: Validate unchanged original real authored GLB reference
+        run: |
+          mkdir -p build/master500k/results src/assets/generated
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path("build/master500k/source/learned_d20.glb")
+          assert p.is_file(),list(p.parent.iterdir())
+          expected="ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f"
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==expected
+          assert Path("build/master500k/source/godot_ibl.png").is_file()
+          assert Path("build/master500k/source/learned_studio.hdr").is_file()
+          print("PASS_ORIGINAL_REFERENCE_REAL_59276_TRI_D20",p.stat().st_size)
+          PY
+      - name: Author 500k real unique-triangle engraved D20 and actual Cycles screenshot
+        run: |
+          timeout 950 blender -b -t 3 --python-exit-code 14 -P tools/blender/build_d20_master_500k.py -- build/master500k/source/learned_d20.glb build/master500k/results > build/master500k/blender-master.log 2>&1 || { tail -100 build/master500k/blender-master.log; exit 11; }
+          grep -F "PASS_ONE_REAL_D20_500000_TRIANGLES_BLENDER" build/master500k/blender-master.log
+          test -s build/master500k/results/d20_obsidian_gold_master_500k.glb
+          test -s build/master500k/results/d20_obsidian_gold_master_500k.blend
+          test -s build/master500k/results/blender_cycles_master_500k.png
+      - name: Check actual GLB GPU triangle index counts (not a modifier or instance claim)
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,struct
+          from pathlib import Path
+          p=Path("build/master500k/results/d20_obsidian_gold_master_500k.glb")
+          raw=p.read_bytes()
+          magic,ver,total=struct.unpack_from("<III",raw)
+          assert (magic,ver,total)==(0x46546c67,2,len(raw))
+          length,tag=struct.unpack_from("<II",raw,12)
+          assert tag==0x4e4f534a
+          g=json.loads(raw[20:20+length])
+          parts=[]
+          for node in g.get("nodes",[]):
+            if "mesh" not in node:continue
+            mesh=g["meshes"][node["mesh"]]
+            triangles=0
+            for prim in mesh["primitives"]:
+              assert prim.get("mode",4)==4
+              indexes=g["accessors"][prim["indices"]]["count"] if "indices" in prim else g["accessors"][prim["attributes"]["POSITION"]]["count"]
+              assert indexes%3==0
+              triangles+=indexes//3
+            parts.append({"name":node["name"],"triangles":triangles})
+          assert len(parts)==21,parts
+          gold=[x for x in parts if x["name"].startswith("Gold_")]
+          stone=[x for x in parts if x["name"].startswith("D20_Engraved")]
+          assert len(gold)==20 and len(stone)==1,(gold,stone)
+          assert sum(x["triangles"] for x in parts)==500000,parts
+          assert len(g["materials"])>=3,len(g["materials"])
+          assert all("Recessed" in x.get("name","") for x in g["materials"] if "Gold" in x.get("name",""))
+          assert any("PolishedObsidian" in x.get("name","") for x in g["materials"])
+          data={"source_glb_sha256":"ec7bcee05f9d6b571b1db0db4ebc09d726b1aedd53a53159c067032c7c74987f",
+            "master_glb_sha256":hashlib.sha256(raw).hexdigest(),
+            "master_glb_bytes":len(raw),"real_unique_rendered_triangles":500000,
+            "stone_tris":stone[0]["triangles"],"gold_tris":sum(x["triangles"] for x in gold),
+            "mesh_count":len(parts),"gold_glyph_meshes":len(gold),
+            "source_materials":[x.get("name","") for x in g["materials"]],
+            "actual_external_original_obsidian_material_downloaded":False,
+            "model_not_multimesh":True,
+            "parts":parts}
+          Path("build/master500k/results/manifest_glb_verified.json").write_text(json.dumps(data,indent=2)+"\n")
+          print("PASS_ONE_TRUE_500K_GLB",json.dumps({k:v for k,v in data.items() if k!="parts"}))
+          PY
+      - name: Import THE EXACT 500k GLB into actual Godot Mobile (not fake render)
+        run: |
+          set -eu
+          cp build/master500k/results/d20_obsidian_gold_master_500k.glb src/assets/generated/learned_d20.glb
+          cp build/master500k/source/learned_studio.hdr src/assets/generated/learned_studio.hdr
+          touch build/.gdignore
+          timeout 160 godot --headless --path . --editor --import --quit > build/master500k/godot-import.log 2>&1 || { tail -90 build/master500k/godot-import.log; exit 21; }
+          if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' build/master500k/godot-import.log; then
+            tail -100 build/master500k/godot-import.log
+            exit 22
+          fi
+          timeout 180 xvfb-run -a -s "-screen 0 1100x900x24" godot --display-driver x11 --path . --rendering-method mobile --audio-driver Dummy --script res://tools/visual/learn_codex_d20_capture.gd -- --variant=ibl > build/master500k/godot-master-mobile.log 2>&1 || { tail -110 build/master500k/godot-master-mobile.log; exit 23; }
+          grep -F "LEARNED_D20_GODOT_REAL_FRAME" build/master500k/godot-master-mobile.log
+          grep -F "LEARNED_D20_SEPARATE_SURFACES_OK" build/master500k/godot-master-mobile.log
+          if grep -Eq 'ERROR:|SCRIPT ERROR:|Parse Error' build/master500k/godot-master-mobile.log; then cat build/master500k/godot-master-mobile.log; exit 24; fi
+          test -s build/learned-d20/godot_ibl.png
+          cp build/learned-d20/godot_ibl.png build/master500k/results/godot_mobile_master_500k.png
+      - name: Assemble real Blender/Godot screenshot comparison without image generation
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageDraw,ImageFont,ImageStat
+          from pathlib import Path
+          import hashlib,json
+          root=Path("build/master500k")
+          original_blender=Image.open(root/"source/blender_cycles.png").convert("RGB")
+          original_godot=Image.open(root/"source/godot_ibl.png").convert("RGB")
+          new_blender=Image.open(root/"results/blender_cycles_master_500k.png").convert("RGB")
+          new_godot=Image.open(root/"results/godot_mobile_master_500k.png").convert("RGB")
+          assert original_blender.size==(1000,850)
+          assert original_godot.size==(1000,850)
+          assert new_blender.size==(720,720)
+          assert new_godot.size==(1000,850)
+          for label,im in [("Blender orig",original_blender),("Godot orig",original_godot),("Blender new",new_blender),("Godot new",new_godot)]:
+            assert max(ImageStat.Stat(im).stddev)>5,(label,"blank")
+          board=Image.new("RGB",(2040,1800),(18,20,24))
+          font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",24)
+          draw=ImageDraw.Draw(board)
+          labels=["BLENDER CYCLES: real original 59,276",
+                  "GODOT MOBILE: real original 59,276",
+                  "BLENDER CYCLES: real NEW 500,000",
+                  "GODOT MOBILE: real NEW 500,000"]
+          for i,(label,im) in enumerate(zip(labels,[original_blender,original_godot,new_blender,new_godot])):
+            x=10+(i%2)*1015;y=42+(i//2)*884
+            draw.text((x,y-31),label,font=font,fill=(245,245,245))
+            # Blender master is deliberately letterboxed, NOT stretched.
+            if i==2:
+              board.paste(im,(x+140,y+65))
+            else:
+              board.paste(im,(x,y))
+          path=root/"results/real_blender_godot_59k_vs_500k.png"
+          board.save(path)
+          manifest={"evidence_type":"composite from original actual engine PNG screenshots",
+            "gallery_has_no_synthetic_image_pixels":True,
+            "source_is_59276_not_user_supplied_codex_glb":True,
+            "comparison_png_sha256":hashlib.sha256(path.read_bytes()).hexdigest(),
+            "sources":[{"name":name,"sha256":hashlib.sha256(p.read_bytes()).hexdigest()}
+                       for name,p in [
+                         ("original_cycles",root/"source/blender_cycles.png"),
+                         ("original_godot",root/"source/godot_ibl.png"),
+                         ("500k_cycles",root/"results/blender_cycles_master_500k.png"),
+                         ("500k_godot",root/"results/godot_mobile_master_500k.png")]],
+            "qualifiers":"studio environment and separate capture settings differ by source, not controlled visual pixel A/B; model geometry exact"}
+          (root/"results/real_render_manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
+          print("PASS_ACTUAL_BLENDER_GODOT_500K_RENDER_COMPARE",path,manifest["comparison_png_sha256"])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-real-unique-500000-D20-GLB-Blender-Godot-Cycles
+          path: |
+            build/master500k/results/
+            build/master500k/blender-master.log
+            build/master500k/godot-import.log
+            build/master500k/godot-master-mobile.log
+          retention-days: 30
+          if-no-files-found: warn
