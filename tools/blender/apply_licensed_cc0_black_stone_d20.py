@@ -72,7 +72,7 @@ def setup_stone(obj,variant):
       native_png_image(roughness,variant+"_real_source_roughness",True),
       native_png_image(normalpath,variant+"_real_source_normal",True)]
     for i in range(2):
-        mat=bpy.data.materials.new("CC0Nero_"+variant+("_faces" if i==0 else "_edge"))
+        mat=bpy.data.materials.new("CC0Nero_"+variant+("_faces" if i==0 else "_EdgeSatin"))
         mat.use_nodes=True
         nt=mat.node_tree
         bs=nt.nodes.get("Principled BSDF")
@@ -89,12 +89,15 @@ def setup_stone(obj,variant):
             rf=nt.nodes.new("ShaderNodeTexImage")
             rf.image=colors[1]
             nt.links.new(rf.outputs["Color"],bs.inputs["Roughness"])
-            norm=nt.nodes.new("ShaderNodeTexImage")
-            norm.image=colors[2]
-            normalmap=nt.nodes.new("ShaderNodeNormalMap")
-            normalmap.inputs["Strength"].default_value=.10
-            nt.links.new(norm.outputs["Color"],normalmap.inputs["Color"])
-            nt.links.new(normalmap.outputs["Normal"],bs.inputs["Normal"])
+        # Real Godot scene acceptance expects a valid PBR normal channel on
+        # BOTH stone face and satin-cut-edge surfaces. Earlier draft lost the
+        # normal on the bevel; that's a true material regression, not a test bug.
+        norm=nt.nodes.new("ShaderNodeTexImage")
+        norm.image=colors[2]
+        normalmap=nt.nodes.new("ShaderNodeNormalMap")
+        normalmap.inputs["Strength"].default_value=.10 if i==0 else .035
+        nt.links.new(norm.outputs["Color"],normalmap.inputs["Color"])
+        nt.links.new(normalmap.outputs["Normal"],bs.inputs["Normal"])
         obj.material_slots[i].material=mat
 
 def do_geometry_uv(obj):
