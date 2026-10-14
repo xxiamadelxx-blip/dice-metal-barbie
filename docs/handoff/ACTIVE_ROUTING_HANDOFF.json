@@ -2,17 +2,15 @@
   "schema_version": 1,
   "repository": "xxiamadelxx-blip/dice-metal-barbie",
   "active": {
-    "task": "M5 D20 smooth radial authored normal maps proven in real Blender/Cycles and Godot Mobile three-yaw A/B; premium obsidian ART FAIL",
+    "task": "M5 selected polished black obsidian from Blendkit: anonymous licensed source intake and real Blender Cycles D20 preview; separate M4/PR #23 remains open",
     "route": "creative-3d",
     "status": "in_progress",
-    "owner": "isolated Blender-authored premium lookdev; never merge without visual acceptance",
-    "next_action": "Read docs/research/M5_D20_RADIAL_NORMAL_SMOOTHING_THREE_YAW_2026-10-12.md and inspect actual old/new source images from #38306809305. C1-soft radial normal removed discontinuous min-edge derivative (numeric cusp metric 0.32736->0.001772), but Mobile yaw ROI only 0.903/0.771/0.568 mean RGB changes and gray/silver side planes remain. Next isolate physical studio HDR light-card direction/intensity and dielectric coat with matched Cycles+Mobile captures; do NOT use a base-color darkening trick or claim art acceptance. Verify spatial AO saved file before claiming AO bake; review 6/9 engraving, independent art critic, 24fps Jolt mapping and actual Android Nord3 later.",
+    "owner": "GitHub-connected Dice agent, isolated no-account Blender lookdev",
+    "next_action": "Inspect exact source run #38590931873 for public Blendkit API/license/download and actual 1000x850 Blender oblique/overhead PNGs. If intake fails, inspect logs and alter hypothesis; if succeeds, inspect real source frames before planning baked GLB→Godot Mobile A/B. Never merge to PR #23/main before owner art approval.",
     "blockers": [
-      "Premium Codex-level glossy BLACK obsidian ART FAIL: gray/silver sides and flat presentation persist; smooth radial gradients are a modest change, user sign-off NOT VERIFIED.",
-      "Real spatial AO NOT VERIFIED: glTF still uses neutral R=255; Blender manifest 'cycles_ao: made' is not reliable proof saved AO isn't black.",
-      "6/9 engraving legibility and actual 24fps Jolt rolls/face mapping not checked against newest experimental model.",
-      "Independent Qwen vision critic/owner aesthetic approval NOT VERIFIED.",
-      "Android AVD gameplay visual QA and physical OnePlus Nord 3 real-device GPU/FPS/thermals NOT VERIFIED; experiment is desktop Mesa Mobile only."
+      "Blendkit free material unattended anonymous download NOT_VERIFIED pending workflow #38590931873; license must be verified at metadata.",
+      "Even successful Blender procedural render is NOT a Godot PBR GLB; actual color/normal/roughness/AO bake and Godot Mobile source frames NOT_VERIFIED.",
+      "User's gold engraved premium D20 artistic acceptance, Jolt/24fps roll, Android AVD, OnePlus Nord3 device FPS/signoff NOT_VERIFIED."
     ],
     "evidence": [
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38132510403",
@@ -127,13 +125,16 @@
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38305802712/artifacts/11772617772",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38306520878",
       "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38306809305",
-      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38306809305/artifacts/11772698044"
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38306809305/artifacts/11772698044",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38590355911",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38590931873",
+      "https://github.com/xxiamadelxx-blip/dice-metal-barbie/blob/experiment/m5-learn-codex-d20/docs/research/M5_SELECTED_BLENDKIT_OBSIDIAN_SOURCE_GATE_2026-10-14.md"
     ],
-    "last_observed_sha": "a97ad01bcfa6e581d869e551d61dc9a90888f346",
-    "last_verified_sha": "a97ad01bcfa6e581d869e551d61dc9a90888f346",
+    "last_observed_sha": "cc2f0149801b3dbfe1e8a2cc93c65d164fec84fe",
+    "last_verified_sha": "",
     "branch": "experiment/m5-learn-codex-d20",
-    "updated_at": "2026-10-12",
-    "verification_note": "Blender 4.0.2 + source authored/saved .blend + GLB exported and reimported; Godot 4.6.3 desktop Mesa Mobile SUCCESS #38305802712. Three-yaw exact-source old-vs-new success #38306809305; old normal glb SHA f9c7fe24, radial glb SHA e83e2aa1; 4454 identical unique POSITION coordinates. GLB bevel split changed 2->1 primitive but semantic PBR face/bevel validation passed. ROI mean RGB difference old to radial at yaw0/45/90 =0.903/0.771/0.568, NOT proof of premium; ART FAIL; no phone evidence. Router CLI enter/checkpoint NOT VERIFIED locally due GitHub-only toolchain, tracked checkpoint updated through authenticated GitHub Git data."
+    "updated_at": "2026-10-14",
+    "verification_note": "Real Godot Mobile/Mesa BRDF workflow #38590355911 completed SUCCESS at c366362; no art accept inferred. Blendkit material fetch/Blender preview workflow #38590931873 currently in_progress and unverified. Local Blender/Godot binaries absent, so router CLI and native local render NOT_VERIFIED; work performed with GitHub source/CI. main and PR #23 unchanged."
   },
   "incidents": {
     "m4-avd-first-frame-stale-after-godot-log": {
