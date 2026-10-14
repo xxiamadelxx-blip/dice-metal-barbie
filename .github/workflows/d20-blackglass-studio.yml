@@ -45,7 +45,7 @@ jobs:
           grep -F PASS_PHYSICAL_BLACKGLASS_HDR_VARIANTS build/learned-d20/blackglass-source.log
           cp build/learned-d20/learned_studio_mobile_narrow*.hdr src/assets/generated/
           cp build/learned-d20/learned_studio_mobile_black*.hdr src/assets/generated/
-          touch build/.gdignore
+          touch build/.gdignore docs/.gdignore
       - name: Real Godot 4.6.3 Mobile import
         run: |
           set -eu
