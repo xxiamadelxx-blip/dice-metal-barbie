@@ -39,6 +39,21 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.12.1'
+      - name: Generate unlicensed reproducible D20 fixture for real Android GPU proof
+        run: |
+          python3 experiments/alpha4-rng-first/tools/make_public_qa_glb.py experiments/alpha4-rng-first/android-app/app/src/main/assets/qa_fixture.glb
+          test -s experiments/alpha4-rng-first/android-app/app/src/main/assets/qa_fixture.glb
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          p=Path('experiments/alpha4-rng-first/android-app/app/src/main/assets/qa_fixture.glb')
+          data=p.read_bytes()
+          assert data[:4]==b'glTF' and len(data)<16000
+          n=struct.unpack_from('<I',data,12)[0]
+          src=json.loads(data[20:20+n])
+          assert sum(n['name'].startswith('Gold_') for n in src['nodes'])==20
+          print('PASS_OPEN_20_FACE_GLB_IN_DEBUG_APK',len(data))
+          PY
       - name: Compile Android WebGL2 application
         working-directory: experiments/alpha4-rng-first/android-app
         run: gradle --no-daemon --stacktrace :app:assembleDebug
@@ -88,10 +103,29 @@ jobs:
             set -eu
             mkdir -p build/alpha4-webgl2-real-android-proof
             adb install -r build/alpha4-webgl2-apk/app-debug.apk
-            adb shell am start -n app.adeldice.weblab/.MainActivity
+            adb shell am start -n app.adeldice.weblab/.MainActivity --ez qa_fixture true
             sleep 18
             adb logcat -d -s AlphaWebGLLab:I chromium:E > build/alpha4-webgl2-real-android-proof/native-webgl.log
             grep -F 'ALPHA_WEBGL_LAB_QA true' build/alpha4-webgl2-real-android-proof/native-webgl.log
+            grep -F 'ALPHA_ANDROID_MODEL_QA {' build/alpha4-webgl2-real-android-proof/native-webgl.log
+            if grep -q 'ALPHA_ANDROID_MODEL_QA_FAIL' build/alpha4-webgl2-real-android-proof/native-webgl.log; then
+              echo 'FAIL: Native Android GLB loader/render QA recorded an error'
+              exit 23
+            fi
+            python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          data=Path('build/alpha4-webgl2-real-android-proof/native-webgl.log').read_text()
+          matches=re.findall(r'ALPHA_ANDROID_MODEL_QA (\\{[^\\n}]+\\})',data)
+          assert matches,'FAIL: no actual in-app GPU pixels for public D20'
+          report=json.loads(matches[-1])
+          assert report['ready'] is True,report
+          assert report['face']==11 and report['front']==11,report
+          assert report['parts']==21 and report['triangles']==40,report
+          assert report['bright']>=16,report
+          assert report['glError']==0,report
+          print('PASS_REAL_ANDROID_WEBVIEW_GLTF_20_FACES_GPU_PIXELS',report)
+          PY
             adb exec-out screencap -p > build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
             test -s build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
             file build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png | grep 'PNG image data'
