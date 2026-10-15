@@ -11,7 +11,7 @@
   "results": [
     {
       "selected": 1,
-      "committedAt": 307.3999999999942,
+      "committedAt": 326.3999999999942,
       "finished": true,
       "topFace": 1,
       "topDot": 0.9999999999999999,
@@ -19,7 +19,7 @@
     },
     {
       "selected": 2,
-      "committedAt": 324.79999999998836,
+      "committedAt": 338.29999999998836,
       "finished": true,
       "topFace": 2,
       "topDot": 1,
@@ -27,7 +27,7 @@
     },
     {
       "selected": 3,
-      "committedAt": 340.8999999999942,
+      "committedAt": 354,
       "finished": true,
       "topFace": 3,
       "topDot": 1,
@@ -35,7 +35,7 @@
     },
     {
       "selected": 4,
-      "committedAt": 357.79999999998836,
+      "committedAt": 371.5999999999767,
       "finished": true,
       "topFace": 4,
       "topDot": 1.0000000000000002,
@@ -43,7 +43,7 @@
     },
     {
       "selected": 5,
-      "committedAt": 374.59999999999127,
+      "committedAt": 387.19999999998254,
       "finished": true,
       "topFace": 5,
       "topDot": 1,
@@ -51,7 +51,7 @@
     },
     {
       "selected": 6,
-      "committedAt": 391.1999999999971,
+      "committedAt": 404.5,
       "finished": true,
       "topFace": 6,
       "topDot": 1,
@@ -59,7 +59,7 @@
     },
     {
       "selected": 7,
-      "committedAt": 407.59999999999127,
+      "committedAt": 422.5999999999767,
       "finished": true,
       "topFace": 7,
       "topDot": 0.9999999999999999,
@@ -67,7 +67,7 @@
     },
     {
       "selected": 8,
-      "committedAt": 424.1999999999971,
+      "committedAt": 437.19999999998254,
       "finished": true,
       "topFace": 8,
       "topDot": 1.0000000000000007,
@@ -75,7 +75,7 @@
     },
     {
       "selected": 9,
-      "committedAt": 442.79999999998836,
+      "committedAt": 453.3999999999942,
       "finished": true,
       "topFace": 9,
       "topDot": 1,
@@ -83,7 +83,7 @@
     },
     {
       "selected": 10,
-      "committedAt": 457.8999999999942,
+      "committedAt": 474.29999999998836,
       "finished": true,
       "topFace": 10,
       "topDot": 0.9999999999999999,
@@ -91,7 +91,7 @@
     },
     {
       "selected": 11,
-      "committedAt": 616.1999999999971,
+      "committedAt": 654.8999999999942,
       "finished": true,
       "topFace": 11,
       "topDot": 1,
@@ -99,7 +99,7 @@
     },
     {
       "selected": 12,
-      "committedAt": 624.0999999999913,
+      "committedAt": 678.1999999999825,
       "finished": true,
       "topFace": 12,
       "topDot": 0.9999999999999999,
@@ -107,7 +107,7 @@
     },
     {
       "selected": 13,
-      "committedAt": 885.8999999999942,
+      "committedAt": 1027.5999999999767,
       "finished": true,
       "topFace": 13,
       "topDot": 0.9999999999999998,
@@ -115,7 +115,7 @@
     },
     {
       "selected": 14,
-      "committedAt": 916.5,
+      "committedAt": 1055.8999999999942,
       "finished": true,
       "topFace": 14,
       "topDot": 1,
@@ -123,7 +123,7 @@
     },
     {
       "selected": 15,
-      "committedAt": 946.5,
+      "committedAt": 1082.8999999999942,
       "finished": true,
       "topFace": 15,
       "topDot": 1.0000000000000004,
@@ -131,7 +131,7 @@
     },
     {
       "selected": 16,
-      "committedAt": 965.8999999999942,
+      "committedAt": 1108.5999999999767,
       "finished": true,
       "topFace": 16,
       "topDot": 0.9999999999999999,
@@ -139,7 +139,7 @@
     },
     {
       "selected": 17,
-      "committedAt": 999.2999999999884,
+      "committedAt": 1149,
       "finished": true,
       "topFace": 17,
       "topDot": 0.9999999999999997,
@@ -147,7 +147,7 @@
     },
     {
       "selected": 18,
-      "committedAt": 1020.1999999999971,
+      "committedAt": 1183.8999999999942,
       "finished": true,
       "topFace": 18,
       "topDot": 0.9999999999999998,
@@ -155,7 +155,7 @@
     },
     {
       "selected": 19,
-      "committedAt": 1048.199999999997,
+      "committedAt": 1219.1999999999825,
       "finished": true,
       "topFace": 19,
       "topDot": 0.9999999999999999,
@@ -163,7 +163,7 @@
     },
     {
       "selected": 20,
-      "committedAt": 1070,
+      "committedAt": 1241.8999999999942,
       "finished": true,
       "topFace": 20,
       "topDot": 0.9999999999999998,
