@@ -2,7 +2,9 @@ name: M5 RNG-first Three.js standalone Android AVD actual screen verification
 on:
   push:
     branches: [experiment/m5-android-renderer-alternatives]
-    paths: [".github/workflows/m5-three-webview-android-avd-verify.yml"]
+    paths:
+      - ".github/workflows/m5-three-webview-android-avd-verify.yml"
+      - "experiments/android-renderers/android/tests/avd_smoke.sh"
   workflow_dispatch:
 permissions:
   contents: read
