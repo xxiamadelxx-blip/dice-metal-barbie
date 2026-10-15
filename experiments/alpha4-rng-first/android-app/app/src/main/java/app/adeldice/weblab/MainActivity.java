@@ -11,6 +11,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
 import android.graphics.Color;
+import android.util.Log;
+import android.webkit.ConsoleMessage;
 
 /** Offline WebGL2 renderer benchmark, not the signed production Dice Roller. */
 public final class MainActivity extends Activity {
@@ -32,8 +34,18 @@ public final class MainActivity extends Activity {
         config.setAllowContentAccess(true);
         config.setAllowFileAccessFromFileURLs(false);
         config.setAllowUniversalAccessFromFileURLs(false);
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                // Verify the *actual* Android WebView GPU context, not a mock or source assertion.
+                view.evaluateJavascript("Boolean(window.DiceExperimentalQA && document.getElementById('canvas').getContext('webgl2') && window.crypto && window.crypto.getRandomValues)",
+                    result -> Log.i("AlphaWebGLLab", "ALPHA_WEBGL_LAB_QA " + result));
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage message) {
+                Log.i("AlphaWebGLLab", "JS " + message.message());
+                return true;
+            }
             @Override public boolean onShowFileChooser(WebView source, ValueCallback<Uri[]> callback,
                                                        FileChooserParams params) {
                 if (pendingFiles != null) pendingFiles.onReceiveValue(null);
