@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1"/>
+<meta name="theme-color" content="#121218"/><title>Dice · RNG-first WebGL2</title>
+<style>
+*{box-sizing:border-box}body{margin:0;color:#e8dcc6;background:#13141a;font:15px system-ui,Arial,sans-serif;min-height:100dvh;display:flex;flex-direction:column}
+header{padding:17px 18px;border-bottom:1px solid #76624040;display:flex;justify-content:space-between;align-items:center;gap:15px}header strong{font-size:18px}header small{color:#aaa091}
+main{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px;gap:8px;justify-content:center}
+.scene{width:min(96vw,520px);aspect-ratio:1;background:radial-gradient(circle at 50% 33%,#31323a,#141519 70%);border:1px solid #89714b33;border-radius:17px;position:relative;overflow:hidden}
+.scene:after{content:"";position:absolute;inset:auto 10% 8%;height:11%;background:#0009;filter:blur(25px);border-radius:50%;pointer-events:none}
+canvas{display:block;width:100%;height:100%;position:relative;z-index:1}#result{font-size:44px;font-weight:800;min-height:58px;color:#edc37a;text-shadow:0 2px 12px #0008;line-height:58px;font-variant-numeric:tabular-nums}
+button{border:0;border-radius:12px;padding:14px 22px;background:linear-gradient(160deg,#e6c180,#ae7b3e);font-weight:750;color:#211a11;font-size:18px;min-width:200px}button:disabled{opacity:.45}
+#status{font-size:13px;color:#b9ad99;max-width:500px;text-align:center;min-height:42px;padding:4px}section.controls{width:min(95vw,520px);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+label.file{display:flex;align-items:center;gap:8px;border:1px solid #6d5944;padding:9px;border-radius:10px;color:#f2d5a1;cursor:pointer;font-size:13px}label.file input{max-width:176px;font-size:11px}
+.range{display:flex;align-items:center;gap:8px;font-size:13px;color:#c4b49b}.range input{width:90px;accent-color:#cca769}
+footer{text-align:center;padding:14px;font-size:11px;color:#aaa093;border-top:1px solid #76624040}code{color:#d5ba8a}
+</style></head><body>
+<header><strong>Dice · Alpha RNG-first</strong><small>WebGL2 без Godot</small></header>
+<main>
+<section class="controls"><label class="file">Оригинальный D20 GLB <input id="input" type="file" accept=".glb,model/gltf-binary"></label><label class="range">Блеск <input id="studio" type="range" min="0" max="2.5" step=".05" value=".85"/></label></section>
+<div class="scene"><canvas id="canvas" width="720" height="720" aria-label="3D модель D20"></canvas></div>
+<div id="result" aria-live="polite">—</div>
+<button id="roll" disabled>Бросить D20</button>
+<div id="status" aria-live="polite">Выбери оригинальный D20 GLB или открой комплект с моделью.</div>
+</main>
+<footer>Сначала <code>crypto.getRandomValues</code>, потом анимация к выбранной грани. Оригинальные PBR-карты GLB сохраняются.</footer>
+<script src="rng-core.js"></script><script src="glb-core.js"></script><script src="webgl-renderer.js"></script>
+<script>
+'use strict';
+(function(){
+const $=id=>document.getElementById(id), status=$('status'),button=$('roll'),out=$('result');
+const setStatus=s=>status.textContent=s;
+const {parse,verifyMaster,poseForNumber,qrot,qmul,qaxis,slerp,norm}=DiceGLB;
+let lastDrawAt=0; let viewer=null, faces=null,current=[0,0,0,1],moving=false,target=current,from=current,fromSettle=current,chosen=null,start=0,frameTimes=[],loaded=false;
+const secureD20=()=>DiceRNG.secureDie(20);
+const SPIN_MS=1720;
+function spinPose(t){const rot=qaxis(norm([.35,1,.22]),(t/0.69)*Math.PI*7.1);return norm(qmul(rot,from));}
+function renderTick(now){try{
+ if(viewer&&loaded){let height=0;
+ if(moving){const t=Math.min(1,(now-start)/SPIN_MS);
+ if(t<=.69){current=spinPose(t);height=.22*Math.abs(Math.sin(t*17.2))*(1-t);}else{
+  const s=(t-.69)/.31,k=s*s*(3-2*s);current=slerp(fromSettle,target,k);height=.05*(1-k);
+ }
+ if(t>=1){current=target;moving=false;button.disabled=false;out.textContent=chosen;setStatus(`RNG ${chosen} · видимая грань ${chosen}. Число определено до броска.`);}
+ }
+ if(moving||now-lastDrawAt>180){lastDrawAt=now;const tick=performance.now();viewer.draw(current,height);frameTimes.push(performance.now()-tick);if(frameTimes.length>120)frameTimes.shift();}
+ }
+ }catch(e){moving=false;button.disabled=true;setStatus('Ошибка WebGL: '+e.message);console.error(e)}requestAnimationFrame(renderTick)}
+async function loadSource(buffer,filename){try{
+ button.disabled=true;loaded=false;setStatus('Проверяю модель: '+filename+'…');const glb=parse(buffer),proof=verifyMaster(glb),labels=proof.labels;
+ const v=viewer||new DiceViewer.Viewer($('canvas'));viewer=v;const stats=await v.load(glb);
+ faces=labels;current=poseForNumber(labels,20);target=current;loaded=true;out.textContent='20';button.disabled=false;
+ setStatus(`Загружено: ${proof.triangles.toLocaleString('ru-RU')} треугольников, ${proof.labels.size} золотых чисел, ${stats.drawCalls} GPU-поверхностей. RNG-first активен.`);
+ }catch(e){button.disabled=true;loaded=false;setStatus('Ошибка модели/рендера: '+e.message);console.error(e)} }
+$('input').onchange=async()=>{const file=$('input').files[0];if(file)await loadSource(await file.arrayBuffer(),file.name)};
+$('studio').oninput=()=>{if(viewer)viewer.studio=Number($('studio').value)};
+button.onclick=()=>{if(!loaded||moving)return;chosen=secureD20();from=current;target=poseForNumber(faces,chosen);fromSettle=spinPose(.69);start=performance.now();moving=true;out.textContent='···';button.disabled=true;setStatus(`RNG заранее выбрал ${chosen}. Анимация не влияет на число.`)};
+window.DiceExperiment={get ready(){return loaded},get lastRNG(){return chosen},get inMotion(){return moving},get triangleCount(){return loaded?500000:0},get recentGpuSubmissionMs(){return frameTimes.length?frameTimes.reduce((x,y)=>x+y,0)/frameTimes.length:null},secureD20};
+// For local http(s) hosting the user can keep GLB beside the page. file://
+// restricts fetch, so there is always a visible user file-picker alternative.
+if(location.protocol==='http:'||location.protocol==='https:')fetch('./d20_selected_original_500k.glb').then(res=>{if(!res.ok)throw Error('Private GLB not next to HTML');return res.arrayBuffer()}).then(buffer=>loadSource(buffer,'оригинальный D20 500k')).catch(()=>{});
+requestAnimationFrame(renderTick);
+})();
+</script></body></html>

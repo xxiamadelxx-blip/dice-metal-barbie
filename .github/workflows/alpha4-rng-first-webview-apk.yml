@@ -1,0 +1,53 @@
+name: Alpha RNG-first alternate WebGL Android APK
+on:
+  push:
+    branches: [experiment/alpha4-rng-first-webgl]
+    paths:
+      - experiments/alpha4-rng-first/**
+      - .github/workflows/alpha4-rng-first-webview-apk.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-offline-webview-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate RNG-first algorithm
+        run: |
+          node experiments/alpha4-rng-first/rng-core.test.cjs
+          node --check experiments/alpha4-rng-first/glb-core.js
+          node --check experiments/alpha4-rng-first/webgl-renderer.js
+          node --check experiments/alpha4-rng-first/rng-core.js
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Install Android 35 SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Compile actual native Android debug APK (public source only)
+        run: |
+          gradle --project-dir experiments/alpha4-rng-first/android-webview :app:assembleDebug --no-daemon --stacktrace
+          test -s experiments/alpha4-rng-first/android-webview/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l experiments/alpha4-rng-first/android-webview/app/build/outputs/apk/debug/app-debug.apk | grep -E 'alpha4-webgl.html|webgl-renderer.js|rng-core.js|glb-core.js'
+          if unzip -l experiments/alpha4-rng-first/android-webview/app/build/outputs/apk/debug/app-debug.apk | grep -q 'd20_selected_original_500k.glb'; then
+            echo 'ERROR: private licensed GLB unexpectedly leaked to public APK'
+            exit 44
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Alpha4-RNG-first-Android-WebView-experiment-debug-APK
+          path: experiments/alpha4-rng-first/android-webview/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+          if-no-files-found: warn
