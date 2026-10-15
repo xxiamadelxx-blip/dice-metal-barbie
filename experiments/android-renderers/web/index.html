@@ -4,21 +4,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="theme-color" content="#080b0a"/>
 <meta name="color-scheme" content="dark"/>
-<title>Adel Dice Lab · Three.js Android · M5 renderer bake-off</title>
+<title>Adel Dice · Alpha 4 RNG-first · Three.js Android</title>
 </head><body>
 <main class="app">
-<header class="topbar"><div class="brand">◈</div><div><div class="kicker">RENDER ENGINE BAKE-OFF · EXPERIMENT</div><h1>Adel Dice Lab <small>THREE / WEBGL2</small></h1></div></header>
+<header class="topbar"><div class="brand">◈</div><div><div class="kicker">ALPHA 4 · PARALLEL ANDROID EXPERIMENT · RNG-FIRST</div><h1>Adel Dice <small>THREE.JS / WEBGL2 · RNG-FIRST</small></h1></div></header>
 <section class="hero">
 <div class="state-line"><span id="state">Инициализация WebGL2…</span><span id="fps" class="metric">FPS: —</span></div>
 <div class="stage" id="stage">
 <canvas id="view" aria-label="Трёхмерный лабораторный рендер D20"></canvas>
-<div class="watermark">ТЕСТ ГРАФИКИ · НЕ БРОСОК</div>
+<div class="watermark">RNG ОПРЕДЕЛЯЕТ РЕЗУЛЬТАТ · 3D ПОКАЗЫВАЕТ ГРАНЬ</div>
 </div>
 <div class="stats">
 <div><span>Отрисованных треугольников</span><strong id="gpu-tris">—</strong></div>
 <div><span>GLB и материалы</span><strong id="asset">Демо, не обсидиан</strong></div>
 <div><span>Вызовов рендеринга</span><strong id="calls">—</strong></div>
 </div>
+</section>
+<section class="roll-panel" aria-label="Экспериментальные броски DnD">
+  <div class="roll-title">Результат определяет RNG <span>Web Crypto</span></div>
+  <div class="roll-score" id="roll-result" aria-live="polite">D20</div>
+  <p class="roll-details" id="roll-details">Результат выбирается до начала анимации. Кубик докатывается до выбранной грани.</p>
+  <div class="roll-buttons">
+    <button id="roll-d20" type="button">Бросить D20</button>
+    <button id="roll-advantage" type="button">Преимущество 2D20</button>
+    <button id="roll-disadvantage" type="button">Помеха 2D20</button>
+    <button id="roll-mixed" type="button">1D20 + 2D6</button>
+  </div>
+  <p class="detail" id="roll-availability">Проверка модели…</p>
 </section>
 <section class="tools">
 <label class="file-label" for="model-file">Загрузить свой GLB (локально)</label>
@@ -33,7 +45,7 @@
 <p id="details" class="detail"></p>
 <p id="errors" role="status" class="errors"></p>
 </section>
-<footer>Alpha 4: Three.js r184. Это независимый тест PBR-рендеринга, а не готовая игра. Физические исходы здесь не генерируются.</footer>
+<footer>Параллельный прототип Alpha 4: Three.js r184 + Web Crypto. Псевдофизическая 3D-анимация управляется заранее выбранным числом, не является Jolt или настоящим физическим броском. Для 1D20+2D6 пока анимируется только D20.</footer>
 </main>
 <script type="module" src="/src/main.js"></script>
 </body></html>
