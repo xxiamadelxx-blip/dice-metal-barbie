@@ -57,3 +57,48 @@ jobs:
           path: experiments/alpha4-rng-first/android-webview/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
           if-no-files-found: warn
+  real-android-emulator:
+    needs: build-offline-webview-apk
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Alpha4-RNG-first-Android-WebView-experiment-debug-APK
+          path: build/alpha4-plain-apk
+      - name: Enable virtualized Android emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -eu
+            mkdir -p build/alpha4-plain-android-proof
+            adb install -r build/alpha4-plain-apk/app-debug.apk
+            adb shell am start -n io.adeldice.rngfirst/.MainActivity
+            sleep 16
+            adb logcat -d -s AlphaPlainWebGL:I chromium:E > build/alpha4-plain-android-proof/native-webview.log
+            grep -F 'ALPHA_PLAIN_WEBGL_QA' build/alpha4-plain-android-proof/native-webview.log
+            adb exec-out screencap -p > build/alpha4-plain-android-proof/real_android_plain_webgl_screen.png
+            python3 - <<'PY'
+            from pathlib import Path
+            p=Path("build/alpha4-plain-android-proof/real_android_plain_webgl_screen.png")
+            assert p.read_bytes()[:8]==bytes((137,80,78,71,13,10,26,10))
+            assert p.stat().st_size>20000
+            print("PASS_REAL_ANDROID_RENDERER_SHELL_ORIGINAL_PNG",p.stat().st_size)
+            PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Alpha4-Plain-WebGL2-Real-Android-Emulator-PNG-Logs
+          path: build/alpha4-plain-android-proof/
+          retention-days: 30
+          if-no-files-found: warn
