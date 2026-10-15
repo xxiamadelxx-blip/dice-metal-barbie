@@ -72,7 +72,11 @@ class MainActivity : Activity() {
         // Android AVD CI #38655979139 failed at nCreateUbershaderProvider
         // before this explicit native dependency was loaded.
         System.loadLibrary("gltfio-jni")
-        android.util.Log.i("DICE_FILAMENT_NATIVE","FILAMENT_AND_GLTFIO_JNI_READY")
+        // ModelViewer also creates a native camera Manipulator from
+        // libfilament-utils-jni.so. Verified second-stage Android crash:
+        // No implementation for Manipulator.nCreateBuilder() after gltfio loaded.
+        System.loadLibrary("filament-utils-jni")
+        android.util.Log.i("DICE_FILAMENT_NATIVE","FILAMENT_GLTFIO_UTILS_JNI_READY")
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.rgb(8,13,11))
