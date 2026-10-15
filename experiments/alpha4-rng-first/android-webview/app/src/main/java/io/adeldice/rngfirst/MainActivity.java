@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
+import android.util.Log;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.ValueCallback;
@@ -74,6 +76,10 @@ public final class MainActivity extends Activity {
       }
     });
     browser.setWebChromeClient(new WebChromeClient(){
+      @Override public boolean onConsoleMessage(ConsoleMessage message){
+        Log.i("AlphaPlainWebGL",message.message());
+        return true;
+      }
       @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params){
         if(upload!=null)upload.onReceiveValue(null);
         upload=callback;
