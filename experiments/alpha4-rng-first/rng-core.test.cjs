@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),crypto=require('node:crypto');
-const {secureDie}=require('./rng-core.js');
+const {secureDie}=require('./load-source.cjs')('./rng-core.js');
 for(const sides of [4,6,8,10,12,20,100]){
  const counts=new Int32Array(sides);
  for(let i=0;i<20000;i++){const v=secureDie(sides,crypto.webcrypto);assert(v>=1&&v<=sides);counts[v-1]++}
