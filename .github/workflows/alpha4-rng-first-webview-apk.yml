@@ -87,6 +87,7 @@ jobs:
             sleep 16
             adb logcat -d -s AlphaPlainWebGL:I chromium:E > build/alpha4-plain-android-proof/native-webview.log
             grep -F 'ALPHA_PLAIN_WEBGL_QA' build/alpha4-plain-android-proof/native-webview.log
+            grep -F '"shaderCompiled":true' build/alpha4-plain-android-proof/native-webview.log
             adb exec-out screencap -p > build/alpha4-plain-android-proof/real_android_plain_webgl_screen.png
             python3 - <<'PY'
             from pathlib import Path
