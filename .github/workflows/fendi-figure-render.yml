@@ -1,0 +1,44 @@
+name: Fendi figure | real Blender render QA from generated mesh
+on:
+  push:
+    branches:
+      - experiment/fendi-ss23-figure-qa
+    paths:
+      - .github/workflows/fendi-figure-render.yml
+      - experiments/fendi-ss23/render.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch real generated mesh from verified inference run
+        uses: actions/download-artifact@v4
+        with:
+          name: fendi-triposr-cpu-qa
+          run-id: 38813331518
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: build/fendi-ss23
+      - name: Prepare Blender and tested NumPy dependency
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender python3-numpy
+          blender -b --python-expr "import bpy, numpy; print('BLENDER_AND_NUMPY_OK',bpy.app.version_string, numpy.__version__)"
+      - name: Render actual colored geometry from four viewpoints
+        run: |
+          test -s build/fendi-ss23/candidate.glb
+          blender -b -t 4 --python experiments/fendi-ss23/render.py
+          test -s build/fendi-ss23/candidate_working.blend
+          test -s build/fendi-ss23/angle_00.png
+      - name: Upload candidate mesh, Blender project, real renders, reference
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fendi-figure-blender-render
+          path: build/fendi-ss23/
+          if-no-files-found: warn
+          retention-days: 14
