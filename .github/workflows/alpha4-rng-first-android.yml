@@ -12,6 +12,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: alpha4-rng-android-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build-real-offline-android:
     runs-on: ubuntu-24.04
@@ -123,8 +126,29 @@ jobs:
             adb exec-out screencap -p > build/alpha4-android-proof/real_android_webview_screen.png
             # Tap the real WEBVIEW 'БРОСИТЬ' control in the Pixel_6 1080x2400
             # emulator viewport. Then verify JS reports the 3D face equals RNG.
-            adb shell input tap 703 1350
-            sleep 8
+            adb shell uiautomator dump /sdcard/alpha4_hierarchy.xml >/dev/null 2>&1 || true
+            adb shell cat /sdcard/alpha4_hierarchy.xml > build/alpha4-android-proof/hierarchy.xml || true
+            location=$(python3 - <<'PY'
+            import re,xml.etree.ElementTree as ET
+            from pathlib import Path
+            pos="703 1435"
+            path=Path("build/alpha4-android-proof/hierarchy.xml")
+            if path.exists():
+              try:
+                root=ET.fromstring(path.read_text())
+                for elem in root.iter():
+                  text=elem.attrib.get("text","")+" "+elem.attrib.get("content-desc","")
+                  if "БРОСИТЬ" in text.upper():
+                    coords=[int(x) for x in re.findall(r"\\d+",elem.attrib.get("bounds",""))]
+                    if len(coords)==4:
+                      pos=f"{(coords[0]+coords[2])//2} {(coords[1]+coords[3])//2}"
+                      break
+              except Exception:pass
+            print(pos)
+            PY
+            )
+            adb shell input tap $location
+            sleep 9
             adb logcat -d -s AlphaWebGL:I chromium:E > build/alpha4-android-proof/native-webview.log
             grep -F 'ALPHA4_ROLL_PROOF' build/alpha4-android-proof/native-webview.log
             adb exec-out screencap -p > build/alpha4-android-proof/real_android_webview_rng_settled.png
