@@ -1,0 +1,53 @@
+name: Fendi figure | Blender cloud bench
+on:
+  push:
+    branches:
+      - experiment/fendi-ss23-figure-qa
+    paths:
+      - .github/workflows/fendi-figure-blender.yml
+      - experiments/fendi-ss23/**
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fendi-blender-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  blender-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender and image utilities
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender imagemagick python3-pil
+          blender -b --version | head -5
+      - name: Retrieve matching Fendi reference
+        run: |
+          mkdir -p build/fendi-ss23
+          curl -fLSs --retry 3 --max-time 40 -o build/fendi-ss23/reference.jpg https://fashionsnap-assets.com/article/images/2022/09/fendi_w23ss_look_053.jpeg
+          identify build/fendi-ss23/reference.jpg
+      - name: Inspect free 3D generator endpoints
+        continue-on-error: true
+        run: |
+          python3 -m venv /tmp/fendi-gradio
+          /tmp/fendi-gradio/bin/pip install -q gradio_client==1.13.0
+          /tmp/fendi-gradio/bin/python - <<'PY'
+          from gradio_client import Client
+          for space in ["stabilityai/stable-fast-3d"]:
+              print("SPACE", space,flush=True)
+              try:
+                  client=Client(space)
+                  print("API",client.view_api(print_info=False),flush=True)
+              except Exception as e:
+                  print("SPACE ERROR",type(e).__name__,str(e)[:500],flush=True)
+          PY
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fendi-blender-probe
+          path: build/fendi-ss23/
+          if-no-files-found: warn
+          retention-days: 7
