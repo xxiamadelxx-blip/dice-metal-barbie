@@ -13,6 +13,26 @@ bpy.ops.import_scene.gltf(filepath=str(GLB.resolve()))
 meshes=[o for o in bpy.context.scene.objects if o.type=="MESH"]
 if not meshes:
     raise RuntimeError("Imported GLB contains zero mesh objects")
+# In raw glTF import, vertex colors may exist without any connected material.
+# Restore the actual model's per-vertex RGB rather than painting it white.
+for ob in meshes:
+    attributes = ob.data.color_attributes
+    print("MESH_COLOR_LAYERS",ob.name,[(a.name,a.domain,a.data_type) for a in attributes],flush=True)
+    if len(attributes):
+        attr = attributes.active_color or attributes[0]
+        mat=bpy.data.materials.new("TripoSR genuine per-vertex colors")
+        mat.use_nodes=True
+        principled=mat.node_tree.nodes.get("Principled BSDF")
+        color_node=mat.node_tree.nodes.new("ShaderNodeVertexColor")
+        color_node.layer_name=attr.name
+        mat.node_tree.links.new(color_node.outputs["Color"],principled.inputs["Base Color"])
+        principled.inputs["Roughness"].default_value=0.84
+        ob.data.materials.clear()
+        ob.data.materials.append(mat)
+    else:
+        print("MISSING_VERTEX_COLOR","No per-vertex color imported in Blender",flush=True)
+    for face in ob.data.polygons:
+        face.use_smooth=True
 corners=[]
 for o in meshes:
     corners.extend(o.matrix_world @ Vector(p) for p in o.bound_box)
