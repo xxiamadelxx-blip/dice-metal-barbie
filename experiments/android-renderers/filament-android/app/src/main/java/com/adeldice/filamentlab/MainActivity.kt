@@ -67,6 +67,12 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Filament.init()
+        // Filament.init() loads the base JNI engine only. ModelViewer's
+        // UbershaderProvider belongs to gltfio and needs libgltfio-jni.so.
+        // Android AVD CI #38655979139 failed at nCreateUbershaderProvider
+        // before this explicit native dependency was loaded.
+        System.loadLibrary("gltfio-jni")
+        android.util.Log.i("DICE_FILAMENT_NATIVE","FILAMENT_AND_GLTFIO_JNI_READY")
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.rgb(8,13,11))
