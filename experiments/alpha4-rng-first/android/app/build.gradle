@@ -1,0 +1,25 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'org.dicemetalbarbie.alpha4webgl'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'org.dicemetalbarbie.alpha4webgl'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '0.2.0-experiment'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            // This experiment produces debug APK only. No fake signed release.
+        }
+    }
+}
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
