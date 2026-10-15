@@ -7,7 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build --base=./",
     "preview": "vite preview --host 0.0.0.0",
-    "smoke": "node tests/smoke.mjs"
+    "smoke": "node tests/smoke.mjs",
+    "test": "node --test tests/rng_first.test.mjs"
   },
   "dependencies": {
     "three": "0.184.0"
