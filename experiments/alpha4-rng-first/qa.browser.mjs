@@ -47,8 +47,13 @@ try{
  assert(surface.width>100&&surface.height>100&&surface.pixels);
  await page.screenshot({path:resolve(output,'real_threejs_webgl_rng_first_d20_20.png'),fullPage:true});
  await page.locator('#viewport').screenshot({path:resolve(output,'real_threejs_canvas_d20_20.png')});
+ // Untrusted source must be rejected before a GLTF loader sees its bytes.
+ await page.locator('#glbUpload').setInputFiles({name:'untrusted.glb',mimeType:'model/gltf-binary',buffer:Buffer.from('bad-model')});
+ await page.waitForFunction(()=>document.getElementById('status')?.textContent?.includes('SHA-256'),null,{timeout:10000});
+ assert.equal(await page.evaluate(()=>window.__DICE_QA__.modelSource),'PROCEDURAL_20_FACES');
+ assert.equal(await page.locator('#result').textContent(),'D20 / 20');
  writeFileSync(resolve(output,'qa.json'),JSON.stringify({pass:true,source:'Playwright Chromium real Three.js WebGL',...data,
-  browserCanvas:surface,consoleErrors:logs},null,2)+'\n');
+  browserCanvas:surface,corruptPrivateGlbRejected:true,consoleErrors:logs},null,2)+'\n');
  if(logs.length)throw new Error('Browser logged errors: '+logs.join('\n'));
  console.log('PASS_REAL_THREE_WEBGL_20_OF_20_FACE_PRESELECTED_RNG',JSON.stringify({
   faceCount:data.faces,rolls:data.results.length,shaderSource:'Three.js realtime WebGL',
