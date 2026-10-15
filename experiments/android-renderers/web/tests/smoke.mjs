@@ -29,6 +29,35 @@ try{
   });
   await page.goto(BASE_URL,{waitUntil:'networkidle',timeout:60000});
   await page.waitForFunction(()=>window.__diceLab?.state?.includes('WebGL2 работает'),{timeout:45000});
+  // Real THREE WebGL2 die roll with preselected crypto outcome and animated
+  // visually matching gold number. No 500k original PBR published to CI.
+  await page.locator('#roll-d20').click();
+  await page.waitForFunction(()=>window.__diceLab?.rollCount===1 && !window.__diceLab?.rolling,
+    {timeout:30000});
+  const firstRoll=await page.evaluate(()=>{
+    const l=window.__diceLab;
+    return {target:l.lastTarget,visible:l.lastVisible,rolls:l.rollCount,
+      result:l.lastResult,mechanics:l.mechanics,history:l.rollHistory};
+  });
+  if(firstRoll.target!==firstRoll.visible||firstRoll.target!==firstRoll.result)
+    throw new Error('RNG-FIRST D20 VISIBLE FACE FAILURE '+JSON.stringify(firstRoll));
+  if(firstRoll.mechanics!=='RNG-FIRST_TARGET_THEN_SCRIPTED_KINEMATIC_3D_NOT_RIGIDBODY')
+    throw new Error('Wrong RNG-first vs Jolt contract');
+  await page.screenshot({path:join(ARTIFACT_DIR,'REAL_THREE_ALPHA4_RNG_FIRST_NUMBERED_D20.png'),
+    fullPage:true,animations:'disabled'});
+  await page.locator('#roll-mixed').click();
+  await page.waitForFunction(()=>window.__diceLab?.rollCount===2&&!window.__diceLab?.rolling,
+    {timeout:30000});
+  const mixedRoll=await page.evaluate(()=>{
+    const l=window.__diceLab;
+    return {chosen:l.currentPlan.visualD20,sum:l.currentPlan.result,
+      actualVisual:l.lastVisible,dice:l.currentPlan.rolls};
+  });
+  if(mixedRoll.chosen!==mixedRoll.actualVisual ||
+      mixedRoll.dice.length!==3 ||
+      mixedRoll.sum!==mixedRoll.dice.reduce((a,x)=>a+x.value,0))
+    throw new Error('Mixed RNG-first discrepancy '+JSON.stringify(mixedRoll));
+  console.log('PASS_REAL_THREE_ALPHA4_RNG_FIRST',JSON.stringify({firstRoll,mixedRoll}));
   const before=await page.evaluate(()=>({state:window.__diceLab.state,frames:window.__diceLab.renderedFrames,
     webgl:window.__diceLab.glVersion}));
   if(!String(before.webgl).includes('WebGL 2.0'))throw new Error('Browser did not create REAL WebGL2 GPU context');
@@ -53,6 +82,10 @@ try{
   if(result.modelTriangles!==500000||result.renderedTriangles<500000)
     throw new Error('GLB actual load / rendered triangles not 500000: '+JSON.stringify(result));
   if(result.sourceOriginal)throw new Error('Synthetic test GLB must never be reported as the original');
+  // Unverified GLB doesn't have authenticated face/number mapping. Never
+  // animate the wrong golden face against an RNG target.
+  const unavailable=await page.locator('#roll-d20').isDisabled();
+  if(!unavailable)throw new Error('Unverified GLB incorrectly enabled guaranteed-number animation');
   if(errors.length)throw new Error('Browser JS/CDN errors: '+JSON.stringify(errors.slice(0,10)));
   await page.screenshot({path:join(ARTIFACT_DIR,'REAL_THREE_WEBGL2_SYNTHETIC_500K_NOT_OBSIDIAN.png'),
     fullPage:true,animations:'disabled'});
