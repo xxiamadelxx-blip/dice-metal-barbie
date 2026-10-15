@@ -139,7 +139,7 @@ jobs:
                 for elem in root.iter():
                   text=elem.attrib.get("text","")+" "+elem.attrib.get("content-desc","")
                   if "БРОСИТЬ" in text.upper():
-                    coords=[int(x) for x in re.findall(r"\\d+",elem.attrib.get("bounds",""))]
+                    coords=[int(x) for x in re.findall(r"\d+",elem.attrib.get("bounds",""))]
                     if len(coords)==4:
                       pos=f"{(coords[0]+coords[2])//2} {(coords[1]+coords[3])//2}"
                       break
