@@ -41,7 +41,7 @@ try:
     model.to("cpu")
     with torch.inference_mode():
         scene_codes=model(backdrop,device="cpu")
-        mesh=model.extract_mesh(scene_codes,resolution=192)[0]
+        mesh=model.extract_mesh(scene_codes,resolution=192,has_vertex_color=True)[0]
     mesh.export(str(OUT/"candidate.glb"))
     record.update({"status":"GENERATED_NOT_ACCEPTED","mesh_bytes":(OUT/"candidate.glb").stat().st_size,
                    "vertices":int(len(mesh.vertices)),"faces":int(len(mesh.faces))})
