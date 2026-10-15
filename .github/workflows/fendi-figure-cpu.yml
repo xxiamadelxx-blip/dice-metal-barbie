@@ -36,7 +36,7 @@ jobs:
           python3 -m venv /tmp/fendi-cpu
           /tmp/fendi-cpu/bin/pip install -q --upgrade pip
           /tmp/fendi-cpu/bin/pip install -q torch --index-url https://download.pytorch.org/whl/cpu
-          /tmp/fendi-cpu/bin/pip install -q 'rembg[cpu]' onnxruntime Pillow numpy scipy einops 'omegaconf' trimesh scikit-image huggingface_hub transformers safetensors imageio 'jaxtyping' 'kiui'
+          /tmp/fendi-cpu/bin/pip install -q 'rembg[cpu]' onnxruntime Pillow numpy scipy einops 'omegaconf' trimesh scikit-image huggingface_hub 'transformers==4.36.2' safetensors imageio 'jaxtyping' 'kiui'
           /tmp/fendi-cpu/bin/python -c "import torch; print('torch',torch.__version__,'CPU')"
       - name: Obtain exact 1600x2400 reference
         run: |
