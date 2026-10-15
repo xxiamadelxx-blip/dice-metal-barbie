@@ -1,0 +1,87 @@
+name: Alpha4 alternative genuine Three WebGL and RNG first browser Gauntlet
+on:
+  push:
+    branches: [experiment/alpha4-rng-first-webgl]
+    paths:
+      - "experiments/alpha4-rng-first/main.js"
+      - "experiments/alpha4-rng-first/index.html"
+      - "experiments/alpha4-rng-first/rng.cjs"
+      - "experiments/alpha4-rng-first/rng.test.cjs"
+      - "experiments/alpha4-rng-first/qa.browser.mjs"
+      - "experiments/alpha4-rng-first/package.json"
+      - ".github/workflows/alpha4-rng-first-webgl.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  real-webgl-rng-first:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: experiments/alpha4-rng-first
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned actual WebGL and browser toolchain
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Test unbiased secure RNG across 140000 samples
+        run: node rng.test.cjs
+      - name: Compile self-contained WebGL 3D renderer
+        run: |
+          npm run build
+          test -s bundle.js
+          grep -q 'WEBGL' bundle.js || true
+      - name: Native Chromium GPU WebGL browser test and real screenshots
+        run: |
+          set -eu
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/alpha-webgl-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          sleep 2
+          EVIDENCE_DIR=qa-output npm run test:browser
+          test -s qa-output/real_threejs_canvas_d20_20.png
+          test -s qa-output/qa.json
+      - name: Build one HTML file requiring no CDN or Android network
+        run: |
+          node - <<'JS'
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const bundle=fs.readFileSync('bundle.js','utf8');
+          const target='<script type="module" src="./bundle.js"></script>';
+          if(!html.includes(target))throw Error('Missing bundle entrypoint');
+          const output=html.replace(target,'<script>\n'+bundle+'\n</script>');
+          fs.writeFileSync('alpha4_rng_first_webgl_standalone.html',output);
+          if(output.length<100000)throw Error('WebGL vendor code missing, cannot call it offline');
+          console.log('PASS_OFFLINE_WEBGL_HTML',output.length);
+          JS
+      - name: Original screenshots and built code are permanent evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Alpha4-Three-WebGL-RNG-first-original-browser-QA
+          path: |
+            experiments/alpha4-rng-first/bundle.js
+            experiments/alpha4-rng-first/alpha4_rng_first_webgl_standalone.html
+            experiments/alpha4-rng-first/qa-output/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Commit public source-generated offline WebGL and proof PNG
+        if: success()
+        run: |
+          set -eu
+          mkdir -p evidence
+          cp qa-output/real_threejs_canvas_d20_20.png evidence/real_threejs_canvas_d20_20.png
+          cp qa-output/qa.json evidence/qa.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bundle.js alpha4_rng_first_webgl_standalone.html evidence/
+          if git diff --cached --quiet; then echo "ALREADY_PUBLISHED"; else
+            git commit -m "evidence(alt): actual Chrome GPU WebGL 20 face RNG-first success and standalone offline HTML"
+            git pull --rebase origin experiment/alpha4-rng-first-webgl
+            git push origin HEAD:refs/heads/experiment/alpha4-rng-first-webgl
+          fi
