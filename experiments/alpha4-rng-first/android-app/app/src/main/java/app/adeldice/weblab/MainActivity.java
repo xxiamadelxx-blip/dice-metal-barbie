@@ -12,6 +12,9 @@ import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
 import android.graphics.Color;
 import android.util.Log;
+import android.util.Base64;
+import java.io.InputStream;
+import java.io.IOException;
 import android.webkit.ConsoleMessage;
 
 /** Offline WebGL2 renderer benchmark, not the signed production Dice Roller. */
@@ -39,6 +42,10 @@ public final class MainActivity extends Activity {
                 // Verify the *actual* Android WebView GPU context, not a mock or source assertion.
                 view.evaluateJavascript("Boolean(window.DiceExperimentalQA && document.getElementById('canvas').getContext('webgl2') && window.crypto && window.crypto.getRandomValues)",
                     result -> Log.i("AlphaWebGLLab", "ALPHA_WEBGL_LAB_QA " + result));
+                // Test-only synthetic fixture: original owner GLB is never packaged or published.
+                if (BuildConfig.DEBUG && getIntent().getBooleanExtra("qa_fixture", false)) {
+                    loadPublicQaFixture(view);
+                }
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
@@ -67,6 +74,40 @@ public final class MainActivity extends Activity {
         });
         setContentView(webView);
         webView.loadUrl("file:///android_asset/viewer.html");
+    }
+
+    /** Instrumented debug launch only: exercise the real GLB parser, GPU and pixels. */
+    private void loadPublicQaFixture(WebView view) {
+        try (InputStream file = getAssets().open("qa_fixture.glb")) {
+            byte[] data = file.readAllBytes();
+            if (data.length < 100 || data.length > 100_000) throw new IOException("Fixture length invalid");
+            String source = Base64.encodeToString(data, Base64.NO_WRAP);
+            String js = "(async()=>{try{"
+                    + "const binary=atob('" + source + "');"
+                    + "const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));"
+                    + "const loaded=await window.DiceExperimentalQA.loadGLB(bytes.buffer,'PUBLIC_SYNTHETIC_QA');"
+                    + "window.DiceExperimentalQA.setTarget(11);"
+                    + "await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));"
+                    + "const qa=window.DiceExperimentalQA;"
+                    + "const canvas=document.getElementById('canvas');"
+                    + "const gpu=canvas.getContext('webgl2');"
+                    + "const image=new Uint8Array(128*128*4);"
+                    + "gpu.readPixels(296,296,128,128,gpu.RGBA,gpu.UNSIGNED_BYTE,image);"
+                    + "let bright=0;for(let k=0;k<image.length;k+=4)"
+                    + "if(image[k]>70||image[k+1]>70)bright++;"
+                    + "const normals=[...qa.goldFaces()].map(([v,n])=>[v,qa.rotatedNormal(v)[2]]).sort((a,b)=>b[1]-a[1]);"
+                    + "const report={ready:qa.state.ready,face:qa.state.visibleFace,"
+                    + "front:normals[0][0],triangles:qa.state.triangles,parts:qa.state.parts,"
+                    + "bright:bright,glError:qa.getGLError()};"
+                    + "console.info('ALPHA_ANDROID_MODEL_QA '+JSON.stringify(report));"
+                    + "if(!report.ready||report.face!==11||report.front!==11||report.parts!==21||"
+                    + "report.bright<16||report.glError!==0)"
+                    + "console.error('ALPHA_ANDROID_MODEL_QA_FAIL '+JSON.stringify(report));"
+                    + "}catch(e){console.error('ALPHA_ANDROID_MODEL_QA_FAIL '+String(e))}})();";
+            view.evaluateJavascript(js, result -> Log.i("AlphaWebGLLab", "Synthetic QA submitted"));
+        } catch (IOException e) {
+            Log.e("AlphaWebGLLab", "ALPHA_ANDROID_MODEL_QA_FAIL fixture not found", e);
+        }
     }
 
     @Override protected void onActivityResult(int request, int code, Intent data) {
