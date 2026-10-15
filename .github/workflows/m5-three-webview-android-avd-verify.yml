@@ -1,4 +1,4 @@
-name: M5 Three.js standalone Android AVD actual screen verification
+name: M5 RNG-first Three.js standalone Android AVD actual screen verification
 on:
   push:
     branches: [experiment/m5-android-renderer-alternatives]
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: 38654290130
+          run-id: 38657853529
           name: M5-ThreeJS-Android-WebView-real-offline-debug-APK
           path: build/avd-apk
       - uses: reactivecircus/android-emulator-runner@v2
