@@ -2,8 +2,8 @@
 // GPU API integration contract: real 500k GLB buffers and draw-counts uploaded
 // to a strictly checking mock WebGL2 context. This DOES NOT prove hardware FPS.
 const fs=require('node:fs'),assert=require('node:assert/strict');
-const {parse,verifyMaster,poseForNumber}=require('./glb-core.js');
-const {Viewer}=require('./webgl-renderer.js');
+const {parse,verifyMaster,poseForNumber}=require('./load-source.cjs')('./glb-core.js');
+const {Viewer}=require('./load-source.cjs')('./webgl-renderer.js');
 const data=fs.readFileSync(process.argv[2]);const ab=data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength);const parsed=parse(ab),proof=verifyMaster(parsed);
 let unique=0,bytesUploaded=0,indicesDrawn=0,drawCalls=0,texturesDecoded=0;
 const gl={VERTEX_SHADER:35633,FRAGMENT_SHADER:35632,COMPILE_STATUS:35713,LINK_STATUS:35714,ARRAY_BUFFER:34962,ELEMENT_ARRAY_BUFFER:34963,STATIC_DRAW:35044,FLOAT:5126,UNSIGNED_SHORT:5123,UNSIGNED_INT:5125,UNSIGNED_BYTE:5121,TRIANGLES:4,RGBA:6408,UNSIGNED_BYTE:5121,TEXTURE_2D:3553,TEXTURE_MIN_FILTER:10241,TEXTURE_MAG_FILTER:10240,LINEAR:9729,LINEAR_MIPMAP_LINEAR:9987,TEXTURE_WRAP_S:10242,TEXTURE_WRAP_T:10243,REPEAT:10497,TEXTURE0:33984,DEPTH_TEST:2929,LEQUAL:515,CULL_FACE:2884,COLOR_BUFFER_BIT:16384,DEPTH_BUFFER_BIT:256,UNPACK_FLIP_Y_WEBGL:37440};
