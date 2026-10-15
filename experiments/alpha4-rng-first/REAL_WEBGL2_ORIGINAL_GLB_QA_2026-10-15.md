@@ -1,0 +1,9 @@
+# Real original-GLB WebGL2 RNG-first verification, 2026-10-15
+
+Separate alternative to Godot. Native headed Chromium 144 / ANGLE SwiftShader, Xvfb, actual owner-selected private BlenderKit D20 GLB SHA256 `60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39`, 19,800,336 bytes. Private GLB remains outside GitHub.
+
+Actual source implementation `viewer.html` + `viewer.js` in private QA package renders 500,000 indexed triangles, 22 surfaces, 20 actual golden numbers. Browser ran all 20 source-face quaternion checks and found correct face/UI matching in 20/20. Re-ran live in headed Chromium this session, GL error 0 before and after; crypto RNG selected **14**, visible top golden source face **14**, UI **14**, all matches. Original PNG screenshots and source tests in local proof archive `alpha4_webgl2_verified_source_and_evidence_2026-10-15.zip` SHA256 `56f51ff6d851b5e677b1b78550ca6de583bafcbc7e7cf1492c45af19b6986b1e` (1,309,076 bytes, 20 files, excludes private GLB).
+
+A prior Android emulator screenshot shows offline WebView UI with blank render canvas because **no private GLB was selected**; log `ALPHA_WEBGL_LAB_QA true` proves WebGL2 context and crypto API only, **not model rendering or performance**. APK `app-debug.apk` 17,159 bytes, structurally valid ZIP with viewer.html, viewer.js, classes.dex, AndroidManifest.xml; full install and GLB import on Android not yet verified in current turn. Desktop SwiftShader is not mobile GPU. No real OnePlus Nord3 performance proof.
+
+**Engineering next:** validate Android document picker loading of original private GLB in emulator (without distributing source), actual in-app frame screenshot and GPU metrics, then controlled identical scale/HDR Godot vs WebGL2. WebGL shader is an approximation of original PBR and current animation interpolates target quaternion; physics-like natural bouncing not proven. Do not claim this is the exact Alpha 4 source. Existing Godot M5, main, PR23 unchanged.
