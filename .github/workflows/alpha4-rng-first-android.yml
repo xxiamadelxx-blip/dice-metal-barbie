@@ -121,8 +121,23 @@ jobs:
             grep -F 'ALPHA4_WEBGL_QA' build/alpha4-android-proof/native-webview.log
             grep -q 'ready' build/alpha4-android-proof/native-webview.log
             adb exec-out screencap -p > build/alpha4-android-proof/real_android_webview_screen.png
-            test -s build/alpha4-android-proof/real_android_webview_screen.png
-            echo PASS_REAL_ANDROID_APK_INSTALLED_BOOTED_WEBVIEW_SCREENSHOT
+            # Tap the real WEBVIEW 'БРОСИТЬ' control in the Pixel_6 1080x2400
+            # emulator viewport. Then verify JS reports the 3D face equals RNG.
+            adb shell input tap 703 1350
+            sleep 8
+            adb logcat -d -s AlphaWebGL:I chromium:E > build/alpha4-android-proof/native-webview.log
+            grep -F 'ALPHA4_ROLL_PROOF' build/alpha4-android-proof/native-webview.log
+            adb exec-out screencap -p > build/alpha4-android-proof/real_android_webview_rng_settled.png
+            test -s build/alpha4-android-proof/real_android_webview_rng_settled.png
+            python3 - <<'PY'
+            from pathlib import Path
+            log=Path("build/alpha4-android-proof/native-webview.log").read_text()
+            matches=[s for s in log.splitlines() if 'ALPHA4_ROLL_PROOF' in s]
+            assert matches, "No actual WebGL RNG-first Android click was observed"
+            assert '"matches":true' in matches[-1],matches[-1]
+            print("PASS_ANDROID_ACTUAL_RNG_EQUALS_RENDERED_3D_UPPER_FACE",matches[-1])
+            PY
+            echo PASS_REAL_ANDROID_APK_INSTALLED_BOOTED_AND_RNG_FIRST_PHYSICAL_RENDER
       - uses: actions/upload-artifact@v4
         if: always()
         with:
