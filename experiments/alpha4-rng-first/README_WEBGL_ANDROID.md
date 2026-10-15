@@ -2,6 +2,15 @@
 
 Independent branch `experiment/alpha4-rng-first-webgl` of `xxiamadelxx-blip/dice-metal-barbie`.
 
+## Latest real checks · 15 October 2026
+
+- **REAL Android 15/API35 WebView with public synthetic 40-triangle D20: PASS.** Latest [GitHub Actions run #38749780238](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38749780238) built an installable offline APK and installed/started it in Pixel 6 AVD using Android WebView WebGL2, checked source QA: `ready=true, face=11, front=11, triangles=40, parts=21, bright=7794, glError=0`. [Actual 1080×2400 screen and Android log](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38749780238/artifacts/11979169727). The screenshot is of **synthetic geometry with golden triangular markers**, never call this the real owner source.
+- **The production-size, owner-selected 500K BlenderKit D20 is verified in REAL Chromium WebGL2, not Android.** Actual current rerun loaded private GLB with SHA `60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39`, 500,000 triangles / 22 surfaces / 20 real golden digit meshes, and secure RNG 18 = UI18 = printed front18 with WebGL errors 0. Forced `createImageBitmap` failure also loaded 500K original GLB via `HTMLImageElement` fallback, with face11 and GL error0.
+- **Android SAF picker now has no MIME filter**, because `.glb` often has unknown MIME. [Source fix](https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/308bf110ac754095643713c47061693086668d43); latest APK tested in CI [artifact](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38749780238/artifacts/11980841419), SHA256 `e8731eee3a7904f193af1a505fc45819f3165b6ebdcdb1daebb071f6e53b7c15`, 21,158 bytes. No private GLB is inside this public/debug APK. Synthetic fixture is visibly labelled [source commit](https://github.com/xxiamadelxx-blip/dice-metal-barbie/commit/7e1cc613e6e0e46d0b2f1b9403646073cf1904ac).
+- **NOT VERIFIED:** exact selected private 500K model from Android SAF in actual AVD/phone, Android real GPU/frame times with 500K original material, real OnePlus Nord 3 performance, perfect physical landing, matching Godot look, user artistic approval. No Qwen independent critic run. Original Godot branch, main, draft PR#23 untouched.
+
+
+
 ## What actually exists (2026-10-15)
 
 - **One original source 500,000-triangle D20 GLB** loaded from a private file, SHA-256 `60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39`.
