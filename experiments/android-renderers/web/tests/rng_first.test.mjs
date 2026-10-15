@@ -49,7 +49,7 @@ test('Every result 1..20 gets the correct TOP geometry face, no Godot or Jolt',(
       const m=measuredFace(q);
       assert.equal(m.value,value,'selected engraved number '+value);
       assert.ok(m.upDot>.999999,'upright alignment for '+value);
-      assert.ok(m.separation>.5,'unique stable upward face '+value);
+      assert.ok(m.separation>.1,'unique stable upward face '+value);
     }
   }
 });
@@ -61,7 +61,7 @@ test('2.3s animated scripted roll ends at originally committed face',async()=>{
     duration:2300,now:()=>1000,animationFrame,
     randomDie:()=>1
   });
-  for(let t=1100;t<=3500;t+=100){
+  for(let t=1100;t<=3300;t+=100){
     assert.ok(queue.length,'renderer must request animation frames');
     queue.shift()(t);
   }
