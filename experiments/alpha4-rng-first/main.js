@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import rng from './rng.cjs';
 
 const {secureDie}=rng;
@@ -98,6 +99,7 @@ die.position.y=0.04;
 const UP=new THREE.Vector3(0,1,0);
 let rolling=false,lastRoll=null,rolls=0;
 const qa={renderer:'Three.js WebGL',usesJolt:false,usesGodot:false,
+  modelSource:'PROCEDURAL_20_FACES',verifiedSha:null,modelTriangles:20,
   faces:normals.length,chosenBeforeAnimation:false,
   engine:'three',get lastRoll(){return lastRoll},get rolling(){return rolling},
   get rolls(){return rolls},get WebGL(){return renderer.capabilities.isWebGL2}};
@@ -164,6 +166,75 @@ id('roll').addEventListener('click',()=>{runRoll().catch(e=>{
   id('status').textContent=e.message;rolling=false;id('roll').disabled=false})});
 id('sides').value='20';id('sides').disabled=true;
 id('sides').setAttribute('title','Текущий 3D-эксперимент проверяет D20; остальные геометрии позже.');
+// Fully private experiment: the owner's original 500K BlenderKit material never
+// enters the public repository. The user selects its existing GLB on-device.
+// The original source is authenticated BEFORE GLSL texture/shader import.
+const OWNER_MODEL_SHA='60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39';
+async function importOwnerOriginal(file){
+  if(rolling)throw Error('Дождись завершения броска');
+  if(!file||file.size>65_000_000)throw Error('Выбери исходный GLB размером до 65 МБ');
+  if(!globalThis.crypto?.subtle)throw Error('Для проверки GLB требуется безопасный контекст');
+  id('roll').disabled=true;
+  const bytes=await file.arrayBuffer();
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  const hex=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+  if(hex!==OWNER_MODEL_SHA)throw Error('SHA-256 не совпадает с утверждённым мастер-файлом 500k');
+  const loader=new GLTFLoader();
+  const gltf=await new Promise((resolve,reject)=>loader.parse(bytes,'',resolve,reject));
+  gltf.scene.updateMatrixWorld(true);
+  const counter={stone:0,gold:0,goldParts:0,stoneParts:0};
+  const labels=new Map();
+  const center=new THREE.Box3().setFromObject(gltf.scene).getCenter(new THREE.Vector3());
+  gltf.scene.traverse(n=>{
+    if(!n.isMesh)return;
+    const geo=n.geometry;
+    const vertexCount=geo.index?geo.index.count:geo.attributes.position.count;
+    if(vertexCount%3!==0)throw Error('Исходная геометрия GLB не триангулирована');
+    const count=vertexCount/3;
+    if(n.name.startsWith('Gold_')){
+      counter.gold+=count;counter.goldParts++;
+      const num=Number(n.name.slice(5));
+      if(!Number.isInteger(num)||num<1||num>20||labels.has(num))throw Error('Дубликат/неверная золотая цифра');
+      geo.computeBoundingBox();
+      const faceCenter=geo.boundingBox.getCenter(new THREE.Vector3()).applyMatrix4(n.matrixWorld);
+      const approx=faceCenter.clone().sub(center).normalize();
+      const exact=new THREE.Vector3(0,1,0).transformDirection(n.matrixWorld);
+      if(exact.dot(approx)<0)exact.negate();
+      // Original cutter/gold extrudes around local +Y. This is the actual
+      // source geometric face normal, not a fabricated outcome number.
+      if(exact.dot(approx)<.86)throw Error('Original GLB gold face normal incorrect: '+num);
+      labels.set(num,exact);
+    }else if(n.name.startsWith('D20_Engraved')){
+      counter.stone+=count;counter.stoneParts++;
+    }else{throw Error('Unexpected mesh object '+n.name)}
+  });
+  if(counter.gold!==280000||counter.stone!==220000||counter.goldParts!==20||counter.stoneParts<1||labels.size!==20){
+    throw Error('Исходная модель не совпала с 500k контрактом: '+JSON.stringify(counter));
+  }
+  const importedNormals=Array.from({length:20},(_,i)=>labels.get(i+1));
+  if(importedNormals.some(n=>!n))throw Error('Не найдены все 20 граней');
+  for(const child of [...die.children])die.remove(child);
+  gltf.scene.scale.setScalar(1.5);
+  die.add(gltf.scene);
+  die.quaternion.identity();
+  normals.splice(0,normals.length,...importedNormals);
+  qa.modelSource='OWNER_ORIGINAL_BLENDERKIT_500K_GLTF';
+  qa.verifiedSha=hex;qa.modelTriangles=counter.gold+counter.stone;
+  qa.modelParts=counter;
+  id('modelLabel').textContent='Исходный обсидиан 500k: SHA проверен, 20 золотых чисел.';
+  id('status').textContent='Реальный оригинальный GLB загружен локально. Сеть не использовалась.';
+  console.log('DICE_ORIGINAL_PRIVATE_GLTF_PASS',JSON.stringify(counter));
+  return counter;
+}
+globalThis.__DICE_QA__.loadPrivateGLB=importOwnerOriginal;
+id('glbUpload').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{await importOwnerOriginal(file)}catch(error){
+    id('status').textContent=error.message;
+    id('modelLabel').textContent='Файл отклонён. Демонстрационный D20 сохранён.';
+    console.warn('DICE_PRIVATE_FILE_REJECTED',error.message);
+  }finally{id('roll').disabled=false}
+});
 const clock=new THREE.Clock();
 let prior=performance.now(),draws=0;
 function render(now){
