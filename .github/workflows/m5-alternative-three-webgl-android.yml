@@ -22,6 +22,7 @@ jobs:
         run: |
           npm install --no-audit --no-fund --package-lock-only
           npm ci --no-audit --no-fund
+          npm test
           npm run build
           if grep -E 'cdn.jsdelivr.net|unpkg.com' dist/index.html; then
             echo "Unexpected external module" && exit 3
@@ -63,6 +64,7 @@ jobs:
         run: |
           npm install --no-audit --no-fund --package-lock-only
           npm ci --no-audit --no-fund
+          npm test
           npm run build
           mkdir -p ../android/app/src/main/assets
           cp -a dist/. ../android/app/src/main/assets/
