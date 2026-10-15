@@ -25,10 +25,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Android SDK tooling
-        uses: android-actions/setup-android@v4
-        with:
-          packages: 'platform-tools'
-          log-accepted-android-sdk-licenses: 'false'
+        uses: android-actions/setup-android@v3
       - name: Android 35 platforms
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Gradle 8.12.1
@@ -57,3 +54,46 @@ jobs:
           path: experiments/alpha4-rng-first/android-app/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+  real-android-emulator:
+    needs: build-android-webview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: adel-dice-alpha4-webgl2-debug-apk
+          path: build/alpha4-webgl2-apk
+      - name: Enable Android KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+      - name: Boot real Android 15 API35 emulator and verify WebGL2
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -eu
+            mkdir -p build/alpha4-webgl2-real-android-proof
+            adb install -r build/alpha4-webgl2-apk/app-debug.apk
+            adb shell am start -n app.adeldice.weblab/.MainActivity
+            sleep 18
+            adb logcat -d -s AlphaWebGLLab:I chromium:E > build/alpha4-webgl2-real-android-proof/native-webgl.log
+            grep -F 'ALPHA_WEBGL_LAB_QA true' build/alpha4-webgl2-real-android-proof/native-webgl.log
+            adb exec-out screencap -p > build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
+            test -s build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
+            file build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png | grep 'PNG image data'
+            echo PASS_ACTUAL_ANDROID_WEBGL2_VIEWER_SHELL
+      - name: Store actual Android screenshot and log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: adel-dice-alpha4-webgl2-real-android-emulator-evidence
+          path: build/alpha4-webgl2-real-android-proof/
+          retention-days: 15
+          if-no-files-found: warn
