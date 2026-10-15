@@ -1,0 +1,179 @@
+{
+  "pass": true,
+  "source": "Playwright Chromium real Three.js WebGL",
+  "renderer": "Three.js WebGL",
+  "engine": "three",
+  "usesGodot": false,
+  "usesJolt": false,
+  "faces": 20,
+  "webgl2": true,
+  "chosenBeforeAnimation": true,
+  "results": [
+    {
+      "selected": 1,
+      "committedAt": 303.59999999999854,
+      "finished": true,
+      "topFace": 1,
+      "topDot": 0.9999999999999999,
+      "matches": true
+    },
+    {
+      "selected": 2,
+      "committedAt": 321.5,
+      "finished": true,
+      "topFace": 2,
+      "topDot": 1,
+      "matches": true
+    },
+    {
+      "selected": 3,
+      "committedAt": 339.90000000000146,
+      "finished": true,
+      "topFace": 3,
+      "topDot": 1,
+      "matches": true
+    },
+    {
+      "selected": 4,
+      "committedAt": 355.09999999999854,
+      "finished": true,
+      "topFace": 4,
+      "topDot": 1.0000000000000002,
+      "matches": true
+    },
+    {
+      "selected": 5,
+      "committedAt": 370.5,
+      "finished": true,
+      "topFace": 5,
+      "topDot": 1,
+      "matches": true
+    },
+    {
+      "selected": 6,
+      "committedAt": 386.8000000000029,
+      "finished": true,
+      "topFace": 6,
+      "topDot": 1,
+      "matches": true
+    },
+    {
+      "selected": 7,
+      "committedAt": 403.6999999999971,
+      "finished": true,
+      "topFace": 7,
+      "topDot": 0.9999999999999999,
+      "matches": true
+    },
+    {
+      "selected": 8,
+      "committedAt": 427,
+      "finished": true,
+      "topFace": 8,
+      "topDot": 1.0000000000000007,
+      "matches": true
+    },
+    {
+      "selected": 9,
+      "committedAt": 591.0999999999985,
+      "finished": true,
+      "topFace": 9,
+      "topDot": 1,
+      "matches": true
+    },
+    {
+      "selected": 10,
+      "committedAt": 612.4000000000015,
+      "finished": true,
+      "topFace": 10,
+      "topDot": 0.9999999999999999,
+      "matches": true
+    },
+    {
+      "selected": 11,
+      "committedAt": 873.3000000000029,
+      "finished": true,
+      "topFace": 11,
+      "topDot": 1,
+      "matches": true
+    },
+    {
+      "selected": 12,
+      "committedAt": 912.8000000000029,
+      "finished": true,
+      "topFace": 12,
+      "topDot": 0.9999999999999999,
+      "matches": true
+    },
+    {
+      "selected": 13,
+      "committedAt": 946.6999999999971,
+      "finished": true,
+      "topFace": 13,
+      "topDot": 0.9999999999999998,
+      "matches": true
+    },
+    {
+      "selected": 14,
+      "committedAt": 986.4000000000015,
+      "finished": true,
+      "topFace": 14,
+      "topDot": 1,
+      "matches": true
+    },
+    {
+      "selected": 15,
+      "committedAt": 1027.5999999999985,
+      "finished": true,
+      "topFace": 15,
+      "topDot": 1.0000000000000004,
+      "matches": true
+    },
+    {
+      "selected": 16,
+      "committedAt": 1074.199999999997,
+      "finished": true,
+      "topFace": 16,
+      "topDot": 0.9999999999999999,
+      "matches": true
+    },
+    {
+      "selected": 17,
+      "committedAt": 1101.5,
+      "finished": true,
+      "topFace": 17,
+      "topDot": 0.9999999999999997,
+      "matches": true
+    },
+    {
+      "selected": 18,
+      "committedAt": 1131.4000000000015,
+      "finished": true,
+      "topFace": 18,
+      "topDot": 0.9999999999999998,
+      "matches": true
+    },
+    {
+      "selected": 19,
+      "committedAt": 1161.5999999999985,
+      "finished": true,
+      "topFace": 19,
+      "topDot": 0.9999999999999999,
+      "matches": true
+    },
+    {
+      "selected": 20,
+      "committedAt": 1171.699999999997,
+      "finished": true,
+      "topFace": 20,
+      "topDot": 0.9999999999999998,
+      "matches": true
+    }
+  ],
+  "browserCanvas": {
+    "width": 416,
+    "height": 506,
+    "pixels": true
+  },
+  "consoleErrors": []
+}
