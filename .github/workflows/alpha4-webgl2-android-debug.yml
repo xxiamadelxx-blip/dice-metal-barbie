@@ -1,0 +1,56 @@
+name: Alpha4 parallel WebGL2 Android debug (NO private GLB)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiment/alpha4-rng-first-webgl
+    paths:
+      - 'experiments/alpha4-rng-first/**'
+      - '.github/workflows/alpha4-webgl2-android-debug.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-android-webview:
+    name: Build offline Android WebView debug APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK tooling
+        uses: android-actions/setup-android@v3
+      - name: Android 35 platforms
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Gradle 8.12.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.12.1'
+      - name: Compile Android WebGL2 application
+        working-directory: experiments/alpha4-rng-first/android-app
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK contains offline renderer, no licensed GLB and no INTERNET permission
+        working-directory: experiments/alpha4-rng-first/android-app
+        run: |
+          set -euxo pipefail
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$apk"
+          unzip -l "$apk" | grep 'assets/viewer.html'
+          unzip -l "$apk" | grep 'assets/viewer.js'
+          if unzip -Z1 "$apk" | grep -E '\.glb$|\.blend$'; then
+            echo 'FAIL: private licensed 3D asset leaked into APK'
+            exit 1
+          fi
+      - name: Upload unsigned experimental APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: adel-dice-alpha4-webgl2-debug-apk
+          path: experiments/alpha4-rng-first/android-app/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
