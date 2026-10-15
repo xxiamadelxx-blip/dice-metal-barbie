@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
-const {parse,verifyMaster,poseForNumber,qrot,dot,labels}=require('./glb-core.js');
+const {parse,verifyMaster,poseForNumber,qrot,dot,labels}=require('./load-source.cjs')('./glb-core.js');
 const file=process.argv[2];if(!file)throw Error('Pass private original GLB filepath');
 const bytes=fs.readFileSync(file);const ab=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);const g=parse(ab),v=verifyMaster(g);
 assert.equal(v.triangles,500000);assert.equal(v.labels.size,20);assert.equal(v.meshNodes,21);
