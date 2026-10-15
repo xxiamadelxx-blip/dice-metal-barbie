@@ -1,46 +1,12 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#101014"><title>Dice Alpha RNG-first experiment</title>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1117">
+<title>AdelDice · WebGL RNG-first</title>
+<link rel="manifest" href="./manifest.webmanifest">
 <style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 35%,#303139,#101014 65%);color:#f2e7ce;min-height:100dvh;display:flex;flex-direction:column;align-items:center}header{width:100%;padding:18px 20px;border-bottom:1px solid #68543855}h1{font-size:18px;margin:0}small{color:#aa9d88}main{width:min(100%,480px);flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:12px}.stage{position:relative;width:100%;aspect-ratio:1;display:grid;place-items:center;perspective:780px}.stage:after{content:"";position:absolute;bottom:12%;width:70%;height:11%;background:#0008;filter:blur(16px);border-radius:50%;z-index:-1}.die{width:64%;aspect-ratio:1;transform-style:preserve-3d;display:grid;place-items:center;will-change:transform;filter:drop-shadow(0 15px 12px #0008)}.die svg{width:100%;height:100%;overflow:visible}.face{fill:#101316;stroke:#bd9b58;stroke-width:2;stroke-linejoin:round}.facet{fill:#222830;stroke:#6d6660;stroke-width:1}.number{font-family:Georgia,serif;fill:#e8bc6b;font-size:70px;text-anchor:middle;dominant-baseline:middle;filter:drop-shadow(0 1px 2px #000)}.roll{background:linear-gradient(#d6ae6a,#94713c);color:#191714;border:0;border-radius:14px;font-weight:800;font-size:18px;padding:16px 36px;min-width:220px}.roll:disabled{opacity:.5}#status{min-height:48px;text-align:center;color:#c6b9a1}#result{font-size:36px;font-weight:800;color:#ebc47c}footer{padding:18px;color:#a99c87;font-size:12px;text-align:center}.controls{display:flex;gap:10px;align-items:center}select{padding:8px;background:#22242b;color:white;border:1px solid #71604b;border-radius:8px}
-@media(prefers-reduced-motion:reduce){.die{transition:none!important}}
-</style></head><body><header><h1>Alpha 4 · RNG-first</h1><small>Независимый HTML/CSS/JS эксперимент · без Godot</small></header>
-<main><div class="controls"><label for="sides">Кубик</label><select id="sides"><option value="20">D20</option><option value="12">D12</option><option value="10">D10</option><option value="8">D8</option><option value="6">D6</option><option value="4">D4</option></select></div>
-<div class="stage"><div class="die" id="die"><svg viewBox="0 0 300 300" aria-label="Стилизованный кубик"><defs><linearGradient id="obs" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#37424b"/><stop offset=".45" stop-color="#090b0f"/><stop offset="1" stop-color="#17191c"/></linearGradient></defs><path d="M150 18 280 94 280 210 150 283 20 210 20 94Z" fill="url(#obs)" stroke="#bda46b" stroke-width="3"/><path class="facet" d="M150 18 280 94 150 150Z"/><path class="facet" d="M150 18 150 150 20 94Z"/><path class="face" d="M20 94 150 150 150 283 20 210Z"/><path class="face" d="M280 94 150 150 150 283 280 210Z"/><path d="M150 18 150 150 150 283" stroke="#bda46b" stroke-width="2"/><text id="faceNumber" class="number" x="150" y="166">20</text></svg></div></div>
-<div id="result" aria-live="polite">—</div><button id="roll" class="roll">Бросить</button><div id="status" aria-live="polite">RNG выбирает результат до начала анимации.</div></main>
-<footer>Это прототип механики, а не финальный 3D-рендер или импортированный обсидиан.</footer>
-<script>
-"use strict";
-const cryptoApi=globalThis.crypto;
-const $=id=>document.getElementById(id);
-function secureDie(sides,random=cryptoApi){
-  if(!Number.isInteger(sides)||sides<2||sides>1000)throw new RangeError("invalid sides");
-  if(!random||typeof random.getRandomValues!=="function")throw Error("Secure RNG unavailable");
-  const span=4294967296,limit=Math.floor(span/sides)*sides,buf=new Uint32Array(1);
-  do{random.getRandomValues(buf)}while(buf[0]>=limit);
-  return (buf[0]%sides)+1;
-}
-function animateChosen(value,done){
- const die=$("die"),duration=1200,start=performance.now(),initial=Math.random()*360;
- const tick=now=>{
-   const t=Math.min(1,(now-start)/duration),ease=1-Math.pow(1-t,3);
-   const angle=initial+(1440+value*17)*ease;
-   die.style.transform=`rotateX(${angle}deg) rotateY(${angle*.71}deg) rotateZ(${angle*.28}deg)`;
-   if(t<1)requestAnimationFrame(tick);else{
-     die.style.transform="rotateX(0deg) rotateY(0deg) rotateZ(0deg)";
-     $("faceNumber").textContent=value;done();
-   }
- };
- requestAnimationFrame(tick);
-}
-let busy=false;
-$("roll").addEventListener("click",()=>{
- if(busy)return;
- const sides=Number($("sides").value);
- let chosen;
- try{chosen=secureDie(sides)}catch(e){$("status").textContent=e.message;return}
- busy=true;$("roll").disabled=true;$("result").textContent="…";
- $("status").textContent="Результат уже определён RNG; идёт анимация.";
- animateChosen(chosen,()=>{busy=false;$("roll").disabled=false;$("result").textContent=String(chosen);$("status").textContent=`D${sides}: ${chosen}. Результат не зависел от анимации.`});
-});
-globalThis.DiceRngFirst={secureDie};
-</script></body></html>
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101116;color:#ede3d3;min-height:100dvh;overflow-x:hidden}body:before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 50% 45%,#282a30 0%,#101116 65%);pointer-events:none}header{position:relative;z-index:2;padding:20px 22px 8px;display:flex;justify-content:space-between;align-items:center}header h1{margin:0;font-size:17px;letter-spacing:.025em;font-weight:600}header small{color:#d4b779;font-size:10px;letter-spacing:.18em;font-weight:600}header .tag{font-size:10px;border:1px solid #776241;color:#d8b876;padding:6px 10px;border-radius:30px}main{position:relative;z-index:1;width:min(100%,540px);margin:auto;display:flex;flex-direction:column;align-items:stretch;padding:0 16px;gap:9px}.viewer{position:relative;width:100%;height:min(62dvh,680px);min-height:320px;border-radius:18px;overflow:hidden;background:radial-gradient(ellipse at center,#292c31 0%,#111318 73%);border:1px solid #66594440}.viewer canvas{width:100%;height:100%;display:block}.label{position:absolute;top:15px;left:16px;letter-spacing:.11em;font-size:11px;color:#ac9b7a;pointer-events:none}.fps{position:absolute;bottom:15px;right:15px;color:#bfa880;font-size:11px;background:#12151caa;padding:5px 9px;border-radius:6px}.result{position:absolute;bottom:15px;left:15px;font-size:25px;color:#f1d49b;font-weight:650;text-shadow:0 2px 12px #000}.bar{display:flex;gap:10px}.bar select,.bar button{background:#23262d;color:#f2e9d5;border:1px solid #75644366;border-radius:12px;padding:13px 15px;font-size:15px}.bar select{width:35%}.bar button{flex:1;background:linear-gradient(145deg,#e8c48b,#a9854f);color:#1b1a17;font-weight:750;border:0;cursor:pointer}.bar button:disabled{opacity:.55}.sub{font-size:11px;text-align:center;color:#aa9c86;min-height:34px;padding:4px 12px}footer{position:relative;color:#8c8171;text-align:center;font-size:10px;padding:15px 18px 26px;line-height:1.5}footer code{font-size:10px}#diag{display:none}body[data-qa="true"] #diag{display:block;white-space:pre-wrap;padding:6px;margin:0;color:#97d3a7;font-size:9px}
+</style></head>
+<body><header><div><small>OBSİDİAN ATELIER · EXPERIMENT</small><h1>AdelDice / RNG-first</h1></div><span class="tag">THREE.JS · WEBGL</span></header>
+<main><section class="viewer" id="viewport"><div class="label">D20 · PHYSICAL LOOK / DIGITAL RNG</div><div class="result" id="result" aria-live="polite">D20 / —</div><div class="fps" id="fps">Preparing WebGL…</div></section>
+<div class="bar"><select id="sides" aria-label="Тип кубика"><option value="20">D20</option><option value="12">D12</option><option value="10">D10</option><option value="8">D8</option><option value="6">D6</option><option value="4">D4</option></select><button id="roll">БРОСИТЬ</button></div>
+<div class="sub" id="status">RNG фиксирует число до начала анимации.</div><pre id="diag" aria-live="off"></pre></main><footer>Параллельный эксперимент: реальная 3D-сцена без Godot.<br>Базовая геометрия демонстрационная, не утверждённый 500k BlenderKit.</footer>
+<script type="module" src="./bundle.js"></script></body></html>
