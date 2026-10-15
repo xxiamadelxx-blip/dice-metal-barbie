@@ -61,8 +61,9 @@ public final class MainActivity extends Activity {
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("*/*");
-                intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
-                    "model/gltf-binary", "application/octet-stream", "application/gltf-buffer"});
+                // The SAF MIME database commonly does not map .glb to glTF.
+                // Deliberately do not set EXTRA_MIME_TYPES: allow the user to select .glb.
+                // The WebGL loader subsequently checks the glTF 2.0 magic/version.
                 try {
                     startActivityForResult(intent, FILE_PICKER_REQUEST);
                     return true;
