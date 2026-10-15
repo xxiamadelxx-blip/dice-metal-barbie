@@ -8,19 +8,85 @@ adb devices -l | tee "$OUT_DIR/device.txt"
 adb install -r "$APK" | tee "$OUT_DIR/install.txt"
 adb shell am start -n com.adeldice.threelab/.MainActivity | tee "$OUT_DIR/launch.txt"
 sleep 22
+# Keep initial evidence, including transient emulator/launcher ANR overlays.
+adb exec-out screencap -p > "$OUT_DIR/REAL_ANDROID_INITIAL_UNFILTERED.png"
+
+dump_window() {
+  local name="$1"
+  timeout 35 adb shell uiautomator dump /sdcard/dice_m5_window.xml > "$OUT_DIR/$name-dump.log" 2>&1 || true
+  timeout 10 adb pull /sdcard/dice_m5_window.xml "$OUT_DIR/$name.xml" > /dev/null 2>&1 || true
+}
+dump_window "before"
+
+# The first AVD attempt passed PNG-only validation but its screenshot visibly
+# contained "Pixel Launcher isn't responding". A modal SYSTEM ERROR is not a
+# valid visual QA frame. Dismiss a transient launcher's "Wait" dialog only when
+# the actual Android accessibility bounds prove which button is present.
+python3 - <<'PY'
+import re
+from pathlib import Path
+from xml.etree import ElementTree
+p=Path("build/avd-original-pixels/before.xml")
+target=Path("build/avd-original-pixels/dismiss.tap")
+if not p.is_file():
+    print("AVD_A11Y_DUMP_MISSING: clean capture will still be checked")
+else:
+    root=ElementTree.parse(p)
+    elements=list(root.iter("node"))
+    labelled=[(n.attrib.get("text","")+" "+n.attrib.get("content-desc","")).strip() for n in elements]
+    visible=" ".join(labelled)
+    error=("isn't responding" in visible or "не отвечает" in visible or "Close app" in visible)
+    print("AVD_SYSTEM_DIALOG_FROM_ACCESSIBILITY",error)
+    if error:
+        for n in elements:
+            label=n.attrib.get("text","")
+            if label in ("Wait","Подождать","Wait for response","Ожидать"):
+                b=re.findall(r"\[(\d+),(\d+)\]",n.attrib.get("bounds",""))
+                if len(b)==2:
+                    x=(int(b[0][0])+int(b[1][0]))//2
+                    y=(int(b[0][1])+int(b[1][1]))//2
+                    target.write_text(f"{x} {y}\n")
+                    print("AVD_DISMISS_LAUNCHER_DIALOG_BY_VERIFIED_BOUNDS",x,y)
+                    break
+        else:
+            raise AssertionError("ANR overlay detected; cannot identify actual Wait button safely")
+PY
+if test -s "$OUT_DIR/dismiss.tap"; then
+    read -r X Y < "$OUT_DIR/dismiss.tap"
+    adb shell input tap "$X" "$Y"
+    sleep 12
+fi
+# Relaunch focus to our APK, not Pixel Launcher, then capture after UI redraw.
+adb shell am start -n com.adeldice.threelab/.MainActivity > "$OUT_DIR/relaunch.txt"
+sleep 8
 adb shell dumpsys activity activities > "$OUT_DIR/activity.txt"
-grep -F "com.adeldice.threelab" "$OUT_DIR/activity.txt" | head -10
 adb exec-out screencap -p > "$OUT_DIR/REAL_ANDROID_EMULATOR_THREE_APP_SCREEN.png"
+dump_window "after"
 adb logcat -d -v threadtime > "$OUT_DIR/logcat.txt"
+
 python3 - <<'PY'
 from pathlib import Path
+from xml.etree import ElementTree
 import struct
-p=Path("build/avd-original-pixels/REAL_ANDROID_EMULATOR_THREE_APP_SCREEN.png")
+out=Path("build/avd-original-pixels")
+p=out/"REAL_ANDROID_EMULATOR_THREE_APP_SCREEN.png"
 raw=p.read_bytes()
 assert raw[:8]==bytes((137,80,78,71,13,10,26,10))
 width,height=struct.unpack_from(">II",raw,16)
 assert width>=480 and height>=720 and len(raw)>25000,(width,height,len(raw))
-log=Path("build/avd-original-pixels/logcat.txt").read_text(errors="replace")
+activity=(out/"activity.txt").read_text(errors="replace")
+assert "com.adeldice.threelab" in activity,"Our activity absent"
+log=(out/"logcat.txt").read_text(errors="replace")
 assert "FATAL EXCEPTION" not in "\n".join(x for x in log.splitlines() if "com.adeldice.threelab" in x)
+p=out/"after.xml"
+if p.is_file():
+    root=ElementTree.parse(p)
+    visible=" ".join((n.attrib.get("text","")+" "+n.attrib.get("content-desc",""))
+                     for n in root.iter("node"))
+    assert not ("isn't responding" in visible or "не отвечает" in visible or "Close app" in visible),(
+        "Emulator still covered by SYSTEM NOT RESPONDING dialog; screenshot rejected")
+    print("AVD_NO_SYSTEM_ANR_OVERLAY_ACCESSIBILITY_PASS")
+else:
+    print("AVD_A11Y_NOT_AVAILABLE: cannot guarantee no system overlay; screenshot for visual review")
 print("PASS_REAL_ANDROID_EMULATOR_APP_SCREEN_AND_INSTALL",width,height,len(raw))
 PY
