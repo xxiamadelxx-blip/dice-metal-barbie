@@ -113,19 +113,19 @@ jobs:
               exit 23
             fi
             python3 - <<'PY'
-          import json,re
-          from pathlib import Path
-          data=Path('build/alpha4-webgl2-real-android-proof/native-webgl.log').read_text()
-          matches=re.findall(r'ALPHA_ANDROID_MODEL_QA (\\{[^\\n}]+\\})',data)
-          assert matches,'FAIL: no actual in-app GPU pixels for public D20'
-          report=json.loads(matches[-1])
-          assert report['ready'] is True,report
-          assert report['face']==11 and report['front']==11,report
-          assert report['parts']==21 and report['triangles']==40,report
-          assert report['bright']>=16,report
-          assert report['glError']==0,report
-          print('PASS_REAL_ANDROID_WEBVIEW_GLTF_20_FACES_GPU_PIXELS',report)
-          PY
+            import json
+            from pathlib import Path
+            data=Path('build/alpha4-webgl2-real-android-proof/native-webgl.log').read_text().splitlines()
+            payloads=[line.split('ALPHA_ANDROID_MODEL_QA ',1)[1].strip() for line in data if 'ALPHA_ANDROID_MODEL_QA {' in line]
+            assert payloads,'FAIL: no real in-app GPU pixel report for public D20'
+            report=json.loads(payloads[-1])
+            assert report['ready'] is True, report
+            assert report['face']==11 and report['front']==11, report
+            assert report['parts']==21 and report['triangles']==40, report
+            assert report['bright']>=16, report
+            assert report['glError']==0, report
+            print('PASS_REAL_ANDROID_WEBVIEW_GLTF_20_FACES_GPU_PIXELS',report)
+            PY
             adb exec-out screencap -p > build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
             test -s build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
             file build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png | grep 'PNG image data'
