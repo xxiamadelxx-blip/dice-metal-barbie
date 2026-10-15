@@ -44,7 +44,7 @@ try:
     # fabricate success.
     print("Requesting real 3D mesh from free ZeroGPU demo",flush=True)
     result = client.predict(
-        "Run", handle_file(str(CUTOUT)), None, .85, "None", -1, 1024,
+        handle_file(str(CUTOUT)), .85, "None", -1, 1024,
         api_name="/run_button"
     )
     state["result_type"] = str(type(result))
