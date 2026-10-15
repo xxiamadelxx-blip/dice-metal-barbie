@@ -8,6 +8,9 @@ import android.webkit.ValueCallback;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.FrameLayout;
+import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebChromeClient.FileChooserParams;
@@ -101,7 +104,18 @@ public final class MainActivity extends Activity {
                 },2500);
             }
         });
-        setContentView(webView);
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(0xff101116);
+        root.addView(webView, new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        // Android 15 draws targetSdk35 apps behind system bars. Keep the
+        // actual WebGL camera and RNG button out of the status/navigation bars.
+        root.setOnApplyWindowInsetsListener((view, insets) -> {
+            view.setPadding(0, insets.getSystemWindowInsetTop(), 0,
+                insets.getSystemWindowInsetBottom());
+            return insets;
+        });
+        setContentView(root);
         webView.loadUrl(LOCAL);
     }
     @Override
