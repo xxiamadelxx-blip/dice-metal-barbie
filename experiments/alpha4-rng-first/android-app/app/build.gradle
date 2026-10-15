@@ -1,0 +1,29 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'app.adeldice.weblab'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'app.adeldice.weblab'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0-webgl-lab'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main.assets.srcDirs += ["$buildDir/web-assets"]
+}
+
+// Use exactly the experiment source files; never duplicate stale copies of the renderer.
+tasks.register('stageOfflineWebGL', Copy) {
+    from("$rootDir/../viewer.html", "$rootDir/../viewer.js")
+    into "$buildDir/web-assets"
+}
+tasks.named('preBuild').configure { dependsOn(tasks.named('stageOfflineWebGL')) }
