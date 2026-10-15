@@ -34,4 +34,19 @@ Google Filament native renderer is an **additional independent track** but its r
 
 New actual CI (update after run): [workflow history](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/workflows/m5-alternative-three-webgl-android.yml).
 
-**Status as authored:** Source implemented, waiting CI results; do NOT claim working Android RNG-first APK until actual updated build and AVD passed.
+**Verified current state:** all required browser and Android **RNG-first execution** checks passed (see directly below). User's original BlenderKit GLB / on-device Nord3 visual parity and D6 multi-body presentation remain open. This is an Android-usable experimental APK, not a released final Dice Roller.
+
+## Real regression proof, 2026-10-15
+
+- [Actual GitHub Chrome WebGL2 + offline Android APK build #38657853529](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38657853529) **PASS**. `npm test` 5/5 including all 20 unique canonical D20 face values, dice opposites21, crypto rejection, 1d20+2d6 sum, all target-quaternion poses and end-of-animation geometrical face parity. Real Chromium GPU screenshot shows Web Crypto selects **19**, gold top after animation **19**; mixed independent RNG `9+3+6=18`, D20 visibly lands **9**. Synthetic unlicensed 500000-triangle GLB actual Chrome GPU draw **500000 triangles in 1 draw call**. Not selected private obsidian art proof.
+- **Installable offline Android APK** built from same source: 1,352,224 bytes SHA256 `bf16fb6b76ee9034a303fdc06e4b7a935a70e27e6446dd7fb54f7c11f367a5fe`, package `com.adeldice.threelab`, targetSdk35/minSdk26, bundling complete Three.js v0.184.0 and CSS/HTML. **No Internet permission or third-party CDN** at runtime. Original debug APK preserved in CI run artifacts and user conversation.
+- [Real Pixel 6 Android 15 emulator clean launcher screenshot #38658823402](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38658823402) **PASS**, true 1080×2400 screen original Android screenshot and WebGL2 app. Previous screenshot #38658376155 was falsely accepted with system **Pixel Launcher isn't responding** overlay; AVD smoke regression now rejects accessibility-reported launcher ANR and no longer uses obstructed frame as visual proof.
+- [Actual Android WebView RNG-first tapped D20 #38659245462](https://github.com/xxiamadelxx-blip/dice-metal-barbie/actions/runs/38659245462) **PASS**: Android uiautomator found real `Бросить D20` DOM accessibility bounds (296, 2325), `adb shell input tap` caused real WebCrypto RNG-first animation, and the resulting native Android screen/accessibility dump independently confirmed **RNG11 = visually displayed D20 gold11 = UI total11**, not inferred from a mocked JS callback. Screenshot is `REAL_ANDROID_RNG_FIRST_D20_AFTER_ROLL.png`; original PNG and exact JSON preserved in GitHub artifact **#11938606144**. No Pixel Launcher ANR overlay in final screenshot.
+- Emulator uses software graphics and at last capture showed ~5 fps. This is not real OnePlus Nord 3 GPU FPS and is not fit for hardware comparison. The main native Filament prototype has not yet completed runtime PASS; two initial native JNI library loading crashes were separately diagnosed.
+
+## Future actual same-source quality comparison
+
+1. Run the *exact* private user BlenderKit source `d20_selected_original_500k.glb` SHA `60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39` via installed app's Android document picker in a private session. Keep original bytes out of public git/CI. Confirm all 20 printed gold, original 2K normal and gloss under approved overhead camera.
+2. Compare against Godot and native Filament on the **same actual Android GPU** with same original GLB, viewport, light/HDR and exposure, true device frame cadence and memory/thermal profile. Do not claim superiority from synthetic or desktop software graphics.
+3. Expand animated 3D dice to all D6 and double D20 for advantage/disadvantage (RNG correctness implemented, but only one chosen D20 is visually animated today), rethrow rules and finished Alpha4 UX.
+
