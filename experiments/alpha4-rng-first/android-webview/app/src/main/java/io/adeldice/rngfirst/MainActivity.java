@@ -2,6 +2,10 @@ package io.adeldice.rngfirst;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Build;
+import android.view.WindowInsets;
+import android.widget.FrameLayout;
+import android.view.ViewGroup;
 import android.content.Intent;
 import android.net.Uri;
 import android.webkit.WebView;
@@ -41,7 +45,24 @@ public final class MainActivity extends Activity {
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
     browser = new WebView(this);
-    setContentView(browser);
+    // Android 15 forces edge-to-edge for SDK 35. Preserve readable UI
+    // by applying real system-bar insets to a native root container.
+    FrameLayout root = new FrameLayout(this);
+    root.setOnApplyWindowInsetsListener((view,insets)->{
+      int left,top,right,bottom;
+      if(Build.VERSION.SDK_INT>=30){
+        android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars());
+        left=bars.left;top=bars.top;right=bars.right;bottom=bars.bottom;
+      }else{
+        left=insets.getSystemWindowInsetLeft();top=insets.getSystemWindowInsetTop();
+        right=insets.getSystemWindowInsetRight();bottom=insets.getSystemWindowInsetBottom();
+      }
+      view.setPadding(left,top,right,bottom);
+      return insets;
+    });
+    root.addView(browser,new FrameLayout.LayoutParams(
+      ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
+    setContentView(root);
     WebSettings settings=browser.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
