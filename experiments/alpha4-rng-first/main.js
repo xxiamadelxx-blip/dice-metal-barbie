@@ -157,6 +157,9 @@ function runRoll({duration=1900,chosen}={}){
         'RNG '+selected+' · верхняя 3D-грань '+faceIndex+' · совпало':
         'ОШИБКА: верхняя грань не совпала с RNG!';
       if(!lastRoll.matches)console.error('D20 rng-face mismatch',lastRoll);
+      console.log('ALPHA4_ROLL_PROOF '+JSON.stringify({
+        rng:selected,real3DFace:faceIndex,normalDot:Number(best.toFixed(8)),
+        matches:lastRoll.matches,engine:'Three.js WebGL'}));
       resolve({...lastRoll});
     }
     requestAnimationFrame(frame);
