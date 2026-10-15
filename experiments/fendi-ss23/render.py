@@ -28,15 +28,23 @@ bpy.context.scene.collection.objects.link(root)
 for o in meshes:
     o.parent=root
     o.matrix_parent_inverse=root.matrix_world.inverted()
-root.location=-center
-root.scale=[1.65/max(size)]*3
+# Raw TripoSR meshes use +X as the upright body axis (head at +X);
+# turn +X to +Z without stretching and center AFTER rotation.
+long_axis=max(range(3),key=lambda i: size[i])
+if long_axis == 0:
+    root.rotation_euler[1] = -math.pi / 2
+elif long_axis == 1:
+    root.rotation_euler[0] = math.pi / 2
+scale = 1.65 / max(size)
+root.scale = [scale] * 3
+root.location = -(root.rotation_euler.to_matrix() @ center) * scale
 
 # Photo comparison views use neutral, non-textured studio and untouched 3D mesh.
 scene=bpy.context.scene
 scene.render.engine="CYCLES"
 scene.cycles.samples=24
-scene.render.resolution_x=960
-scene.render.resolution_y=960
+scene.render.resolution_x=900
+scene.render.resolution_y=1350
 scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="PNG"
 scene.render.film_transparent=False
