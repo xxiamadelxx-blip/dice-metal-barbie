@@ -90,3 +90,57 @@ else:
     print("AVD_A11Y_NOT_AVAILABLE: cannot guarantee no system overlay; screenshot for visual review")
 print("PASS_REAL_ANDROID_EMULATOR_APP_SCREEN_AND_INSTALL",width,height,len(raw))
 PY
+
+
+# Real Android UI interaction, not only a WebGL startup screenshot.
+# Android uiautomator exposed the browser DOM node "Бросить D20" and exact
+# clickable bounds in previous AVD run #38658823402.
+python3 - <<'PY'
+from pathlib import Path
+from xml.etree import ElementTree
+import re
+out=Path("build/avd-original-pixels")
+root=ElementTree.parse(out/"after.xml")
+buttons=[n for n in root.iter("node") if n.attrib.get("text","")=="Бросить D20"]
+assert len(buttons)==1,("RNG-first D20 button not exposed in Android accessibility",len(buttons))
+b=re.findall(r"\[(\d+),(\d+)\]",buttons[0].attrib.get("bounds",""))
+assert len(b)==2,("RNG-first control is offscreen",b)
+x=(int(b[0][0])+int(b[1][0]))//2
+y=(int(b[0][1])+int(b[1][1]))//2
+assert x>50 and 50<y<2390,("Invalid viewport control bounds",x,y)
+(out/"roll.tap").write_text(f"{x} {y}\n")
+print("PASS_ANDROID_VISIBLE_RNG_BUTTON_BOUNDS",x,y)
+PY
+read -r RX RY < "$OUT_DIR/roll.tap"
+adb shell input tap "$RX" "$RY"
+sleep 12
+dump_window "after-rng-roll"
+adb exec-out screencap -p > "$OUT_DIR/REAL_ANDROID_RNG_FIRST_D20_AFTER_ROLL.png"
+python3 - <<'PY'
+from pathlib import Path
+from xml.etree import ElementTree
+import re,struct,json
+out=Path("build/avd-original-pixels")
+p=out/"after-rng-roll.xml"
+assert p.is_file(), "No Android accessibility results after tapping actual D20"
+root=ElementTree.parse(p)
+visible=" ".join((n.attrib.get("text","")+" "+n.attrib.get("content-desc",""))
+                 for n in root.iter("node"))
+assert "isn't responding" not in visible and "Close app" not in visible,(
+    "Android screenshot covered with system ANR")
+m=re.search(r"D20=(\d+); сумма (\d+)\. Видимая грань D20: (\d+)\.",visible)
+assert m,("Android WebView did not settle with displayed RNG+gold face parity",visible[-1000:])
+rng,total,visible_face=map(int,m.groups())
+assert 1<=rng<=20 and total==rng==visible_face,(rng,total,visible_face)
+png=(out/"REAL_ANDROID_RNG_FIRST_D20_AFTER_ROLL.png").read_bytes()
+assert png[:8]==bytes((137,80,78,71,13,10,26,10))
+w,h=struct.unpack_from(">II",png,16)
+assert w>=480 and h>=720 and len(png)>25000,(w,h,len(png))
+data={"result_from_crypto":rng,"visually_upward_number":visible_face,
+      "webview_displayed_total":total,"actual_android_emulator":True,
+      "scripted_quaternion_animation_not_real_rigidbody":True,
+      "original_owner_blenderkit_glb":False,
+      "screenshot":str(out/"REAL_ANDROID_RNG_FIRST_D20_AFTER_ROLL.png")}
+(out/"real_android_rng_roll_assertions.json").write_text(json.dumps(data,indent=2)+"\n")
+print("PASS_REAL_ANDROID_EMULATOR_RNG_FIRST_D20_VISIBLE_FACE",json.dumps(data))
+PY
