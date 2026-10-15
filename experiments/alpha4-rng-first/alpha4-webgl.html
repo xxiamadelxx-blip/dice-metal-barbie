@@ -58,6 +58,9 @@ window.DiceExperiment={get ready(){return loaded},get lastRNG(){return chosen},g
 // For local http(s) hosting the user can keep GLB beside the page. file://
 // restricts fetch, so there is always a visible user file-picker alternative.
 if(location.protocol==='http:'||location.protocol==='https:')fetch('./d20_selected_original_500k.glb').then(res=>{if(!res.ok)throw Error('Private GLB not next to HTML');return res.arrayBuffer()}).then(buffer=>loadSource(buffer,'оригинальный D20 500k')).catch(()=>{});
+const preflight={secure:window.isSecureContext,webgl2:!!document.createElement('canvas').getContext('webgl2'),engine:'native WebGL2',godot:false};
+console.log('ALPHA_PLAIN_WEBGL_QA '+JSON.stringify(preflight));
+if(!preflight.webgl2)setStatus('WebGL2 недоступен: проверь GPU/Android System WebView.');
 requestAnimationFrame(renderTick);
 })();
 </script></body></html>
