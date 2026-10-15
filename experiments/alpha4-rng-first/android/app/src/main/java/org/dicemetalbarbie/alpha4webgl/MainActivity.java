@@ -2,11 +2,15 @@ package org.dicemetalbarbie.alpha4webgl;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.content.Intent;
+import android.net.Uri;
+import android.webkit.ValueCallback;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
+import android.webkit.WebChromeClient.FileChooserParams;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -21,7 +25,9 @@ import androidx.webkit.WebViewAssetLoader;
 public final class MainActivity extends Activity {
     private static final String TAG = "AlphaWebGL";
     private static final String LOCAL = "https://appassets.androidplatform.net/assets/exp/index.html";
+    private static final int PICK_PRIVATE_GLB = 2026;
     private WebView webView;
+    private ValueCallback<Uri[]> pendingFile;
 
     @Override
     public void onCreate(Bundle state) {
@@ -42,6 +48,27 @@ public final class MainActivity extends Activity {
         webView.getSettings().setMediaPlaybackRequiresUserGesture(true);
         webView.getSettings().setSupportZoom(false);
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> files,
+                FileChooserParams params) {
+                // System document picker: no storage permissions or network.
+                // Only the user's existing private GLB is read on this phone.
+                if (pendingFile != null) pendingFile.onReceiveValue(null);
+                pendingFile = files;
+                Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                pick.addCategory(Intent.CATEGORY_OPENABLE);
+                pick.setType("*/*");
+                pick.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                try {
+                    startActivityForResult(pick, PICK_PRIVATE_GLB);
+                    return true;
+                } catch (Exception e) {
+                    Log.e(TAG,"Private GLB file chooser unavailable",e);
+                    pendingFile.onReceiveValue(null);
+                    pendingFile = null;
+                    return false;
+                }
+            }
             @Override
             public boolean onConsoleMessage(ConsoleMessage message) {
                 Log.i(TAG,"WEBGL_JS "+message.messageLevel()+" "+message.message());
@@ -78,7 +105,17 @@ public final class MainActivity extends Activity {
         webView.loadUrl(LOCAL);
     }
     @Override
+    protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request != PICK_PRIVATE_GLB || pendingFile == null) return;
+        Uri[] files = result == RESULT_OK && data != null && data.getData() != null
+            ? new Uri[]{data.getData()} : null;
+        pendingFile.onReceiveValue(files);
+        pendingFile = null;
+    }
+    @Override
     protected void onDestroy() {
+        if (pendingFile != null) {pendingFile.onReceiveValue(null);pendingFile = null;}
         if (webView != null) {
             webView.destroy();
             webView = null;
