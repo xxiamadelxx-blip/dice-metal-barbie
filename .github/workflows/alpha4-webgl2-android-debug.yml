@@ -25,7 +25,10 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Android SDK tooling
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: 'false'
       - name: Android 35 platforms
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Gradle 8.12.1
