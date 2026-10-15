@@ -105,7 +105,9 @@ async function loadGLB(arrayBuffer,name='D20 source'){
   pieces=result;goldFaces=gold;buffers=gpuBuffers;textures=gpuTextures;totalTris=tris;
   state.ready=true;state.triangles=tris;state.parts=result.length;state.assetName=name;state.meshInfo=result.map(x=>x.nodeName);el('roll').disabled=false;
   el('metrics').textContent=tris.toLocaleString('ru')+' треугольников · '+result.length+' поверхностей · '+gold.size+' цифр';
-  htmlStatus('Оригинальный GLB загружен. RNG выберет грань до начала анимации.');return {triangles:tris,parts:result.length,faces:gold.size}
+  htmlStatus(name==='PUBLIC_SYNTHETIC_QA'
+    ? 'СИНТЕТИЧЕСКИЙ QA D20: только тест Android WebGL2, НЕ исходный обсидиан.'
+    : 'Локальный GLB загружен. RNG выберет грань до начала анимации.');return {triangles:tris,parts:result.length,faces:gold.size}
  }
  function setTarget(face){if(!state.ready||!goldFaces.has(face))throw Error('No loaded GLB or invalid face '+face);current=qfrom(goldFaces.get(face),[0,0,1]);state.selected=face;state.visibleFace=face;el('result').textContent=face}
  function chooseFace(face=null){if(!state.ready||state.busy)return false;const result=face===null?secureRoll(20):face;if(!goldFaces.has(result))throw RangeError('Not a D20 face: '+result);
