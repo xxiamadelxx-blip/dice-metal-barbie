@@ -22,13 +22,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      # GitHub Ubuntu Android SDK is preinstalled. setup-android@v3 currently
-      # attempts the removed legacy SDK package "tools", which fails.
-      - name: Use preinstalled SDK command-line tools
-        run: |
-          echo "$ANDROID_HOME/cmdline-tools/16.0/bin" >> "$GITHUB_PATH"
-          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-          test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager"
+      - uses: android-actions/setup-android@v4
+        with:
+          # v3 used the removed 'tools' SDK package and fails on current runners.
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: 'false'
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
