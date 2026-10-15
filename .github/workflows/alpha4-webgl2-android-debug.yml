@@ -65,7 +65,81 @@ jobs:
           test -s "$apk"
           unzip -l "$apk" | grep 'assets/viewer.html'
           unzip -l "$apk" | grep 'assets/viewer.js'
-          if unzip -Z1 "$apk" | grep -E '\.glb$|\.blend$'; then
+          unzip -l "$apk" | grep 'assets/qa_fixture.glb'
+          test "$(unzip -p "$apk" assets/qa_fixture.glb | wc -c)" -lt 16000
+          if unzip -Z1 "$apk" | grep -E '\.glb$|\.blend
+            echo 'FAIL: private licensed 3D asset leaked into APK'
+            exit 1
+          fi
+      - name: Upload unsigned experimental APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: adel-dice-alpha4-webgl2-debug-apk
+          path: experiments/alpha4-rng-first/android-app/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+  real-android-emulator:
+    needs: build-android-webview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: adel-dice-alpha4-webgl2-debug-apk
+          path: build/alpha4-webgl2-apk
+      - name: Enable Android KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+      - name: Boot real Android 15 API35 emulator and verify WebGL2
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -eu
+            mkdir -p build/alpha4-webgl2-real-android-proof
+            adb install -r build/alpha4-webgl2-apk/app-debug.apk
+            adb shell am start -n app.adeldice.weblab/.MainActivity --ez qa_fixture true
+            sleep 18
+            adb logcat -d -s AlphaWebGLLab:I chromium:E > build/alpha4-webgl2-real-android-proof/native-webgl.log
+            grep -F 'ALPHA_WEBGL_LAB_QA true' build/alpha4-webgl2-real-android-proof/native-webgl.log
+            grep -F 'ALPHA_ANDROID_MODEL_QA {' build/alpha4-webgl2-real-android-proof/native-webgl.log
+            if grep -q 'ALPHA_ANDROID_MODEL_QA_FAIL' build/alpha4-webgl2-real-android-proof/native-webgl.log; then
+              echo 'FAIL: Native Android GLB loader/render QA recorded an error'
+              exit 23
+            fi
+            python3 - <<'PY'
+            import json
+            from pathlib import Path
+            data=Path('build/alpha4-webgl2-real-android-proof/native-webgl.log').read_text().splitlines()
+            payloads=[line.split('ALPHA_ANDROID_MODEL_QA ',1)[1].strip() for line in data if 'ALPHA_ANDROID_MODEL_QA {' in line]
+            assert payloads,'FAIL: no real in-app GPU pixel report for public D20'
+            report=json.loads(payloads[-1])
+            assert report['ready'] is True, report
+            assert report['face']==11 and report['front']==11, report
+            assert report['parts']==21 and report['triangles']==40, report
+            assert report['bright']>=16, report
+            assert report['glError']==0, report
+            print('PASS_REAL_ANDROID_WEBVIEW_GLTF_20_FACES_GPU_PIXELS',report)
+            PY
+            adb exec-out screencap -p > build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
+            test -s build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
+            file build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png | grep 'PNG image data'
+            echo PASS_ACTUAL_ANDROID_WEBGL2_VIEWER_SHELL
+      - name: Store actual Android screenshot and log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: adel-dice-alpha4-webgl2-real-android-emulator-evidence
+          path: build/alpha4-webgl2-real-android-proof/
+          retention-days: 15
+          if-no-files-found: warn | grep -v -x 'assets/qa_fixture.glb'; then
             echo 'FAIL: private licensed 3D asset leaked into APK'
             exit 1
           fi
