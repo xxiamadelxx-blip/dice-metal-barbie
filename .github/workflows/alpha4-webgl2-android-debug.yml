@@ -112,6 +112,9 @@ jobs:
             grep -F 'ALPHA_WEBGL_LAB_QA true' build/alpha4-webgl2-real-android-proof/native-webgl.log
             grep -F 'ALPHA_ANDROID_MODEL_QA {' build/alpha4-webgl2-real-android-proof/native-webgl.log
             python3 experiments/alpha4-rng-first/tools/check_android_gpu_qa.py build/alpha4-webgl2-real-android-proof/native-webgl.log
+            adb exec-out screencap -p > build/alpha4-webgl2-real-android-proof/real_android_before_ui_dismiss.png
+            adb shell input tap 290 1300
+            sleep 1
             adb exec-out screencap -p > build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
             test -s build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png
             file build/alpha4-webgl2-real-android-proof/real_android_webgl2_app_screen.png | grep 'PNG image data'
