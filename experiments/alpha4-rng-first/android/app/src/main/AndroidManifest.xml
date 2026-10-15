@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Intentionally NO INTERNET permission: all WebGL and source assets local. -->
+  <application android:allowBackup="false" android:label="Dice Alpha WebGL"
+    android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.NoActionBar"
+    android:hardwareAccelerated="true" android:supportsRtl="true">
+    <activity android:name=".MainActivity" android:exported="true"
+       android:screenOrientation="portrait">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>
