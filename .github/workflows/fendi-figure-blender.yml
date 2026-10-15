@@ -1,4 +1,4 @@
-name: Fendi figure | Blender cloud bench
+name: Fendi reference | real Blender 3D experiment
 on:
   push:
     branches:
@@ -13,41 +13,42 @@ concurrency:
   group: fendi-blender-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  blender-probe:
+  reconstruct:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Install Blender and image utilities
+      - name: Install real Blender and image processing tools
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y blender imagemagick python3-pil
           blender -b --version | head -5
-      - name: Retrieve matching Fendi reference
+      - name: Download verified high-resolution reference
         run: |
           mkdir -p build/fendi-ss23
           curl -fLSs --retry 3 --max-time 40 -o build/fendi-ss23/reference.jpg https://fashionsnap-assets.com/article/images/2022/09/fendi_w23ss_look_053.jpeg
           identify build/fendi-ss23/reference.jpg
-      - name: Inspect free 3D generator endpoints
-        continue-on-error: true
+      - name: Prepare image-to-3D Python environment
         run: |
-          python3 -m venv /tmp/fendi-gradio
-          /tmp/fendi-gradio/bin/pip install -q gradio_client==1.13.0
-          /tmp/fendi-gradio/bin/python - <<'PY'
-          from gradio_client import Client
-          for space in ["stabilityai/stable-fast-3d"]:
-              print("SPACE", space,flush=True)
-              try:
-                  client=Client(space)
-                  print("API",client.view_api(print_info=False),flush=True)
-              except Exception as e:
-                  print("SPACE ERROR",type(e).__name__,str(e)[:500],flush=True)
-          PY
-      - name: Upload evidence
+          python3 -m venv /tmp/fendi-3d
+          /tmp/fendi-3d/bin/pip install -q --upgrade pip
+          /tmp/fendi-3d/bin/pip install -q 'gradio_client==1.13.0' 'rembg[cpu]' Pillow onnxruntime
+      - name: Generate a real mesh from isolated subject, preserve failures
+        run: |
+          /tmp/fendi-3d/bin/python experiments/fendi-ss23/generate.py
+          cat build/fendi-ss23/generation.json
+      - name: Render four mesh-only Blender views, save blend
+        run: |
+          if [ -s build/fendi-ss23/candidate.glb ]; then
+            blender -b -t 4 --python experiments/fendi-ss23/render.py
+          else
+            echo "NOT VERIFIED: no generated mesh; cannot honestly render or compare a figurine"
+          fi
+      - name: Upload reference, segmentation, logs, model and Blender previews
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fendi-blender-probe
+          name: fendi-ss23-figure-experiment
           path: build/fendi-ss23/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 7
