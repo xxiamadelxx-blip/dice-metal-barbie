@@ -43,6 +43,10 @@ root.location = -(root.rotation_euler.to_matrix() @ center) * scale
 scene=bpy.context.scene
 scene.render.engine="CYCLES"
 scene.cycles.samples=24
+# Ubuntu distro Blender is compiled without Intel OpenImageDenoise.
+# Force raw sample output instead of failing at the denoising stage.
+scene.cycles.use_denoising=False
+bpy.context.view_layer.cycles.use_denoising=False
 scene.render.resolution_x=900
 scene.render.resolution_y=1350
 scene.render.resolution_percentage=100
