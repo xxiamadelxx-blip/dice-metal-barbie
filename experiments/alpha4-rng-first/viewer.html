@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101016"><title>Dice Renderer Laboratory · WebGL2</title>
+<style>
+*{box-sizing:border-box}html{background:#090a0d}body{margin:0;background:radial-gradient(ellipse 82% 65% at 49% 43%,#242431,#0b0c10 72%);color:#f2dfba;font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100dvh;display:flex;flex-direction:column}
+header{text-align:center;padding:13px 16px 5px}h1{font-size:18px;margin:0 0 3px;font-weight:650;letter-spacing:.01em}small{color:#ad9f8d;font-size:12px}main{margin:auto;display:flex;flex-direction:column;align-items:center;width:min(100%,600px);gap:8px;padding:5px 12px 16px}.scene{width:100%;position:relative;aspect-ratio:1;max-height:65dvh;display:grid;place-items:center}.scene::after{content:'';position:absolute;bottom:8%;left:20%;width:60%;height:12%;background:#0009;filter:blur(24px);border-radius:100%;z-index:0}canvas{position:relative;z-index:1;display:block;width:100%;height:100%;object-fit:contain;touch-action:pan-y}.result{font-size:37px;font-weight:750;min-height:46px;font-variant-numeric:tabular-nums;line-height:1.2;color:#ebc47e}.result span{font-size:12px;font-weight:400;color:#a69b8a}button{border:1px solid #dab476;background:linear-gradient(160deg,#e5c17f,#a57b43);color:#16130f;font-size:18px;font-weight:700;border-radius:13px;padding:13px 37px;min-width:215px}button:disabled{opacity:.65}label.file{font-size:12px;display:block;max-width:90%;padding:7px 10px;border:1px solid #514637;border-radius:7px;color:#d8b875;text-align:center}input[type=file]{font-size:12px;width:100%;color:#9d9690;max-width:340px}#status{text-align:center;font-size:12px;color:#c9b9a0;min-height:29px;margin:0;max-width:90%;line-height:1.4}.hint{font-size:11px;color:#aaa1a0;text-align:center;max-width:92%;line-height:1.4}#metrics{font-family:monospace;font-size:11px;color:#9d9ea8;text-align:center}footer{text-align:center;color:#847d78;font-size:11px;padding:7px 5px 13px}a{color:#ddbb7d}
+</style></head><body>
+<header><h1>AdelDice · 3D Lab</h1><small>WebGL2 · без Godot · RNG выбирает результат до броска</small></header>
+<main><div class="scene"><canvas id="canvas" width="720" height="720" aria-label="3D D20 из оригинального GLB"></canvas></div>
+<div class="result" aria-live="polite"><span>D20&nbsp; </span><strong id="result">—</strong></div>
+<button id="roll" type="button" disabled>Бросить D20</button>
+<label class="file">Приватная 3D-модель .glb <input id="asset" type="file" accept=".glb,model/gltf-binary"></label>
+<div id="status" aria-live="polite">Выберите оригинальный GLB из приватных файлов.</div><div id="metrics"></div>
+<div class="hint">3D-модель и золотые цифры берутся непосредственно из GLB. Файл остаётся локальным. Без сети, сервера и загрузки материала в GitHub.</div></main>
+<footer>Экспериментальная ветка. Визуальная приёмка, Android APK и GPU-производительность пока не подтверждены.</footer>
+<script src="viewer.js"></script></body></html>
