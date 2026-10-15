@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import './style.css';
+import { makeRoll } from './rng_first.mjs';
+import { createDemoNumberedD20, animateToPrintedFace } from './dice_animation.js';
 
 const SOURCE_SHA='60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39';
 const el=(id)=>document.getElementById(id);
@@ -10,7 +12,8 @@ const lab=window.__diceLab={
   renderer:'Three.js r184 WebGL2',state:'initializing',modelLoaded:false,
   exactOriginal:false,modelTriangles:0,stoneTriangles:0,goldTriangles:0,goldMeshes:0,
   drawTriangles:0,drawCalls:0,renderedFrames:0,fps:0,sourceSha:null,error:null,
-  camera:'overhead',demo:true
+  camera:'overhead',demo:true,rngAuthority:'crypto.getRandomValues via unbiased rejection',
+  rollHistory:[],rolling:false,lastTarget:null,lastVisible:null,lastResult:null,rollCount:0
 };
 function status(value){lab.state=value;el('state').textContent=value}
 function failure(error){console.error(error);lab.error=String(error?.message||error);el('errors').textContent=lab.error;status('Ошибка, см. диагностику');}
@@ -41,6 +44,10 @@ setCamera('overhead');
 let ambient=null;
 let model=null;
 let turntable=false;
+let rollBusy=false;
+const dicePivot=new THREE.Group();
+dicePivot.name='RNG_FIRST_VISUAL_ONLY';
+scene.add(dicePivot);
 const startClock=performance.now();
 const durations=[];
 const frame=(now)=>{
@@ -56,7 +63,7 @@ const frame=(now)=>{
     camera.top=half;camera.bottom=-half;
     camera.updateProjectionMatrix();
   }
-  if(turntable&&model)model.rotation.y+=.0033;
+  if(turntable&&model&&!rollBusy)dicePivot.rotation.y+=.0033;
   renderer.render(scene,camera);
   lab.renderedFrames++;
   lab.drawTriangles=renderer.info.render.triangles;
@@ -81,14 +88,11 @@ if(renderer){
   scene.environment=ambient.texture;
   renderer.setAnimationLoop(frame);
   status('WebGL2 работает · Three.js r184');
-  const demo=new THREE.Mesh(
-    new THREE.IcosahedronGeometry(.98,1),
-    new THREE.MeshPhysicalMaterial({color:0x171d1d,metalness:0,roughness:.16,clearcoat:.32,clearcoatRoughness:.12,flatShading:true})
-  );
-  demo.name='SYNTHETIC_LOW_POLY_PLACEHOLDER_NOT_OWNER_SOURCE';
-  model=demo;
-  scene.add(demo);
+  model=createDemoNumberedD20();
+  dicePivot.add(model);
   lab.demo=true;
+  lab.modelLoaded=true;
+  status('WebGL2 работает · демо D20 с RNG-first');
 }
 const loader=new GLTFLoader();
 async function loadGLB(file){
@@ -122,8 +126,14 @@ async function loadGLB(file){
   lab.modelLoaded=true;lab.demo=false;
   const verified=lab.exactOriginal&&triangles===500000&&stone===220000&&gold===280000&&goldMeshes===20;
   lab.verifiedPremium=verified;
-  if(model){scene.remove(model);model.traverse?.(o=>{if(o===model&&o.geometry?.type?.includes('Icosahedron')){o.geometry.dispose();o.material?.dispose?.()}})}
+  if(rollBusy)throw new Error('Дождитесь завершения текущего броска');
+  if(model){
+    dicePivot.remove(model);
+    model.userData?.disposeDemo?.();
+  }
   model=root;
+  dicePivot.quaternion.identity();
+  dicePivot.position.set(0,0,0);
   if(verified){
     const basis=new THREE.Matrix4().makeBasis(
       new THREE.Vector3(-.99980195,-.00372885,.01954887),
@@ -137,11 +147,12 @@ async function loadGLB(file){
     const size=bounds.getSize(new THREE.Vector3()).length();
     if(size>0)model.scale.multiplyScalar(1.8/size);
   }
-  scene.add(model);
+  dicePivot.add(model);
+  updateRollButtons();
   status(verified?'Проверен оригинальный 500k обсидиан':'GLB загружен · НЕ подтверждён исходник');
   el('asset').textContent=verified?'500k original ✓':`${triangles.toLocaleString('ru-RU')} tris (другой GLB)`;
   el('sha').textContent='SHA-256 '+hash+' · '+(verified?'оригинальный приватный PBR':'не совпадает с сохранённым D20');
-  el('details').textContent=`Меш: ${triangles.toLocaleString('ru-RU')} треугольников. Камень: ${stone.toLocaleString('ru-RU')}. Золото: ${gold.toLocaleString('ru-RU')}, ${goldMeshes} частей. PBR normalMap: ${realNormalTextures}. Материалы: ${Array.from(materialNames).join(', ')}. В браузерном тесте физика/результат броска не реализованы.`;
+  el('details').textContent=`Меш: ${triangles.toLocaleString('ru-RU')} треугольников. Камень: ${stone.toLocaleString('ru-RU')}. Золото: ${gold.toLocaleString('ru-RU')}, ${goldMeshes} частей. PBR normalMap: ${realNormalTextures}. Материалы: ${Array.from(materialNames).join(', ')}. RNG-first анимация доступна только для проверенного оригинального GLB или встроенного демонстрационного D20.`;
   return lab;
 }
 lab.loadGLB=loadGLB;
@@ -152,6 +163,60 @@ el('model-file').addEventListener('change',async(event)=>{
 el('top').addEventListener('click',()=>setCamera('overhead'));
 el('tilt').addEventListener('click',()=>setCamera('tilted'));
 el('rotate').addEventListener('click',()=>{turntable=!turntable;el('rotate').textContent=turntable?'Остановить':'Вращать модель'});
+const rollButtons={
+  d20:el('roll-d20'),advantage:el('roll-advantage'),
+  disadvantage:el('roll-disadvantage'),mixed:el('roll-mixed')
+};
+function updateRollButtons(){
+  const playable=!!model&&(lab.demo===true||lab.verifiedPremium===true)&&!rollBusy;
+  for(const button of Object.values(rollButtons))button.disabled=!playable;
+  el('roll-availability').textContent=lab.verifiedPremium?
+    'Оригинальный 500k D20 подтверждён: RNG определяет исход, 3D следует ему.':
+    lab.demo?'Демо D20. Настоящий обсидиан загружается локальным GLB.':
+    'У другого GLB не подтверждена нумерация, бросок заблокирован.';
+}
+function describePlan(plan){
+  const pieces=plan.rolls.map(x=>x.type.toUpperCase()+'='+x.value).join(' + ');
+  const limitation=plan.mode==='mixed'?
+    ' Два D6 рассчитаны RNG, их 3D-модели ещё не анимируются.':
+    plan.mode==='advantage'||plan.mode==='disadvantage'?
+    ' Два RNG-значения, анимирован только выбранный D20.':'';
+  return pieces+'; сумма '+plan.result+'.'+limitation;
+}
+async function roll(mode='d20'){
+  if(rollBusy)throw new Error('Бросок уже анимируется');
+  if(!model||(lab.demo!==true&&lab.verifiedPremium!==true))
+    throw new Error('Требуется цифровой D20 с подтверждённым расположением всех 20 чисел');
+  // COMMIT RESULT before any GPU animation, never change it after a collision.
+  const plan=makeRoll(mode);
+  rollBusy=true;lab.rolling=true;
+  turntable=false;el('rotate').textContent='Вращать модель';
+  lab.lastTarget=plan.visualD20;
+  lab.lastResult=plan.result;
+  lab.currentPlan=plan;
+  el('roll-result').textContent='Бросок… RNG уже выбрал '+plan.visualD20;
+  el('roll-details').textContent='Результат зафиксирован до анимации.';
+  updateRollButtons();
+  try{
+    const finished=await animateToPrintedFace(dicePivot,plan.visualD20);
+    lab.lastVisible=finished.visible;
+    lab.rollCount++;
+    lab.rollHistory.push({mode,target:plan.visualD20,visible:finished.visible,
+      result:plan.result,rolls:plan.rolls,verifiedFace:true});
+    if(lab.rollHistory.length>50)lab.rollHistory.shift();
+    el('roll-result').textContent=String(plan.result);
+    el('roll-details').textContent=describePlan(plan)+' Видимая грань D20: '+finished.visible+
+      '. Выбор сделан Web Crypto до начала анимации.';
+    return {plan,...finished};
+  }catch(error){failure(error);throw error}
+  finally{rollBusy=false;lab.rolling=false;updateRollButtons()}
+}
+lab.roll=roll;
+lab.mechanics='RNG-FIRST_TARGET_THEN_SCRIPTED_KINEMATIC_3D_NOT_RIGIDBODY';
+for(const [mode,button] of Object.entries(rollButtons)){
+  button.addEventListener('click',()=>roll(mode).catch(failure));
+}
+updateRollButtons();
 el('capture').addEventListener('click',()=>{
   if(!renderer){failure(new Error('Нет GPU-кадра'));return}
   const link=document.createElement('a');
