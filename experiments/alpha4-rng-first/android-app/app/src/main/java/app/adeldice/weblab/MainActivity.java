@@ -43,7 +43,8 @@ public final class MainActivity extends Activity {
                 view.evaluateJavascript("Boolean(window.DiceExperimentalQA && document.getElementById('canvas').getContext('webgl2') && window.crypto && window.crypto.getRandomValues)",
                     result -> Log.i("AlphaWebGLLab", "ALPHA_WEBGL_LAB_QA " + result));
                 // Test-only synthetic fixture: original owner GLB is never packaged or published.
-                if (BuildConfig.DEBUG && getIntent().getBooleanExtra("qa_fixture", false)) {
+                if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+                        && getIntent().getBooleanExtra("qa_fixture", false)) {
                     loadPublicQaFixture(view);
                 }
             }
