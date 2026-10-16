@@ -29,7 +29,7 @@ precision highp float;
 in vec3 vNormal;in vec3 vPosition;in vec2 vUV;
 uniform sampler2D uAlbedo;uniform sampler2D uNormal;
 uniform int uType;uniform int uHasAlbedo;uniform int uHasNormal;
-uniform vec3 uGoldBase;uniform float uRoughness;uniform float uMetalness;
+uniform vec3 uBaseFactor;uniform float uNormalScale;uniform float uRoughness;uniform float uMetalness;
 out vec4 o;
 float disk(vec3 reflection,vec3 direction,float angularRadius,float feather){float cosAngle=dot(reflection,normalize(direction));return smoothstep(cos(angularRadius+feather),cos(angularRadius-feather),cosAngle);}
 vec3 linearToSRGB(vec3 c){return pow(max(c,vec3(0.)),vec3(1.0/2.2));}
@@ -42,12 +42,12 @@ void main(){
    vec3 tangent=normalize(dpos1*duv2.y-dpos2*duv1.y);
    vec3 bitangent=normalize(-dpos1*duv2.x+dpos2*duv1.x);
    vec3 nm=texture(uNormal,vUV).rgb*2.0-1.0;
-   nm.xy*=0.20;
+   nm.xy*=uNormalScale;
    norm=normalize(mat3(tangent,bitangent,norm)*nm);
  }
  vec3 reflection=reflect(-eye,norm);
- vec3 linearBase=(uType==2)?uGoldBase:vec3(.024,.027,.030);
- if(uHasAlbedo==1){vec3 albedo=texture(uAlbedo,vUV).rgb;linearBase=pow(albedo,vec3(2.2));}
+ vec3 linearBase=uBaseFactor;
+ if(uHasAlbedo==1){vec3 albedo=texture(uAlbedo,vUV).rgb;linearBase*=pow(albedo,vec3(2.2));}
  float NoV=max(dot(norm,eye),0.0);
  float f=pow(1.0-NoV,5.0);
  vec3 f0=mix(vec3(0.04),linearBase,clamp(uMetalness,0.,1.));
@@ -66,7 +66,7 @@ void main(){
 }`;
 function compile(type,code){const sh=gl.createShader(type);gl.shaderSource(sh,code);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error('GLSL: '+gl.getShaderInfoLog(sh));return sh}
 const program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vertex));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error('Link: '+gl.getProgramInfoLog(program));gl.useProgram(program);
-const uniform={};for(const n of ['uDie','uNode','uProjection','uType','uHasAlbedo','uHasNormal','uGoldBase','uRoughness','uMetalness','uAlbedo','uNormal'])uniform[n]=gl.getUniformLocation(program,n);
+const uniform={};for(const n of ['uDie','uNode','uProjection','uType','uHasAlbedo','uHasNormal','uBaseFactor','uNormalScale','uRoughness','uMetalness','uAlbedo','uNormal'])uniform[n]=gl.getUniformLocation(program,n);
 const locations={};for(const name of ['POSITION','NORMAL','TEXCOORD_0'])locations[name]=gl.getAttribLocation(program,name);
 const projection=new Float32Array([1.55,0,0,0,0,1.55,0,0,0,0,-1.001,-1,0,0,-.1001,0]);gl.uniformMatrix4fv(uniform.uProjection,false,projection);
 gl.uniform1i(uniform.uAlbedo,0);gl.uniform1i(uniform.uNormal,1);
@@ -136,7 +136,7 @@ async function loadGLB(arrayBuffer,name='D20 source'){
     }
     const ind=json.accessors[p.indices];if(![gl.UNSIGNED_SHORT,gl.UNSIGNED_INT].includes(ind.componentType))throw Error('Indices must be U16/U32');
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gpuBuffers[ind.bufferView].buffer);const mat=json.materials?.[p.material]||{},pbr=mat.pbrMetallicRoughness||{};
-    result.push({vao,count:ind.count,offset:ind.byteOffset||0,indType:ind.componentType,node:nodeMatrix,nodeName:n.name||mesh.name,matType:goldMatch?2:0,base:pbr.baseColorTexture?.index,normal:mat.normalTexture?.index,baseFactor:pbr.baseColorFactor||[1,1,1,1],rough:pbr.roughnessFactor??1,metal:pbr.metallicFactor??0});tris+=ind.count/3;
+    result.push({vao,count:ind.count,offset:ind.byteOffset||0,indType:ind.componentType,node:nodeMatrix,nodeName:n.name||mesh.name,matType:goldMatch?2:0,base:pbr.baseColorTexture?.index,normal:mat.normalTexture?.index,baseFactor:pbr.baseColorFactor||[1,1,1,1],normalScale:mat.normalTexture?.scale??1,rough:pbr.roughnessFactor??1,metal:pbr.metallicFactor??1});tris+=ind.count/3;
    }
   }
   if(gold.size!==20||Array.from({length:20},(_,i)=>i+1).some(i=>!gold.has(i)))throw Error('Expected 20 original numbered gold meshes, found '+gold.size);
@@ -160,7 +160,7 @@ async function loadGLB(arrayBuffer,name='D20 source'){
    if(t>=1){current=roll.to;state.busy=false;state.visibleFace=roll.chosen;el('result').textContent=roll.chosen;el('roll').disabled=false;htmlStatus('RNG='+roll.chosen+' · золотая грань='+roll.chosen+' · GLB оригинал');roll=null;}}
   gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   if(state.ready){gl.useProgram(program);const die=qmat(current,[0,0,-2.65]);gl.uniformMatrix4fv(uniform.uDie,false,die);
-   for(const piece of pieces){gl.bindVertexArray(piece.vao);gl.uniformMatrix4fv(uniform.uNode,false,piece.node);gl.uniform1i(uniform.uType,piece.matType);gl.uniform1i(uniform.uHasAlbedo,piece.base===undefined?0:1);gl.uniform1i(uniform.uHasNormal,piece.normal===undefined?0:1);gl.uniform3f(uniform.uGoldBase,.56,.335,.105);gl.uniform1f(uniform.uRoughness,piece.rough);gl.uniform1f(uniform.uMetalness,piece.metal);
+   for(const piece of pieces){gl.bindVertexArray(piece.vao);gl.uniformMatrix4fv(uniform.uNode,false,piece.node);gl.uniform1i(uniform.uType,piece.matType);gl.uniform1i(uniform.uHasAlbedo,piece.base===undefined?0:1);gl.uniform1i(uniform.uHasNormal,piece.normal===undefined?0:1);gl.uniform3f(uniform.uBaseFactor,piece.baseFactor[0],piece.baseFactor[1],piece.baseFactor[2]);gl.uniform1f(uniform.uNormalScale,piece.normalScale);gl.uniform1f(uniform.uRoughness,piece.rough);gl.uniform1f(uniform.uMetalness,piece.metal);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,piece.base===undefined?white:textures[piece.base]);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,piece.normal===undefined?flatNormal:textures[piece.normal]);gl.drawElements(gl.TRIANGLES,piece.count,piece.indType,piece.offset);state.drawCount++;}
   }
   state.lastDurationMs=performance.now()-t0;requestAnimationFrame(paint)
