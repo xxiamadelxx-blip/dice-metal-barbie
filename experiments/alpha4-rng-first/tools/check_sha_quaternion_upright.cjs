@@ -39,7 +39,7 @@ function testGLB(file,original){
  const gold=j.nodes.filter(n=>/^Gold_\d{1,2}$/.test(n.name||''));assert.equal(gold.length,20);
  const normals=gold.map(n=>[Number(n.name.split('_')[1]),n.translation]);
  const rotations=gold.map(n=>[Number(n.name.split('_')[1]),n.rotation||[0,0,0,1]]);
- context.REAL_NORMALS=normals;context.REAL_ROTATIONS=rotations;context.GOLD_UP=original?[0,0,1]:[0,1,0];
+ context.REAL_NORMALS=normals;context.REAL_ROTATIONS=rotations;context.GOLD_UP=original?[0,0,-1]:[0,1,0];
  vm.runInContext(`const goldFaces=new Map(REAL_NORMALS.map(([v,p])=>[v,unit(p)]));
  const glyphUpVectors=new Map(REAL_ROTATIONS.map(([v,q])=>[v,qrot(q,GOLD_UP)]));`,context);
  for(let val=1;val<=20;val++){
