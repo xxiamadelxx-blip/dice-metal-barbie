@@ -122,8 +122,21 @@ async function loadGLB(arrayBuffer,name='D20 source'){
   if(json.extensionsRequired?.length)throw Error('Unsupported glTF required extension '+json.extensionsRequired.join(','));
   const viewBytes=bv=>new Uint8Array(arrayBuffer,bin.byteOffset+(bv.byteOffset??0),bv.byteLength);
   const gpuBuffers=json.bufferViews.map(bv=>{const b=gl.createBuffer();const target=bv.target||gl.ARRAY_BUFFER;gl.bindBuffer(target,b);gl.bufferData(target,viewBytes(bv),gl.STATIC_DRAW);return {buffer:b,target}});
-  const images=await Promise.all((json.images||[]).map(async image=>{let data,mime=image.mimeType||'image/png';if(image.bufferView!==undefined)data=viewBytes(json.bufferViews[image.bufferView]);else throw Error('External image files not supported');const blob=new Blob([data],{type:mime});return createImageBitmap(blob,{imageOrientation:'flipY',premultiplyAlpha:'none'})}));
-  const gpuTextures=(json.textures||[]).map((t)=>{const sampler=json.samplers?.[t.sampler]||{},bmp=images[t.source];if(!bmp)throw Error('Missing texture source');const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,sampler.wrapS??gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,sampler.wrapT??gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bmp);gl.generateMipmap(gl.TEXTURE_2D);return tex});
+  async function decodeTexture(data,mime){
+    const blob=new Blob([data],{type:mime});
+    if(typeof createImageBitmap==='function'){
+      try{return await createImageBitmap(blob,{imageOrientation:'flipY',premultiplyAlpha:'none'});}
+      catch(err){console.warn('createImageBitmap failed, trying HTMLImageElement',String(err));}
+    }
+    return await new Promise((resolve,reject)=>{
+      const url=URL.createObjectURL(blob),img=new Image();
+      img.onload=()=>{URL.revokeObjectURL(url);resolve(img);};
+      img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('GLB embedded image decode failed'));};
+      img.src=url;
+    });
+  }
+  const images=await Promise.all((json.images||[]).map(async image=>{let data,mime=image.mimeType||'image/png';if(image.bufferView!==undefined)data=viewBytes(json.bufferViews[image.bufferView]);else throw Error('External image files not supported');return decodeTexture(data,mime)}));
+  const gpuTextures=(json.textures||[]).map((t)=>{const sampler=json.samplers?.[t.sampler]||{},bmp=images[t.source];if(!bmp)throw Error('Missing texture source');const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,sampler.wrapS??gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,sampler.wrapT??gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,typeof ImageBitmap==='undefined'||!(bmp instanceof ImageBitmap));gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bmp);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.generateMipmap(gl.TEXTURE_2D);return tex});
   const result=[],gold=new Map(),glyphUp=new Map();let tris=0;
   for(const n of (json.nodes||[])){
    if(n.mesh===undefined)continue;const mesh=json.meshes[n.mesh],nodeMatrix=matNode(n),nodeRot=n.rotation||[0,0,0,1];
