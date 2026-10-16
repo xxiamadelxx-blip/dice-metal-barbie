@@ -76,6 +76,17 @@ const flatNormal=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,flatNormal);gl.
 let pieces=[],goldFaces=new Map(),buffers=[],textures=[],current=[0,0,0,1],roll=null,lastTime=0,totalTris=0;
 function accessorProps(a){const typeCount={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16}[a.type];if(!typeCount)throw Error('Accessor type unsupported: '+a.type);return {size:typeCount,type:a.componentType,count:a.count,offset:a.byteOffset||0}}
 async function loadGLB(arrayBuffer,name='D20 source'){
+  // Fail closed BEFORE allocating GPU buffers or accepting a model as original.
+  // Synthetic benchmark fixture is explicitly test-only and cannot masquerade as original.
+  const syntheticFixture=name==='PUBLIC_SYNTHETIC_QA';
+  if(!syntheticFixture){
+    if(!globalThis.crypto?.subtle?.digest)throw Error('SHA-256 unavailable in this WebView; original model cannot be verified');
+    const bytes=await globalThis.crypto.subtle.digest('SHA-256',arrayBuffer);
+    const actual=Array.from(new Uint8Array(bytes),v=>v.toString(16).padStart(2,'0')).join('');
+    const expected='60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39';
+    if(actual!==expected)throw Error('GLB SHA-256 mismatch: selected file is NOT the approved original D20');
+    state.assetSha256=actual;
+  }else{state.assetSha256='SYNTHETIC_QA_NOT_ORIGINAL';}
   const view=new DataView(arrayBuffer);if(view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2)throw Error('Only glTF 2.0 GLB supported');
   let idx=12,json=null,bin=null;while(idx+8<=arrayBuffer.byteLength){const len=view.getUint32(idx,true),kind=view.getUint32(idx+4,true);idx+=8;if(kind===0x4e4f534a)json=JSON.parse(new TextDecoder().decode(arrayBuffer.slice(idx,idx+len)));if(kind===0x004e4942)bin=new Uint8Array(arrayBuffer,idx,len);idx+=len}
   if(!json||!bin||!json.accessors||!json.bufferViews)throw Error('GLB missing JSON/BIN');
@@ -103,6 +114,7 @@ async function loadGLB(arrayBuffer,name='D20 source'){
   if(!result.length)throw Error('No drawable meshes');
   // Keep local-only source material private. No network transfer; binary stays in browser memory.
   pieces=result;goldFaces=gold;buffers=gpuBuffers;textures=gpuTextures;totalTris=tris;
+  state.syntheticFixture=syntheticFixture;
   state.ready=true;state.triangles=tris;state.parts=result.length;state.assetName=name;state.meshInfo=result.map(x=>x.nodeName);el('roll').disabled=false;
   el('metrics').textContent=tris.toLocaleString('ru')+' треугольников · '+result.length+' поверхностей · '+gold.size+' цифр';
   htmlStatus(name==='PUBLIC_SYNTHETIC_QA'
