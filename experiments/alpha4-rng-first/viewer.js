@@ -75,14 +75,43 @@ const white=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,white);gl.texImage2D
 const flatNormal=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,flatNormal);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,255,255]));
 let pieces=[],goldFaces=new Map(),buffers=[],textures=[],current=[0,0,0,1],roll=null,lastTime=0,totalTris=0;
 function accessorProps(a){const typeCount={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16}[a.type];if(!typeCount)throw Error('Accessor type unsupported: '+a.type);return {size:typeCount,type:a.componentType,count:a.count,offset:a.byteOffset||0}}
+/** Offline SHA-256 fallback for Android opaque file:// origins without SubtleCrypto. */
+function sha256Fallback(arrayBuffer){
+ const raw=new Uint8Array(arrayBuffer), size=raw.length, padded=Math.ceil((size+9)/64)*64;
+ const message=new Uint8Array(padded);message.set(raw);message[size]=0x80;
+ const bits=size*8, dv=new DataView(message.buffer);
+ dv.setUint32(padded-8,Math.floor(bits/4294967296),false);dv.setUint32(padded-4,bits>>>0,false);
+ const h=new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+ const k=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+ const r=(x,n)=>(x>>>n)|(x<<(32-n)),w=new Uint32Array(64);
+ for(let start=0;start<padded;start+=64){
+  for(let j=0;j<16;j++)w[j]=dv.getUint32(start+j*4,false);
+  for(let j=16;j<64;j++){const a=w[j-15],b=w[j-2];w[j]=(w[j-16]+(r(a,7)^r(a,18)^(a>>>3))+w[j-7]+(r(b,17)^r(b,19)^(b>>>10)))>>>0}
+  let [a,b,c,d,e,f,g,z]=h;
+  for(let j=0;j<64;j++){
+   const s1=r(e,6)^r(e,11)^r(e,25),choose=(e&f)^(~e&g);
+   const t1=(z+s1+choose+k[j]+w[j])>>>0;
+   const s0=r(a,2)^r(a,13)^r(a,22),major=(a&b)^(a&c)^(b&c);
+   const t2=(s0+major)>>>0;
+   z=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0;
+  }
+  for(const [i,v] of [a,b,c,d,e,f,g,z].entries())h[i]=(h[i]+v)>>>0;
+ }
+ return Array.from(h,v=>v.toString(16).padStart(8,'0')).join('');
+}
+async function sha256Hex(buffer){
+ if(globalThis.crypto?.subtle?.digest){
+  const digest=await globalThis.crypto.subtle.digest('SHA-256',buffer);
+  return Array.from(new Uint8Array(digest),v=>v.toString(16).padStart(2,'0')).join('');
+ }
+ return sha256Fallback(buffer);
+}
 async function loadGLB(arrayBuffer,name='D20 source'){
   // Fail closed BEFORE allocating GPU buffers or accepting a model as original.
   // Synthetic benchmark fixture is explicitly test-only and cannot masquerade as original.
   const syntheticFixture=name==='PUBLIC_SYNTHETIC_QA';
   if(!syntheticFixture){
-    if(!globalThis.crypto?.subtle?.digest)throw Error('SHA-256 unavailable in this WebView; original model cannot be verified');
-    const bytes=await globalThis.crypto.subtle.digest('SHA-256',arrayBuffer);
-    const actual=Array.from(new Uint8Array(bytes),v=>v.toString(16).padStart(2,'0')).join('');
+    const actual=await sha256Hex(arrayBuffer);
     const expected='60a7d624c126776eb357fb0ba97c8724175a5ec7ce629358276286da75889f39';
     if(actual!==expected)throw Error('GLB SHA-256 mismatch: selected file is NOT the approved original D20');
     state.assetSha256=actual;
