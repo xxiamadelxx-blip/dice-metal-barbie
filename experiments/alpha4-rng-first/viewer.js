@@ -127,7 +127,7 @@ async function loadGLB(arrayBuffer,name='D20 source'){
   const result=[],gold=new Map(),glyphUp=new Map();let tris=0;
   for(const n of (json.nodes||[])){
    if(n.mesh===undefined)continue;const mesh=json.meshes[n.mesh],nodeMatrix=matNode(n),nodeRot=n.rotation||[0,0,0,1];
-   const goldMatch=/^Gold_(\d{1,2})$/.exec(n.name||'');if(goldMatch){const face=Number(goldMatch[1]);if(gold.has(face))throw Error('Duplicate gold number '+face);const cent=n.translation||[0,0,0];gold.set(face,unit(cent));glyphUp.set(face,qrot(nodeRot,[0,0,1]));}
+   const goldMatch=/^Gold_(\d{1,2})$/.exec(n.name||'');if(goldMatch){const face=Number(goldMatch[1]);if(gold.has(face))throw Error('Duplicate gold number '+face);const cent=n.translation||[0,0,0];gold.set(face,unit(cent));glyphUp.set(face,qrot(nodeRot,syntheticFixture?[0,1,0]:[0,0,1]));}
    for(const p of mesh.primitives){if((p.mode??4)!==4)throw Error('Triangle mesh required');if(p.indices===undefined)throw Error('Indexed triangles required');
     const vao=gl.createVertexArray();gl.bindVertexArray(vao);for(const attr of ['POSITION','NORMAL','TEXCOORD_0']){
       let aId=p.attributes[attr],loc=locations[attr];if(aId===undefined){gl.disableVertexAttribArray(loc);gl.vertexAttrib3f(loc,0,0,attr==='NORMAL'?1:0);continue}
