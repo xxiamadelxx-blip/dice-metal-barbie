@@ -7,7 +7,7 @@ const state={ready:false,busy:false,selected:0,visibleFace:null,drawCount:0,tria
 const unit=v=>{const l=Math.hypot(...v);return v.map(x=>x/l)};
 const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
-const qmul=(a,b)=>[a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[3]+a[1]*b[0]-a[2]*b[1],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];
+const qmul=(a,b)=>[a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];
 const qnorm=q=>{const d=Math.hypot(...q);return q.map(x=>x/d)};
 const qaxis=(v,t)=>[...unit(v).map(x=>x*Math.sin(t/2)),Math.cos(t/2)];
 const qfrom=(from,to)=>{const d=dot(from,to);if(d<-.999999){let v=cross(from,[1,0,0]);if(Math.hypot(...v)<.001)v=cross(from,[0,1,0]);return qaxis(v,Math.PI)}return qnorm([...cross(from,to),1+d])};
@@ -73,7 +73,7 @@ gl.uniform1i(uniform.uAlbedo,0);gl.uniform1i(uniform.uNormal,1);
 gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);gl.clearColor(.042,.043,.06,1);
 const white=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,white);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));
 const flatNormal=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,flatNormal);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,255,255]));
-let pieces=[],goldFaces=new Map(),buffers=[],textures=[],current=[0,0,0,1],roll=null,lastTime=0,totalTris=0;
+let pieces=[],goldFaces=new Map(),glyphUpVectors=new Map(),buffers=[],textures=[],current=[0,0,0,1],roll=null,lastTime=0,totalTris=0;
 function accessorProps(a){const typeCount={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16}[a.type];if(!typeCount)throw Error('Accessor type unsupported: '+a.type);return {size:typeCount,type:a.componentType,count:a.count,offset:a.byteOffset||0}}
 /** Offline SHA-256 fallback for Android opaque file:// origins without SubtleCrypto. */
 function sha256Fallback(arrayBuffer){
@@ -124,10 +124,10 @@ async function loadGLB(arrayBuffer,name='D20 source'){
   const gpuBuffers=json.bufferViews.map(bv=>{const b=gl.createBuffer();const target=bv.target||gl.ARRAY_BUFFER;gl.bindBuffer(target,b);gl.bufferData(target,viewBytes(bv),gl.STATIC_DRAW);return {buffer:b,target}});
   const images=await Promise.all((json.images||[]).map(async image=>{let data,mime=image.mimeType||'image/png';if(image.bufferView!==undefined)data=viewBytes(json.bufferViews[image.bufferView]);else throw Error('External image files not supported');const blob=new Blob([data],{type:mime});return createImageBitmap(blob,{imageOrientation:'flipY',premultiplyAlpha:'none'})}));
   const gpuTextures=(json.textures||[]).map((t)=>{const sampler=json.samplers?.[t.sampler]||{},bmp=images[t.source];if(!bmp)throw Error('Missing texture source');const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,sampler.wrapS??gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,sampler.wrapT??gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bmp);gl.generateMipmap(gl.TEXTURE_2D);return tex});
-  const result=[],gold=new Map();let tris=0;
+  const result=[],gold=new Map(),glyphUp=new Map();let tris=0;
   for(const n of (json.nodes||[])){
    if(n.mesh===undefined)continue;const mesh=json.meshes[n.mesh],nodeMatrix=matNode(n),nodeRot=n.rotation||[0,0,0,1];
-   const goldMatch=/^Gold_(\d{1,2})$/.exec(n.name||'');if(goldMatch){const face=Number(goldMatch[1]);if(gold.has(face))throw Error('Duplicate gold number '+face);const cent=n.translation||[0,0,0];gold.set(face,unit(cent));}
+   const goldMatch=/^Gold_(\d{1,2})$/.exec(n.name||'');if(goldMatch){const face=Number(goldMatch[1]);if(gold.has(face))throw Error('Duplicate gold number '+face);const cent=n.translation||[0,0,0];gold.set(face,unit(cent));glyphUp.set(face,qrot(nodeRot,[0,0,1]));}
    for(const p of mesh.primitives){if((p.mode??4)!==4)throw Error('Triangle mesh required');if(p.indices===undefined)throw Error('Indexed triangles required');
     const vao=gl.createVertexArray();gl.bindVertexArray(vao);for(const attr of ['POSITION','NORMAL','TEXCOORD_0']){
       let aId=p.attributes[attr],loc=locations[attr];if(aId===undefined){gl.disableVertexAttribArray(loc);gl.vertexAttrib3f(loc,0,0,attr==='NORMAL'?1:0);continue}
@@ -142,7 +142,7 @@ async function loadGLB(arrayBuffer,name='D20 source'){
   if(gold.size!==20||Array.from({length:20},(_,i)=>i+1).some(i=>!gold.has(i)))throw Error('Expected 20 original numbered gold meshes, found '+gold.size);
   if(!result.length)throw Error('No drawable meshes');
   // Keep local-only source material private. No network transfer; binary stays in browser memory.
-  pieces=result;goldFaces=gold;buffers=gpuBuffers;textures=gpuTextures;totalTris=tris;
+  pieces=result;goldFaces=gold;glyphUpVectors=glyphUp;buffers=gpuBuffers;textures=gpuTextures;totalTris=tris;
   state.syntheticFixture=syntheticFixture;
   state.ready=true;state.triangles=tris;state.parts=result.length;state.assetName=name;state.meshInfo=result.map(x=>x.nodeName);el('roll').disabled=false;
   el('metrics').textContent=tris.toLocaleString('ru')+' треугольников · '+result.length+' поверхностей · '+gold.size+' цифр';
@@ -150,10 +150,19 @@ async function loadGLB(arrayBuffer,name='D20 source'){
     ? 'СИНТЕТИЧЕСКИЙ QA D20: только тест Android WebGL2, НЕ исходный обсидиан.'
     : 'Локальный GLB загружен. RNG выберет грань до начала анимации.');return {triangles:tris,parts:result.length,faces:gold.size}
  }
- function setTarget(face){if(!state.ready||!goldFaces.has(face))throw Error('No loaded GLB or invalid face '+face);current=qfrom(goldFaces.get(face),[0,0,1]);state.selected=face;state.visibleFace=face;el('result').textContent=face}
+ function uprightTarget(face){
+  const normal=goldFaces.get(face),letterUp=glyphUpVectors.get(face);
+  if(!normal||!letterUp)throw Error('Original numbered face up-vector not available '+face);
+  const align=qfrom(normal,[0,0,1]);
+  const forward=qrot(align,letterUp);
+  if(Math.hypot(forward[0],forward[1])<0.01)throw Error('Degenerate gold lettering orientation '+face);
+  const twist=Math.atan2(forward[0],forward[1]);
+  return qnorm(qmul(qaxis([0,0,1],twist),align));
+ }
+ function setTarget(face){if(!state.ready||!goldFaces.has(face))throw Error('No loaded GLB or invalid face '+face);current=uprightTarget(face);state.selected=face;state.visibleFace=face;el('result').textContent=face}
  function chooseFace(face=null){if(!state.ready||state.busy)return false;const result=face===null?secureRoll(20):face;if(!goldFaces.has(result))throw RangeError('Not a D20 face: '+result);
   state.selected=result;state.visibleFace=null;state.busy=true;el('result').textContent='…';el('roll').disabled=true;
-  htmlStatus('RNG выбрал '+result+' до начала вращения.');roll={from:current,to:qfrom(goldFaces.get(result),[0,0,1]),chosen:result,start:performance.now(),duration:1750};return result
+  htmlStatus('RNG выбрал '+result+' до начала вращения.');roll={from:current,to:uprightTarget(result),chosen:result,start:performance.now(),duration:1750};return result
  }
  function paint(now){state.frames++;const t0=performance.now();
   if(roll){const t=Math.min(1,(now-roll.start)/roll.duration),s=t*t*(3-2*t);const spin=qaxis([.65,.28,.7],Math.PI*4*(1-s));current=qnorm(qmul(spin,qslerp(roll.from,roll.to,s)));
@@ -168,5 +177,5 @@ async function loadGLB(arrayBuffer,name='D20 source'){
  requestAnimationFrame(paint);
  el('roll').addEventListener('click',()=>chooseFace());
  el('asset').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;el('roll').disabled=true;htmlStatus('Читаю GLB '+file.name+'...');try{const o=await loadGLB(await file.arrayBuffer(),file.name);console.info('REAL_PRIVATE_GLB_LOADED',o)}catch(err){state.error=String(err);htmlStatus(err.message,true);console.error(err)}});
- window.DiceExperimentalQA={state,loadGLB,setTarget,chooseFace,goldFaces:()=>new Map(goldFaces),orientation:(face)=>qfrom(goldFaces.get(face),[0,0,1]),rotatedNormal:(face)=>qrot(current,goldFaces.get(face)),rng:secureRoll,getGLError:()=>gl.getError(),gpuInfo:()=>({version:gl.getParameter(gl.VERSION),vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER)})};
+ window.DiceExperimentalQA={state,loadGLB,setTarget,chooseFace,goldFaces:()=>new Map(goldFaces),orientation:(face)=>uprightTarget(face),letterUp:(face)=>qrot(current,glyphUpVectors.get(face)),rotatedNormal:(face)=>qrot(current,goldFaces.get(face)),rng:secureRoll,getGLError:()=>gl.getError(),gpuInfo:()=>({version:gl.getParameter(gl.VERSION),vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER)})};
 })();
