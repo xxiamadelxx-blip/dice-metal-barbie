@@ -56,6 +56,9 @@ jobs:
           assert sum(n['name'].startswith('Gold_') for n in src['nodes'])==20
           print('PASS_OPEN_20_FACE_GLB_IN_DEBUG_APK',len(data))
           PY
+      - name: Independent SHA-256 and 20 original-layout quaternion regression
+        run: |
+          node experiments/alpha4-rng-first/tools/check_sha_quaternion_upright.cjs
       - name: Compile Android WebGL2 application
         working-directory: experiments/alpha4-rng-first/android-app
         run: gradle --no-daemon --stacktrace :app:assembleDebug
