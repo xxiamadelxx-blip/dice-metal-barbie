@@ -39,6 +39,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.12.1'
+      - name: Contract-check glTF 2.0 source material semantics
+        run: node experiments/alpha4-rng-first/tools/pbr_material_contract.test.cjs
       - name: Generate unlicensed reproducible D20 fixture for real Android GPU proof
         run: |
           python3 experiments/alpha4-rng-first/tools/make_public_qa_glb.py experiments/alpha4-rng-first/android-app/app/src/main/assets/qa_fixture.glb
